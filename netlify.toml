@@ -1,6 +1,6 @@
 # Netlifyデプロイ設定
 [build]
-  command = "npm run build"
+  command = "CI= npm run build"
   publish = ".next"
 
 [build.environment]
