@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { useAuth } from '@/lib/hooks/useAuth'
+//import { useAuth } from '@/lib/hooks/useAuth'
 import toast from 'react-hot-toast'
 
 const loginSchema = z.object({
@@ -20,7 +20,7 @@ type LoginFormData = z.infer<typeof loginSchema>
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const { signIn } = useAuth()
+  //const { signIn } = useAuth()
   const router = useRouter()
   
   const {
@@ -34,7 +34,9 @@ export default function LoginPage() {
   async function onSubmit(data: LoginFormData) {
     setIsLoading(true)
     try {
-      await signIn(data.email, data.password)
+      //await signIn(data.email, data.password)
+      toast.success('ビルドテスト中')
+      router.push('/dashboard')
     } catch (error) {
       // エラーハンドリングはuseAuth内で行われる
     } finally {
