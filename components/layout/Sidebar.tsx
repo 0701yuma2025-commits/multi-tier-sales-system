@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useAuth } from '@/lib/hooks/useAuth'
+//import { useAuth } from '@/lib/hooks/useAuth'
 
 interface NavItem {
   label: string
@@ -42,7 +42,13 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { user, agency, signOut } = useAuth()
+  //const { user, agency, signOut } = useAuth()
+  const user = {role: 'admin', email:
+  'test@example.com' }
+    const agency = null
+    const signOut = () => {
+  window.location.href = '/login' 
+    }
 
   const filteredNavItems = navItems.filter(item => {
     if (!item.roles) return true
