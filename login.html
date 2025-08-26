@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン - 多段階営業代理店管理システム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #1f2937;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .logo p {
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #374151;
+            font-weight: 500;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .password-wrapper {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        .remember-me {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .remember-me input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+        
+        .remember-me label {
+            margin-bottom: 0;
+            color: #6b7280;
+            font-weight: normal;
+        }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 12px 20px;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        
+        .btn-primary:active {
+            background-color: #1d4ed8;
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 24px 0;
+            position: relative;
+        }
+        
+        .divider::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background-color: #e5e7eb;
+        }
+        
+        .divider span {
+            background-color: white;
+            padding: 0 12px;
+            color: #6b7280;
+            font-size: 14px;
+            position: relative;
+        }
+        
+        .links {
+            text-align: center;
+        }
+        
+        .links a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-block;
+            margin: 4px 0;
+        }
+        
+        .links a:hover {
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            background-color: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .success-message {
+            background-color: #efe;
+            border: 1px solid #cfc;
+            color: #3c3;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>ログイン</h1>
+            <p>多段階営業代理店管理システム</p>
+        </div>
+        
+        <div class="error-message" id="errorMessage">
+            メールアドレスまたはパスワードが正しくありません
+        </div>
+        
+        <div class="success-message" id="successMessage">
+            ログインに成功しました
+        </div>
+        
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="email">メールアドレス</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required
+                    placeholder="email@example.com"
+                >
+            </div>
+            
+            <div class="form-group">
+                <label for="password">パスワード</label>
+                <div class="password-wrapper">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        required
+                        placeholder="パスワードを入力"
+                    >
+                    <span class="password-toggle" onclick="togglePassword()">表示</span>
+                </div>
+            </div>
+            
+            <div class="remember-me">
+                <input type="checkbox" id="remember" name="remember">
+                <label for="remember">ログイン情報を記憶する</label>
+            </div>
+            
+            <button type="submit" class="btn-primary">ログイン</button>
+        </form>
+        
+        <div class="divider">
+            <span>または</span>
+        </div>
+        
+        <div class="links">
+            <a href="#" onclick="showDemo()">デモアカウントでログイン</a><br>
+            <a href="/">トップページに戻る</a>
+        </div>
+    </div>
+    
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleText = document.querySelector('.password-toggle');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleText.textContent = '非表示';
+            } else {
+                passwordInput.type = 'password';
+                toggleText.textContent = '表示';
+            }
+        }
+        
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+            
+            // エラーメッセージを非表示
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            
+            // デモ用の認証（実際はサーバー側で処理）
+            if (email === 'admin@example.com' && password === 'admin123') {
+                successMessage.style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = '/dashboard.html';
+                }, 1000);
+            } else if (email === 'agency@example.com' && password === 'agency123') {
+                successMessage.style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = '/dashboard.html';
+                }, 1000);
+            } else {
+                errorMessage.style.display = 'block';
+            }
+        }
+        
+        function showDemo() {
+            alert('デモアカウント:\n\n管理者: admin@example.com / admin123\n代理店: agency@example.com / agency123');
+        }
+    </script>
+</body>
+</html>

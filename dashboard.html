@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ダッシュボード - 多段階営業代理店管理システム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f3f4f6;
+            min-height: 100vh;
+        }
+        
+        /* ヘッダー */
+        .header {
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #1f2937;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .user-name {
+            color: #4b5563;
+            font-size: 14px;
+        }
+        
+        .logout-btn {
+            padding: 8px 16px;
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background-color: #dc2626;
+        }
+        
+        /* ナビゲーション */
+        .nav {
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0 24px;
+        }
+        
+        .nav-list {
+            display: flex;
+            list-style: none;
+            gap: 32px;
+        }
+        
+        .nav-item {
+            padding: 16px 0;
+            position: relative;
+            cursor: pointer;
+            color: #6b7280;
+            font-size: 15px;
+            transition: color 0.2s;
+        }
+        
+        .nav-item:hover {
+            color: #3b82f6;
+        }
+        
+        .nav-item.active {
+            color: #3b82f6;
+            font-weight: 500;
+        }
+        
+        .nav-item.active::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #3b82f6;
+        }
+        
+        /* メインコンテンツ */
+        .main-content {
+            padding: 32px 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* KPIカード */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .kpi-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .kpi-label {
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        .kpi-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        
+        .kpi-change {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .kpi-change.positive {
+            color: #10b981;
+        }
+        
+        .kpi-change.negative {
+            color: #ef4444;
+        }
+        
+        /* チャート */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .chart-period {
+            padding: 6px 12px;
+            background-color: #f3f4f6;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #4b5563;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .chart-placeholder {
+            height: 300px;
+            background-color: #f9fafb;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+        }
+        
+        /* テーブル */
+        .table-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #e5e7eb;
+            color: #4b5563;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f3f4f6;
+            color: #1f2937;
+            font-size: 14px;
+        }
+        
+        tr:hover {
+            background-color: #f9fafb;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-paid {
+            background-color: #dbeafe;
+            color: #1e3a8a;
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <h1>多段階営業代理店管理システム</h1>
+        <div class="user-info">
+            <span class="user-name">admin@example.com</span>
+            <button class="logout-btn" onclick="handleLogout()">ログアウト</button>
+        </div>
+    </header>
+    
+    <!-- ナビゲーション -->
+    <nav class="nav">
+        <ul class="nav-list">
+            <li class="nav-item active" onclick="switchTab('dashboard')">ダッシュボード</li>
+            <li class="nav-item" onclick="switchTab('agencies')">代理店管理</li>
+            <li class="nav-item" onclick="switchTab('sales')">売上管理</li>
+            <li class="nav-item" onclick="switchTab('commissions')">報酬管理</li>
+            <li class="nav-item" onclick="switchTab('settings')">設定</li>
+        </ul>
+    </nav>
+    
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <!-- KPIセクション -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">今月の売上</div>
+                <div class="kpi-value">¥1,250,000</div>
+                <div class="kpi-change positive">
+                    <span>↑</span>
+                    <span>+12.5%</span>
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-label">アクティブ代理店数</div>
+                <div class="kpi-value">48</div>
+                <div class="kpi-change positive">
+                    <span>↑</span>
+                    <span>+4</span>
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-label">未払い報酬</div>
+                <div class="kpi-value">¥375,000</div>
+                <div class="kpi-change negative">
+                    <span>↑</span>
+                    <span>+¥50,000</span>
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-label">今月の新規代理店</div>
+                <div class="kpi-value">12</div>
+                <div class="kpi-change positive">
+                    <span>↑</span>
+                    <span>+50%</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- チャートセクション -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h2 class="chart-title">売上推移</h2>
+                    <select class="chart-period">
+                        <option>過去30日</option>
+                        <option>過去90日</option>
+                        <option>過去1年</option>
+                    </select>
+                </div>
+                <div class="chart-placeholder">
+                    売上推移グラフ
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h2 class="chart-title">代理店階層別分布</h2>
+                    <select class="chart-period">
+                        <option>現在</option>
+                    </select>
+                </div>
+                <div class="chart-placeholder">
+                    階層別分布グラフ
+                </div>
+            </div>
+        </div>
+        
+        <!-- テーブルセクション -->
+        <div class="table-card">
+            <div class="table-header">
+                <h2 class="chart-title">最近の売上</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>日付</th>
+                        <th>代理店名</th>
+                        <th>商品</th>
+                        <th>金額</th>
+                        <th>ステータス</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2024-03-15</td>
+                        <td>株式会社ABC商事</td>
+                        <td>プレミアムプラン</td>
+                        <td>¥50,000</td>
+                        <td><span class="status-badge status-paid">支払済</span></td>
+                    </tr>
+                    <tr>
+                        <td>2024-03-14</td>
+                        <td>XYZ営業株式会社</td>
+                        <td>スタンダードプラン</td>
+                        <td>¥30,000</td>
+                        <td><span class="status-badge status-pending">処理中</span></td>
+                    </tr>
+                    <tr>
+                        <td>2024-03-14</td>
+                        <td>田中商店</td>
+                        <td>ベーシックプラン</td>
+                        <td>¥20,000</td>
+                        <td><span class="status-badge status-paid">支払済</span></td>
+                    </tr>
+                    <tr>
+                        <td>2024-03-13</td>
+                        <td>山田エージェンシー</td>
+                        <td>プレミアムプラン</td>
+                        <td>¥50,000</td>
+                        <td><span class="status-badge status-paid">支払済</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+    
+    <script>
+        function handleLogout() {
+            if (confirm('ログアウトしますか？')) {
+                window.location.href = '/login.html';
+            }
+        }
+        
+        function switchTab(tab) {
+            // タブ切り替えの視覚的フィードバック
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // デモ用のアラート
+            if (tab !== 'dashboard') {
+                alert(`${tab} ページは準備中です`);
+            }
+        }
+    </script>
+</body>
+</html>
