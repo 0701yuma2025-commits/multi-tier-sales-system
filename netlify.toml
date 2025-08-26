@@ -15,11 +15,11 @@
   NODE_ENV = "production"
 
 # リダイレクト設定
+# SPAの404対策のため、存在しないパスをindex.htmlにリダイレクト
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  conditions = {Role = ["admin"]}
 
 # ヘッダー設定
 [[headers]]
