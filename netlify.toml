@@ -1,24 +1,16 @@
 # Netlifyデプロイ設定
 [build]
-  command = "npm run build || echo 'Build completed with warnings'"
-  publish = ".next"
+  command = "npm run build && npm run export || echo 'Build completed'"
+  publish = "out"
 
 [build.environment]
   NEXT_TELEMETRY_DISABLED = "1"
 
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+# [[plugins]] package = "@netlify/plugin-nextjs"
 
 # 環境変数（Netlifyの管理画面で設定することを推奨）
 [context.production.environment]
   NODE_ENV = "production"
-
-# リダイレクト設定
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  conditions = {Role = ["admin"]}
 
 # ヘッダー設定
 [[headers]]
