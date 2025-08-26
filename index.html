@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多段階営業代理店管理システム - Loading...</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+        }
+        h1 {
+            color: #1f2937;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #3b82f6;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message {
+            color: #6b7280;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+        .error-message {
+            color: #ef4444;
+            margin-top: 20px;
+            font-size: 14px;
+            display: none;
+        }
+        .links {
+            margin-top: 30px;
+        }
+        .links a {
+            color: #3b82f6;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 14px;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>多段階営業代理店管理システム</h1>
+        <div class="loader"></div>
+        <p class="message">システムを読み込んでいます...</p>
+        <p class="error-message" id="error">
+            エラーが発生しました。しばらくしてから再度お試しください。
+        </p>
+        <div class="links">
+            <a href="/login">ログイン画面へ</a>
+            <a href="/dashboard">ダッシュボードへ</a>
+        </div>
+    </div>
+
+    <script>
+        // Next.jsアプリが利用可能な場合はリダイレクト
+        setTimeout(function() {
+            // Next.jsのルートをチェック
+            fetch('/_next/static/css/')
+                .then(function(response) {
+                    if (response.ok) {
+                        // Next.jsアプリが動作している場合
+                        window.location.href = '/login';
+                    }
+                })
+                .catch(function() {
+                    // エラーメッセージを表示
+                    document.getElementById('error').style.display = 'block';
+                    document.querySelector('.loader').style.display = 'none';
+                    document.querySelector('.message').style.display = 'none';
+                });
+        }, 2000);
+    </script>
+</body>
+</html>
