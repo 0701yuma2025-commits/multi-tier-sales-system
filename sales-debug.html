@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>売上デバッグ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            background-color: #f3f4f6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1, h2 {
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        
+        pre {
+            background-color: #f9fafb;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        .success {
+            color: #10b981;
+        }
+        
+        .error {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>売上管理デバッグページ</h1>
+        
+        <div class="section">
+            <h2>データチェック</h2>
+            <button onclick="checkData()">データを確認</button>
+            <button onclick="testSale()">テスト売上を追加</button>
+            <button onclick="clearAll()">すべてクリア</button>
+            <div id="dataCheck"></div>
+        </div>
+        
+        <div class="section">
+            <h2>売上データ詳細</h2>
+            <div id="salesDetail"></div>
+        </div>
+        
+        <div class="section">
+            <h2>報酬計算テスト</h2>
+            <div id="commissionTest"></div>
+        </div>
+    </div>
+    
+    <script src="/js/database.js"></script>
+    <script>
+        function checkData() {
+            const data = db.getData();
+            const agencies = data.agencies || [];
+            const products = data.products || [];
+            const sales = data.sales || [];
+            const commissions = data.commissions || [];
+            
+            let html = '<h3>データ構造チェック</h3>';
+            html += '<h4>代理店データ:</h4>';
+            html += `<pre>${JSON.stringify(agencies.slice(0, 2), null, 2)}</pre>`;
+            html += '<h4>商品データ:</h4>';
+            html += `<pre>${JSON.stringify(products, null, 2)}</pre>`;
+            html += '<h4>売上データ:</h4>';
+            html += `<pre>${JSON.stringify(sales.slice(0, 2), null, 2)}</pre>`;
+            html += '<h4>報酬データ:</h4>';
+            html += `<pre>${JSON.stringify(commissions.slice(0, 5), null, 2)}</pre>`;
+            
+            document.getElementById('dataCheck').innerHTML = html;
+        }
+        
+        function testSale() {
+            // 佐藤サービス（Tier4）が商品Aを販売
+            const testSaleData = {
+                date: new Date().toISOString().split('T')[0],
+                agencyId: 'AGN20240005',
+                product: 'PRD001',
+                customerName: 'テスト顧客',
+                amount: 100000,
+                notes: 'デバッグ用テスト売上',
+                status: 'confirmed'
+            };
+            
+            try {
+                const sale = db.addSale(testSaleData);
+                
+                let html = '<h3 class="success">テスト売上を追加しました</h3>';
+                html += '<h4>売上データ:</h4>';
+                html += `<pre>${JSON.stringify(sale, null, 2)}</pre>`;
+                
+                // 報酬計算の詳細を表示
+                if (sale.commissions && sale.commissions.length > 0) {
+                    html += '<h4>報酬計算結果:</h4>';
+                    let totalCommission = 0;
+                    sale.commissions.forEach(commission => {
+                        html += `<p>${commission.agencyName} (Tier${commission.tier}): `;
+                        html += `¥${commission.amount.toLocaleString()} `;
+                        html += `(${(commission.rate * 100).toFixed(1)}% - ${commission.type})</p>`;
+                        totalCommission += commission.amount;
+                    });
+                    html += `<p><strong>報酬総額: ¥${totalCommission.toLocaleString()}</strong></p>`;
+                }
+                
+                document.getElementById('salesDetail').innerHTML = html;
+                
+                // 売上一覧も更新
+                showSalesList();
+            } catch (error) {
+                document.getElementById('salesDetail').innerHTML = 
+                    `<p class="error">エラー: ${error.message}</p>`;
+                console.error(error);
+            }
+        }
+        
+        function showSalesList() {
+            const sales = db.getSales();
+            let html = '<h3>売上一覧</h3>';
+            
+            if (sales.length === 0) {
+                html += '<p>売上データがありません</p>';
+            } else {
+                html += '<table border="1" style="width: 100%; border-collapse: collapse;">';
+                html += '<tr><th>ID</th><th>日付</th><th>代理店</th><th>商品</th><th>金額</th><th>報酬総額</th></tr>';
+                
+                sales.forEach(sale => {
+                    const agency = db.getAgencies().find(a => a.id === sale.agencyId);
+                    const product = db.getProducts().find(p => p.id === sale.product);
+                    const totalCommission = sale.commissions ? 
+                        sale.commissions.reduce((sum, c) => sum + c.amount, 0) : 0;
+                    
+                    html += '<tr>';
+                    html += `<td>${sale.id}</td>`;
+                    html += `<td>${sale.date}</td>`;
+                    html += `<td>${agency ? (agency.company_name || agency.name) : '不明'} (ID: ${sale.agencyId})</td>`;
+                    html += `<td>${product ? product.name : '不明'} (ID: ${sale.product})</td>`;
+                    html += `<td>¥${sale.amount.toLocaleString()}</td>`;
+                    html += `<td>¥${totalCommission.toLocaleString()}</td>`;
+                    html += '</tr>';
+                });
+                
+                html += '</table>';
+            }
+            
+            document.getElementById('commissionTest').innerHTML = html;
+        }
+        
+        function clearAll() {
+            if (confirm('すべてのデータをクリアしますか？')) {
+                localStorage.removeItem('multiTierSalesSystem');
+                location.reload();
+            }
+        }
+        
+        // ページ読み込み時に実行
+        document.addEventListener('DOMContentLoaded', function() {
+            checkData();
+            showSalesList();
+        });
+    </script>
+</body>
+</html>
