@@ -12,7 +12,6 @@
 
   export const config = {
     matcher: [
-      '/((?!_next/static|_next/image|favico
-  n.ico).*)',
+      '/((?!_next/static|_next/image|favicon.ico).*)',
     ],
   }
