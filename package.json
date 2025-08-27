@@ -1,0 +1,12 @@
+{
+  "name": "multi-tier-sales-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "多段階営業代理店管理システム - 静的サイト版",
+  "author": "Your Name",
+  "license": "MIT",
+  "scripts": {
+    "serve": "python -m http.server 8000",
+    "deploy": "echo 'Push to GitHub for automatic Netlify deployment'"
+  }
+}
