@@ -1,0 +1,395 @@
+/* レスポンシブデザイン用CSS */
+
+/* タブレット用 (1024px以下) */
+@media screen and (max-width: 1024px) {
+    /* ヘッダー調整 */
+    .header h1 {
+        font-size: 20px;
+    }
+    
+    /* ナビゲーション */
+    .nav-list {
+        gap: 20px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+    }
+    
+    .nav-item {
+        font-size: 14px;
+        white-space: nowrap;
+        padding: 14px 0;
+    }
+    
+    /* KPIカード */
+    .kpi-grid,
+    .stats-grid,
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+    
+    /* テーブルのスクロール対応 */
+    .table-card,
+    .activity-section,
+    .table-section {
+        overflow-x: auto;
+    }
+    
+    table {
+        min-width: 600px;
+    }
+    
+    /* チャートグリッド */
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* フォームレイアウト */
+    .rate-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* サイドバーレイアウト */
+    .main-content {
+        grid-template-columns: 200px 1fr;
+        gap: 20px;
+    }
+    
+    .sidebar-item {
+        font-size: 14px;
+        padding: 10px 16px;
+    }
+}
+
+/* スマートフォン用 (768px以下) */
+@media screen and (max-width: 768px) {
+    /* ヘッダー */
+    .header {
+        padding: 12px 16px;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .header h1 {
+        font-size: 18px;
+        text-align: center;
+    }
+    
+    .user-info {
+        width: 100%;
+        justify-content: space-between;
+        font-size: 13px;
+    }
+    
+    .logout-btn {
+        font-size: 13px;
+        padding: 6px 12px;
+    }
+    
+    /* ナビゲーション - ハンバーガーメニュー化 */
+    .nav {
+        position: relative;
+    }
+    
+    .nav-toggle {
+        display: block;
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #4b5563;
+    }
+    
+    .nav-list {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 280px;
+        height: 100vh;
+        background: white;
+        flex-direction: column;
+        padding: 60px 20px 20px;
+        gap: 0;
+        transition: left 0.3s;
+        z-index: 1000;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .nav-list.active {
+        left: 0;
+    }
+    
+    .nav-item {
+        width: 100%;
+        padding: 16px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .nav-close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+    }
+    
+    /* メインコンテンツ */
+    .main-content {
+        padding: 20px 16px;
+        grid-template-columns: 1fr;
+    }
+    
+    /* KPIカード */
+    .kpi-grid,
+    .stats-grid,
+    .metrics-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .kpi-card,
+    .stat-card,
+    .metric-card {
+        padding: 16px;
+    }
+    
+    .kpi-value,
+    .stat-value,
+    .metric-value {
+        font-size: 24px;
+    }
+    
+    /* タイトル */
+    .page-title,
+    .action-title {
+        font-size: 20px;
+    }
+    
+    /* ボタングループ */
+    .action-bar {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .action-buttons {
+        width: 100%;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+        font-size: 14px;
+    }
+    
+    /* テーブル - カード型に変更 */
+    .mobile-table {
+        display: block;
+    }
+    
+    .mobile-table thead {
+        display: none;
+    }
+    
+    .mobile-table tbody {
+        display: block;
+    }
+    
+    .mobile-table tr {
+        display: block;
+        margin-bottom: 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 16px;
+        background: white;
+    }
+    
+    .mobile-table td {
+        display: block;
+        padding: 8px 0;
+        border-bottom: none;
+        font-size: 14px;
+    }
+    
+    .mobile-table td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #6b7280;
+        display: block;
+        margin-bottom: 4px;
+        font-size: 12px;
+    }
+    
+    /* チャート */
+    .chart-wrapper {
+        height: 250px;
+    }
+    
+    /* フォーム */
+    .form-group {
+        margin-bottom: 16px;
+    }
+    
+    /* モーダル */
+    .modal-content {
+        margin: 20px;
+        padding: 20px;
+        width: calc(100% - 40px);
+    }
+    
+    .modal-title {
+        font-size: 20px;
+    }
+    
+    /* タブ */
+    .tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .tab {
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+    
+    /* 設定画面サイドバー */
+    .sidebar {
+        position: fixed;
+        left: -100%;
+        top: 0;
+        width: 260px;
+        height: 100vh;
+        background: white;
+        z-index: 1001;
+        transition: left 0.3s;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        overflow-y: auto;
+    }
+    
+    .sidebar.active {
+        left: 0;
+    }
+    
+    .sidebar-toggle {
+        display: block;
+        margin-bottom: 20px;
+        padding: 10px 16px;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        width: 100%;
+    }
+    
+    /* データグリッド */
+    .data-grid,
+    .comparison-tables,
+    .blocklist-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 小型スマートフォン用 (480px以下) */
+@media screen and (max-width: 480px) {
+    /* ヘッダータイトル */
+    .header h1 {
+        font-size: 16px;
+    }
+    
+    /* KPIカード */
+    .kpi-value,
+    .stat-value,
+    .metric-value {
+        font-size: 20px;
+    }
+    
+    .kpi-label,
+    .stat-label,
+    .metric-title {
+        font-size: 12px;
+    }
+    
+    /* ボタン */
+    .btn-primary,
+    .btn-secondary,
+    .btn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    /* フォーム入力 */
+    .form-input,
+    .form-select,
+    .form-textarea {
+        font-size: 16px; /* iOSでのズーム防止 */
+    }
+    
+    /* モーダル */
+    .modal-content {
+        margin: 10px;
+        padding: 16px;
+        width: calc(100% - 20px);
+    }
+}
+
+/* 印刷用スタイル */
+@media print {
+    /* ナビゲーション非表示 */
+    .nav,
+    .header,
+    .logout-btn,
+    .action-buttons,
+    .btn,
+    button {
+        display: none !important;
+    }
+    
+    /* 背景色削除 */
+    body {
+        background: white;
+    }
+    
+    /* グリッドを縦に並べる */
+    .kpi-grid,
+    .stats-grid,
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* ページブレイク */
+    .chart-card,
+    .table-card {
+        page-break-inside: avoid;
+    }
+}
+
+/* ダークモード対応（将来の実装用） */
+@media (prefers-color-scheme: dark) {
+    /* ダークモード用のスタイルをここに追加 */
+}
+
+/* アクセシビリティ向上 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* 高コントラストモード */
+@media (prefers-contrast: high) {
+    .btn-primary {
+        background-color: #1a1a1a;
+    }
+    
+    .btn-secondary {
+        border: 2px solid #1a1a1a;
+    }
+}
