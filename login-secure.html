@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+    <title>セキュアログイン - 多段階営業代理店管理システム</title>
+    <script src="js/security-utils.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 420px;
+            padding: 40px;
+        }
+        
+        .security-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            padding: 8px 16px;
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 6px;
+            color: #15803d;
+            font-size: 14px;
+        }
+        
+        .security-badge svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            font-size: 28px;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        
+        .logo p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .alert.error {
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+        
+        .alert.warning {
+            background-color: #fef3c7;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+        
+        .alert.success {
+            background-color: #d1fae5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            color: #374151;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+        
+        .form-input.error {
+            border-color: #ef4444;
+        }
+        
+        .password-strength {
+            margin-top: 8px;
+            height: 4px;
+            background-color: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            transition: width 0.3s, background-color 0.3s;
+        }
+        
+        .password-strength-bar.very-weak {
+            width: 20%;
+            background-color: #ef4444;
+        }
+        
+        .password-strength-bar.weak {
+            width: 40%;
+            background-color: #f97316;
+        }
+        
+        .password-strength-bar.medium {
+            width: 60%;
+            background-color: #eab308;
+        }
+        
+        .password-strength-bar.strong {
+            width: 100%;
+            background-color: #22c55e;
+        }
+        
+        .password-feedback {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        
+        .captcha-container {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .captcha-question {
+            font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 8px;
+        }
+        
+        .captcha-input {
+            width: 120px;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 12px 20px;
+            background-color: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary:hover {
+            background-color: #4f46e5;
+        }
+        
+        .btn-primary:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .rate-limit-message {
+            text-align: center;
+            color: #ef4444;
+            font-size: 14px;
+            margin-top: 16px;
+        }
+        
+        .security-info {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+        }
+        
+        .security-features {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 8px;
+        }
+        
+        .security-feature {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top-color: #6366f1;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .demo-notice {
+            background-color: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #3730a3;
+        }
+        
+        .remember-device {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .remember-device input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .remember-device label {
+            font-size: 14px;
+            color: #4b5563;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- セキュリティバッジ -->
+        <div class="security-badge">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+            セキュア接続
+        </div>
+        
+        <div class="logo">
+            <h1>🔒 セキュアログイン</h1>
+            <p>Multi-Tier Sales Agency System</p>
+        </div>
+        
+        <!-- デモ環境の通知 -->
+        <div class="demo-notice">
+            <strong>デモ環境</strong>：セキュリティ機能のデモンストレーション用ページです
+        </div>
+        
+        <!-- アラートメッセージ -->
+        <div id="alertMessage" class="alert"></div>
+        
+        <form id="secureLoginForm" onsubmit="handleSecureLogin(event)">
+            <input type="hidden" id="csrfToken" name="csrfToken">
+            
+            <div class="form-group">
+                <label class="form-label" for="email">メールアドレス</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email"
+                    class="form-input"
+                    required
+                    autocomplete="username"
+                    maxlength="100"
+                >
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="password">パスワード</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password"
+                    class="form-input"
+                    required
+                    autocomplete="current-password"
+                    maxlength="128"
+                    oninput="checkPasswordStrengthUI(this.value)"
+                >
+                <div class="password-strength">
+                    <div id="strengthBar" class="password-strength-bar"></div>
+                </div>
+                <div id="passwordFeedback" class="password-feedback"></div>
+            </div>
+            
+            <!-- CAPTCHA -->
+            <div class="captcha-container">
+                <div class="captcha-question" id="captchaQuestion"></div>
+                <input 
+                    type="text" 
+                    id="captchaAnswer" 
+                    class="captcha-input"
+                    placeholder="答えを入力"
+                    required
+                    maxlength="10"
+                >
+            </div>
+            
+            <!-- デバイス記憶 -->
+            <div class="remember-device">
+                <input type="checkbox" id="rememberDevice" name="rememberDevice">
+                <label for="rememberDevice">このデバイスを30日間記憶する</label>
+            </div>
+            
+            <button type="submit" class="btn-primary" id="loginButton">
+                セキュアログイン
+            </button>
+        </form>
+        
+        <!-- レート制限メッセージ -->
+        <div id="rateLimitMessage" class="rate-limit-message" style="display: none;"></div>
+        
+        <!-- セキュリティ情報 -->
+        <div class="security-info">
+            <div>このサイトは以下のセキュリティ対策で保護されています</div>
+            <div class="security-features">
+                <div class="security-feature">
+                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    CSRF保護
+                </div>
+                <div class="security-feature">
+                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    レート制限
+                </div>
+                <div class="security-feature">
+                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    XSS防御
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 初期化
+        const loginRateLimiter = new SecurityUtils.RateLimiter(5, 300000); // 5回/5分
+        const ipAddress = 'demo-ip-' + Math.random().toString(36).substring(7);
+        let captchaAnswer = null;
+        
+        // ページロード時
+        document.addEventListener('DOMContentLoaded', function() {
+            // CSRFトークン生成
+            const csrfToken = SecurityUtils.generateCSRFToken();
+            sessionStorage.setItem('csrfToken', csrfToken);
+            document.getElementById('csrfToken').value = csrfToken;
+            
+            // CAPTCHA生成
+            generateCaptcha();
+            
+            // デモアカウント情報を自動入力（テスト用）
+            setTimeout(() => {
+                showAlert('デモ用: admin@example.com / admin123', 'warning');
+            }, 1000);
+        });
+        
+        // CAPTCHA生成
+        function generateCaptcha() {
+            const num1 = Math.floor(Math.random() * 10) + 1;
+            const num2 = Math.floor(Math.random() * 10) + 1;
+            captchaAnswer = num1 + num2;
+            document.getElementById('captchaQuestion').textContent = `${num1} + ${num2} = ?`;
+        }
+        
+        // パスワード強度表示
+        function checkPasswordStrengthUI(password) {
+            const result = SecurityUtils.checkPasswordStrength(password);
+            const strengthBar = document.getElementById('strengthBar');
+            const feedback = document.getElementById('passwordFeedback');
+            
+            strengthBar.className = 'password-strength-bar ' + result.level;
+            
+            if (password.length > 0 && result.feedback.length > 0) {
+                feedback.textContent = result.feedback[0];
+            } else if (password.length > 0) {
+                feedback.textContent = '強固なパスワードです';
+            } else {
+                feedback.textContent = '';
+            }
+        }
+        
+        // セキュアログイン処理
+        async function handleSecureLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const captchaInput = parseInt(document.getElementById('captchaAnswer').value);
+            const csrfToken = document.getElementById('csrfToken').value;
+            const rememberDevice = document.getElementById('rememberDevice').checked;
+            
+            // レート制限チェック
+            if (!loginRateLimiter.isAllowed(ipAddress)) {
+                const remainingTime = Math.ceil(loginRateLimiter.getRemainingTime(ipAddress) / 1000);
+                showRateLimitMessage(remainingTime);
+                return;
+            }
+            
+            // 入力検証
+            if (!SecurityUtils.InputValidator.email(email)) {
+                showAlert('有効なメールアドレスを入力してください', 'error');
+                return;
+            }
+            
+            // SQLインジェクション検査
+            if (SecurityUtils.hasSQLInjectionRisk(email) || SecurityUtils.hasSQLInjectionRisk(password)) {
+                showAlert('不正な文字が検出されました', 'error');
+                logSecurityEvent('SQL_INJECTION_ATTEMPT', { email, ip: ipAddress });
+                return;
+            }
+            
+            // XSS対策（表示時にエスケープ）
+            const safeEmail = SecurityUtils.escapeHtml(email);
+            
+            // CSRFトークン検証
+            if (!SecurityUtils.validateCSRFToken(csrfToken)) {
+                showAlert('セキュリティトークンが無効です', 'error');
+                logSecurityEvent('CSRF_TOKEN_INVALID', { email: safeEmail, ip: ipAddress });
+                return;
+            }
+            
+            // CAPTCHA検証
+            if (captchaInput !== captchaAnswer) {
+                showAlert('計算問題の答えが正しくありません', 'error');
+                generateCaptcha(); // 新しい問題を生成
+                return;
+            }
+            
+            // パスワード強度チェック（新規登録時のみ実施）
+            const passwordStrength = SecurityUtils.checkPasswordStrength(password);
+            if (passwordStrength.score < 60) {
+                showAlert('パスワードが弱すぎます。より強固なパスワードを使用してください', 'warning');
+            }
+            
+            // ログインボタンを無効化
+            const loginButton = document.getElementById('loginButton');
+            loginButton.disabled = true;
+            loginButton.innerHTML = '<span class="loading"></span>認証中...';
+            
+            // 認証処理（デモ用）
+            setTimeout(() => {
+                if (email === 'admin@example.com' && password === 'admin123') {
+                    // 成功
+                    showAlert('ログインに成功しました', 'success');
+                    
+                    // セキュアセッション作成
+                    const sessionData = {
+                        email: safeEmail,
+                        role: 'admin',
+                        loginTime: new Date().toISOString(),
+                        ip: ipAddress,
+                        deviceTrusted: rememberDevice
+                    };
+                    
+                    if (rememberDevice) {
+                        SecurityUtils.SecureSession.set('userSession', sessionData, 43200); // 30日
+                    } else {
+                        SecurityUtils.SecureSession.set('userSession', sessionData, 30); // 30分
+                    }
+                    
+                    logSecurityEvent('LOGIN_SUCCESS', { email: safeEmail, ip: ipAddress });
+                    
+                    // リダイレクト
+                    setTimeout(() => {
+                        window.location.href = 'dashboard-admin.html';
+                    }, 1000);
+                } else {
+                    // 失敗
+                    showAlert('メールアドレスまたはパスワードが正しくありません', 'error');
+                    logSecurityEvent('LOGIN_FAILED', { email: safeEmail, ip: ipAddress });
+                    
+                    // 新しいCAPTCHA
+                    generateCaptcha();
+                    document.getElementById('captchaAnswer').value = '';
+                    
+                    loginButton.disabled = false;
+                    loginButton.innerHTML = 'セキュアログイン';
+                }
+            }, 1500);
+        }
+        
+        // アラート表示
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alertMessage');
+            alertDiv.textContent = message;
+            alertDiv.className = `alert ${type}`;
+            alertDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // レート制限メッセージ
+        function showRateLimitMessage(seconds) {
+            const messageDiv = document.getElementById('rateLimitMessage');
+            messageDiv.style.display = 'block';
+            
+            const timer = setInterval(() => {
+                if (seconds <= 0) {
+                    messageDiv.style.display = 'none';
+                    clearInterval(timer);
+                } else {
+                    messageDiv.textContent = `ログイン試行回数が上限に達しました。${seconds}秒後に再試行してください。`;
+                    seconds--;
+                }
+            }, 1000);
+        }
+        
+        // セキュリティイベントログ（デモ用）
+        function logSecurityEvent(eventType, details) {
+            const event = {
+                type: eventType,
+                timestamp: new Date().toISOString(),
+                ...details
+            };
+            console.log('Security Event:', event);
+            
+            // 実際の環境では、サーバーに送信して記録
+        }
+        
+        // コンテキストメニュー無効化（セキュリティ強化）
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+        
+        // 開発者ツール検出（デモ用）
+        let devtools = { open: false, orientation: null };
+        const threshold = 160;
+        
+        setInterval(function() {
+            if (window.outerHeight - window.innerHeight > threshold || 
+                window.outerWidth - window.innerWidth > threshold) {
+                if (!devtools.open) {
+                    devtools.open = true;
+                    console.warn('開発者ツールが検出されました');
+                    logSecurityEvent('DEVTOOLS_OPENED', { ip: ipAddress });
+                }
+            } else {
+                devtools.open = false;
+            }
+        }, 500);
+    </script>
+</body>
+</html>

@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>セキュリティモニター - 多段階営業代理店管理システム</title>
+    <script src="js/auth-check-simple.js"></script>
+    <script src="js/security-utils.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f3f4f6;
+            min-height: 100vh;
+        }
+        
+        /* ヘッダー */
+        .header {
+            background-color: #1f2937;
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            }
+        }
+        
+        .header-controls {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        
+        .refresh-btn {
+            padding: 8px 16px;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .refresh-btn:hover {
+            background-color: #2563eb;
+        }
+        
+        /* メインコンテンツ */
+        .main-content {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* アラートバー */
+        .alert-bar {
+            display: none;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+        
+        .alert-bar.critical {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .alert-bar.warning {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        
+        .alert-bar.info {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        
+        /* メトリクスグリッド */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card.danger {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .metric-card.warning {
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .metric-card.success {
+            border-left: 4px solid #22c55e;
+        }
+        
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .metric-title {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        .metric-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: 18px;
+        }
+        
+        .metric-icon.danger {
+            background-color: #fee2e2;
+            color: #ef4444;
+        }
+        
+        .metric-icon.warning {
+            background-color: #fef3c7;
+            color: #f59e0b;
+        }
+        
+        .metric-icon.success {
+            background-color: #d1fae5;
+            color: #22c55e;
+        }
+        
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        
+        .metric-description {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        
+        /* アクティビティログ */
+        .activity-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .filter-btn {
+            padding: 6px 12px;
+            background-color: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn:hover {
+            background-color: #e5e7eb;
+        }
+        
+        .filter-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .activity-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .activity-table th {
+            text-align: left;
+            padding: 12px;
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: 600;
+            font-size: 14px;
+            color: #4b5563;
+        }
+        
+        .activity-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+        }
+        
+        .activity-table tr:hover {
+            background-color: #f9fafb;
+        }
+        
+        .event-type {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .event-type.login {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .event-type.failed {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .event-type.suspicious {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .event-type.blocked {
+            background-color: #fce7f3;
+            color: #be185d;
+        }
+        
+        /* ヒートマップ */
+        .heatmap-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: auto repeat(24, 1fr);
+            gap: 2px;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+        
+        .heatmap-cell {
+            aspect-ratio: 1;
+            background-color: #e5e7eb;
+            border-radius: 2px;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .heatmap-cell.low {
+            background-color: #bbf7d0;
+        }
+        
+        .heatmap-cell.medium {
+            background-color: #fbbf24;
+        }
+        
+        .heatmap-cell.high {
+            background-color: #f87171;
+        }
+        
+        .heatmap-label {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        /* ツールチップ */
+        .tooltip {
+            position: absolute;
+            background-color: #1f2937;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .tooltip.show {
+            opacity: 1;
+        }
+        
+        /* IPブロックリスト */
+        .blocklist-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        
+        .blocklist-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .ip-list {
+            margin-top: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .ip-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .ip-address {
+            font-family: monospace;
+            font-size: 14px;
+            color: #1f2937;
+        }
+        
+        .ip-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .action-btn.unblock {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .action-btn.block {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <h1>
+            <span class="status-indicator"></span>
+            セキュリティモニター
+        </h1>
+        <div class="header-controls">
+            <span id="lastUpdate">最終更新: --:--:--</span>
+            <button class="refresh-btn" onclick="refreshData()">🔄 更新</button>
+        </div>
+    </header>
+    
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <!-- アラートバー -->
+        <div id="alertBar" class="alert-bar">
+            <span id="alertMessage"></span>
+        </div>
+        
+        <!-- セキュリティメトリクス -->
+        <div class="metrics-grid">
+            <div class="metric-card danger">
+                <div class="metric-header">
+                    <div>
+                        <div class="metric-title">ブロック中のIP</div>
+                        <div class="metric-value" id="blockedIPs">12</div>
+                        <div class="metric-description">過去24時間</div>
+                    </div>
+                    <div class="metric-icon danger">🚫</div>
+                </div>
+            </div>
+            
+            <div class="metric-card warning">
+                <div class="metric-header">
+                    <div>
+                        <div class="metric-title">ログイン失敗</div>
+                        <div class="metric-value" id="failedLogins">48</div>
+                        <div class="metric-description">過去24時間</div>
+                    </div>
+                    <div class="metric-icon warning">⚠️</div>
+                </div>
+            </div>
+            
+            <div class="metric-card warning">
+                <div class="metric-header">
+                    <div>
+                        <div class="metric-title">不審なアクティビティ</div>
+                        <div class="metric-value" id="suspiciousActivity">7</div>
+                        <div class="metric-description">要確認</div>
+                    </div>
+                    <div class="metric-icon warning">🔍</div>
+                </div>
+            </div>
+            
+            <div class="metric-card success">
+                <div class="metric-header">
+                    <div>
+                        <div class="metric-title">成功ログイン</div>
+                        <div class="metric-value" id="successfulLogins">324</div>
+                        <div class="metric-description">過去24時間</div>
+                    </div>
+                    <div class="metric-icon success">✓</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- リアルタイムアクティビティログ -->
+        <div class="activity-section">
+            <div class="section-header">
+                <h2 class="section-title">リアルタイムアクティビティ</h2>
+                <div class="filter-controls">
+                    <button class="filter-btn active" onclick="filterActivity('all')">すべて</button>
+                    <button class="filter-btn" onclick="filterActivity('login')">ログイン</button>
+                    <button class="filter-btn" onclick="filterActivity('failed')">失敗</button>
+                    <button class="filter-btn" onclick="filterActivity('suspicious')">不審</button>
+                </div>
+            </div>
+            
+            <table class="activity-table">
+                <thead>
+                    <tr>
+                        <th>時刻</th>
+                        <th>イベント</th>
+                        <th>ユーザー/IP</th>
+                        <th>詳細</th>
+                        <th>アクション</th>
+                    </tr>
+                </thead>
+                <tbody id="activityLog">
+                    <!-- 動的に生成 -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- アクセスヒートマップ -->
+        <div class="heatmap-section">
+            <div class="section-header">
+                <h2 class="section-title">24時間アクセスヒートマップ</h2>
+            </div>
+            <div class="heatmap-grid" id="heatmapGrid">
+                <!-- 動的に生成 -->
+            </div>
+        </div>
+        
+        <!-- IPブロックリスト -->
+        <div class="blocklist-section">
+            <div class="blocklist-card">
+                <h3 class="section-title">ブロック中のIPアドレス</h3>
+                <div class="ip-list" id="blockedIPList">
+                    <!-- 動的に生成 -->
+                </div>
+            </div>
+            
+            <div class="blocklist-card">
+                <h3 class="section-title">監視対象IPアドレス</h3>
+                <div class="ip-list" id="watchlistIPList">
+                    <!-- 動的に生成 -->
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- ツールチップ -->
+    <div id="tooltip" class="tooltip"></div>
+    
+    <script>
+        // デモデータ生成
+        let activityData = [];
+        let heatmapData = [];
+        let blockedIPs = new Set();
+        let watchlistIPs = new Set();
+        
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            generateDemoData();
+            updateDisplay();
+            
+            // 自動更新（10秒ごと）
+            setInterval(() => {
+                addNewActivity();
+                updateDisplay();
+            }, 10000);
+        });
+        
+        // デモデータ生成
+        function generateDemoData() {
+            // アクティビティログ
+            const eventTypes = ['login', 'failed', 'suspicious', 'blocked'];
+            const users = ['admin@example.com', 'user1@example.com', 'user2@example.com', 'unknown'];
+            
+            for (let i = 0; i < 20; i++) {
+                const type = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+                activityData.push({
+                    id: i,
+                    timestamp: new Date(Date.now() - Math.random() * 3600000),
+                    type: type,
+                    user: users[Math.floor(Math.random() * users.length)],
+                    ip: generateRandomIP(),
+                    details: getEventDetails(type)
+                });
+            }
+            
+            // ヒートマップデータ
+            for (let day = 0; day < 7; day++) {
+                for (let hour = 0; hour < 24; hour++) {
+                    const value = Math.floor(Math.random() * 100);
+                    heatmapData.push({ day, hour, value });
+                }
+            }
+            
+            // ブロックリスト
+            for (let i = 0; i < 8; i++) {
+                blockedIPs.add(generateRandomIP());
+                watchlistIPs.add(generateRandomIP());
+            }
+        }
+        
+        // 新しいアクティビティ追加
+        function addNewActivity() {
+            const eventTypes = ['login', 'failed', 'suspicious'];
+            const type = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+            
+            const newActivity = {
+                id: activityData.length,
+                timestamp: new Date(),
+                type: type,
+                user: Math.random() > 0.5 ? 'user' + Math.floor(Math.random() * 100) + '@example.com' : 'unknown',
+                ip: generateRandomIP(),
+                details: getEventDetails(type)
+            };
+            
+            activityData.unshift(newActivity);
+            if (activityData.length > 50) {
+                activityData.pop();
+            }
+            
+            // アラート表示
+            if (type === 'suspicious' || type === 'blocked') {
+                showAlert(`不審なアクティビティを検出: ${newActivity.ip}`, type === 'blocked' ? 'critical' : 'warning');
+            }
+        }
+        
+        // 表示更新
+        function updateDisplay() {
+            updateMetrics();
+            updateActivityLog();
+            updateHeatmap();
+            updateBlocklists();
+            updateLastUpdate();
+        }
+        
+        // メトリクス更新
+        function updateMetrics() {
+            const now = new Date();
+            const last24h = new Date(now - 24 * 60 * 60 * 1000);
+            
+            const recent = activityData.filter(a => a.timestamp > last24h);
+            
+            document.getElementById('blockedIPs').textContent = blockedIPs.size;
+            document.getElementById('failedLogins').textContent = recent.filter(a => a.type === 'failed').length;
+            document.getElementById('suspiciousActivity').textContent = recent.filter(a => a.type === 'suspicious').length;
+            document.getElementById('successfulLogins').textContent = recent.filter(a => a.type === 'login').length;
+        }
+        
+        // アクティビティログ更新
+        function updateActivityLog() {
+            const tbody = document.getElementById('activityLog');
+            tbody.innerHTML = '';
+            
+            activityData.slice(0, 10).forEach(activity => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${activity.timestamp.toLocaleTimeString()}</td>
+                    <td><span class="event-type ${activity.type}">${getEventLabel(activity.type)}</span></td>
+                    <td>${SecurityUtils.escapeHtml(activity.user)}<br><small>${activity.ip}</small></td>
+                    <td>${activity.details}</td>
+                    <td>
+                        ${activity.type === 'suspicious' || activity.type === 'failed' ? 
+                            `<button class="action-btn block" onclick="blockIP('${activity.ip}')">ブロック</button>` : 
+                            ''}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // ヒートマップ更新
+        function updateHeatmap() {
+            const grid = document.getElementById('heatmapGrid');
+            grid.innerHTML = '';
+            
+            // 曜日ラベル
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            days.forEach(day => {
+                const label = document.createElement('div');
+                label.className = 'heatmap-label';
+                label.textContent = day;
+                grid.appendChild(label);
+            });
+            
+            // 時間ヘッダー
+            for (let hour = 0; hour < 24; hour++) {
+                const label = document.createElement('div');
+                label.style.textAlign = 'center';
+                label.style.fontSize = '10px';
+                label.style.color = '#9ca3af';
+                label.textContent = hour;
+                grid.appendChild(label);
+            }
+            
+            // ヒートマップセル
+            heatmapData.forEach(data => {
+                const cell = document.createElement('div');
+                cell.className = 'heatmap-cell';
+                
+                if (data.value < 30) cell.classList.add('low');
+                else if (data.value < 70) cell.classList.add('medium');
+                else cell.classList.add('high');
+                
+                cell.onmouseenter = (e) => showTooltip(e, `${data.value} アクセス`);
+                cell.onmouseleave = hideTooltip;
+                
+                grid.appendChild(cell);
+            });
+        }
+        
+        // ブロックリスト更新
+        function updateBlocklists() {
+            const blockedList = document.getElementById('blockedIPList');
+            const watchList = document.getElementById('watchlistIPList');
+            
+            blockedList.innerHTML = '';
+            watchList.innerHTML = '';
+            
+            blockedIPs.forEach(ip => {
+                const item = createIPItem(ip, 'blocked');
+                blockedList.appendChild(item);
+            });
+            
+            watchlistIPs.forEach(ip => {
+                const item = createIPItem(ip, 'watchlist');
+                watchList.appendChild(item);
+            });
+        }
+        
+        // IPアイテム作成
+        function createIPItem(ip, type) {
+            const div = document.createElement('div');
+            div.className = 'ip-item';
+            div.innerHTML = `
+                <span class="ip-address">${ip}</span>
+                <div class="ip-actions">
+                    ${type === 'blocked' ? 
+                        `<button class="action-btn unblock" onclick="unblockIP('${ip}')">解除</button>` :
+                        `<button class="action-btn block" onclick="blockIP('${ip}')">ブロック</button>`
+                    }
+                </div>
+            `;
+            return div;
+        }
+        
+        // IP操作
+        function blockIP(ip) {
+            blockedIPs.add(ip);
+            watchlistIPs.delete(ip);
+            updateDisplay();
+            showAlert(`IPアドレス ${ip} をブロックしました`, 'info');
+        }
+        
+        function unblockIP(ip) {
+            blockedIPs.delete(ip);
+            updateDisplay();
+            showAlert(`IPアドレス ${ip} のブロックを解除しました`, 'info');
+        }
+        
+        // フィルタリング
+        function filterActivity(type) {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 実際のフィルタリング実装は省略
+            console.log('フィルタ:', type);
+        }
+        
+        // アラート表示
+        function showAlert(message, type = 'info') {
+            const alertBar = document.getElementById('alertBar');
+            const alertMessage = document.getElementById('alertMessage');
+            
+            alertBar.className = `alert-bar ${type}`;
+            alertBar.style.display = 'flex';
+            alertMessage.textContent = message;
+            
+            setTimeout(() => {
+                alertBar.style.display = 'none';
+            }, 5000);
+        }
+        
+        // ツールチップ
+        function showTooltip(event, text) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.textContent = text;
+            tooltip.style.left = event.pageX + 10 + 'px';
+            tooltip.style.top = event.pageY - 30 + 'px';
+            tooltip.classList.add('show');
+        }
+        
+        function hideTooltip() {
+            document.getElementById('tooltip').classList.remove('show');
+        }
+        
+        // 最終更新時刻
+        function updateLastUpdate() {
+            document.getElementById('lastUpdate').textContent = 
+                '最終更新: ' + new Date().toLocaleTimeString();
+        }
+        
+        // データ更新
+        function refreshData() {
+            addNewActivity();
+            updateDisplay();
+            showAlert('データを更新しました', 'info');
+        }
+        
+        // ヘルパー関数
+        function generateRandomIP() {
+            return `${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`;
+        }
+        
+        function getEventLabel(type) {
+            const labels = {
+                'login': 'ログイン成功',
+                'failed': 'ログイン失敗',
+                'suspicious': '不審な活動',
+                'blocked': 'ブロック済み'
+            };
+            return labels[type] || type;
+        }
+        
+        function getEventDetails(type) {
+            const details = {
+                'login': '正常なログイン',
+                'failed': 'パスワードが正しくありません',
+                'suspicious': '短時間に複数回の試行',
+                'blocked': 'IPアドレスがブロックされています'
+            };
+            return details[type] || '';
+        }
+    </script>
+</body>
+</html>
