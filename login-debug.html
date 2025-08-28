@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログインデバッグ - ステップバイステップ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        .step {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .step h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 ログインデバッグツール</h1>
+    
+    <div class="step">
+        <h2>ステップ1: LocalStorageの確認</h2>
+        <button onclick="checkStorage()">LocalStorageを確認</button>
+        <button onclick="clearStorage()">LocalStorageをクリア</button>
+        <div id="storageResult" class="result"></div>
+    </div>
+    
+    <div class="step">
+        <h2>ステップ2: デモアカウント設定</h2>
+        <button onclick="setAdminAccount()">管理者アカウントを設定</button>
+        <button onclick="setAgencyAccount()">代理店アカウントを設定</button>
+        <div id="accountResult" class="result"></div>
+    </div>
+    
+    <div class="step">
+        <h2>ステップ3: 認証状態の確認</h2>
+        <button onclick="checkAuthStatus()">認証状態を確認</button>
+        <div id="authResult" class="result"></div>
+    </div>
+    
+    <div class="step">
+        <h2>ステップ4: ページ遷移テスト</h2>
+        <button onclick="testLoginPage()">login.htmlへ移動</button>
+        <button onclick="testAdminDashboard()">dashboard-admin.htmlへ移動</button>
+        <button onclick="testAgencyDashboard()">dashboard-agency.htmlへ移動</button>
+        <div id="navigationResult" class="result"></div>
+    </div>
+    
+    <div class="step">
+        <h2>ステップ5: 手動ログインテスト</h2>
+        <button onclick="manualLogin('admin')">管理者としてログイン</button>
+        <button onclick="manualLogin('agency')">代理店としてログイン</button>
+        <div id="loginResult" class="result"></div>
+    </div>
+
+    <script>
+        function checkStorage() {
+            const storage = {
+                currentUser: localStorage.getItem('currentUser'),
+                supabaseConfig: localStorage.getItem('supabaseConfig'),
+                supabaseAuthToken: localStorage.getItem('supabase.auth.token')
+            };
+            
+            document.getElementById('storageResult').innerHTML = 
+                'LocalStorage内容:\n' + JSON.stringify(storage, null, 2);
+        }
+        
+        function clearStorage() {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('supabase.auth.token');
+            localStorage.removeItem('supabaseConfig');
+            document.getElementById('storageResult').innerHTML = 
+                '<span class="success">✅ LocalStorageをクリアしました（Supabase設定も含む）</span>';
+            checkStorage();
+        }
+        
+        function setAdminAccount() {
+            const user = {
+                email: 'admin@example.com',
+                role: 'admin',
+                isDemo: true
+            };
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            document.getElementById('accountResult').innerHTML = 
+                '<span class="success">✅ 管理者アカウントを設定しました</span>\n' + 
+                JSON.stringify(user, null, 2);
+        }
+        
+        function setAgencyAccount() {
+            const user = {
+                email: 'agency@example.com',
+                role: 'agency',
+                isDemo: true
+            };
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            document.getElementById('accountResult').innerHTML = 
+                '<span class="success">✅ 代理店アカウントを設定しました</span>\n' + 
+                JSON.stringify(user, null, 2);
+        }
+        
+        function checkAuthStatus() {
+            const userStr = localStorage.getItem('currentUser');
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    document.getElementById('authResult').innerHTML = 
+                        '<span class="success">✅ ログイン済み</span>\n' + 
+                        'ユーザー: ' + user.email + '\n' +
+                        '役割: ' + user.role;
+                } catch (e) {
+                    document.getElementById('authResult').innerHTML = 
+                        '<span class="error">❌ 認証情報が不正です</span>\n' + e.message;
+                }
+            } else {
+                document.getElementById('authResult').innerHTML = 
+                    '<span class="error">❌ ログインしていません</span>';
+            }
+        }
+        
+        function testLoginPage() {
+            document.getElementById('navigationResult').innerHTML = 
+                '🚀 login.htmlへ移動します...';
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 1000);
+        }
+        
+        function testAdminDashboard() {
+            const user = localStorage.getItem('currentUser');
+            if (!user) {
+                document.getElementById('navigationResult').innerHTML = 
+                    '<span class="error">❌ ログインが必要です</span>';
+                return;
+            }
+            document.getElementById('navigationResult').innerHTML = 
+                '🚀 dashboard-admin.htmlへ移動します...';
+            setTimeout(() => {
+                window.location.href = 'dashboard-admin.html';
+            }, 1000);
+        }
+        
+        function testAgencyDashboard() {
+            const user = localStorage.getItem('currentUser');
+            if (!user) {
+                document.getElementById('navigationResult').innerHTML = 
+                    '<span class="error">❌ ログインが必要です</span>';
+                return;
+            }
+            document.getElementById('navigationResult').innerHTML = 
+                '🚀 dashboard-agency.htmlへ移動します...';
+            setTimeout(() => {
+                window.location.href = 'dashboard-agency.html';
+            }, 1000);
+        }
+        
+        function manualLogin(type) {
+            // 認証情報を設定
+            const user = {
+                email: type === 'admin' ? 'admin@example.com' : 'agency@example.com',
+                role: type,
+                isDemo: true
+            };
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            
+            // 結果表示
+            document.getElementById('loginResult').innerHTML = 
+                '<span class="success">✅ ログインしました</span>\n' + 
+                JSON.stringify(user, null, 2) + '\n\n' +
+                '3秒後にダッシュボードへ移動します...';
+            
+            // ダッシュボードへ移動
+            setTimeout(() => {
+                window.location.href = type === 'admin' 
+                    ? 'dashboard-admin.html' 
+                    : 'dashboard-agency.html';
+            }, 3000);
+        }
+        
+        // ページ読み込み時に自動でストレージをチェック
+        window.onload = function() {
+            checkStorage();
+            checkAuthStatus();
+        };
+    </script>
+</body>
+</html>
