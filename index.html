@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="多段階営業代理店管理システム - 効率的な代理店ネットワークの構築と報酬管理を実現">
+    <meta name="keywords" content="代理店管理,アフィリエイト,多段階報酬,営業支援">
+    <title>多段階営業代理店管理システム</title>
+    <script src="js/mobile-menu.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        /* ヘッダー */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+        
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+        
+        .nav-menu a:hover {
+            opacity: 0.8;
+        }
+        
+        /* ヒーローセクション */
+        .hero {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 120px 20px 80px;
+            text-align: center;
+        }
+        
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #2d3436;
+        }
+        
+        .hero-subtitle {
+            font-size: 20px;
+            color: #636e72;
+            margin-bottom: 40px;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background-color: #6366f1;
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        
+        .btn-primary:hover {
+            background-color: #4f46e5;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: #6366f1;
+            border: 2px solid #6366f1;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #6366f1;
+            color: white;
+        }
+        
+        /* 特徴セクション */
+        .features {
+            padding: 80px 20px;
+            background: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 60px;
+            color: #2d3436;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+        
+        .feature-card {
+            text-align: center;
+            padding: 40px;
+            border-radius: 12px;
+            background: #f8f9fa;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .feature-title {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #2d3436;
+        }
+        
+        .feature-description {
+            color: #636e72;
+            line-height: 1.8;
+        }
+        
+        /* 機能一覧セクション */
+        .functions {
+            padding: 80px 20px;
+            background: #f8f9fa;
+        }
+        
+        .functions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+        
+        .function-item {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .function-item h3 {
+            color: #2d3436;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .function-item p {
+            color: #636e72;
+            font-size: 14px;
+        }
+        
+        /* デモセクション */
+        .demo-section {
+            padding: 80px 20px;
+            background: white;
+            text-align: center;
+        }
+        
+        .demo-accounts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin: 40px auto;
+            max-width: 800px;
+        }
+        
+        .demo-card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .demo-card h3 {
+            color: #2d3436;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .demo-credentials {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        /* フッター */
+        .footer {
+            background: #2d3436;
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+        
+        .footer-links a:hover {
+            opacity: 0.8;
+        }
+        
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .nav-menu {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            .hero h1 {
+                font-size: 36px;
+            }
+            
+            .hero-subtitle {
+                font-size: 18px;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .features-grid,
+            .functions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* アニメーション */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                🏢 多段階営業代理店管理システム
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="#features">特徴</a></li>
+                    <li><a href="#functions">機能</a></li>
+                    <li><a href="#demo">デモ</a></li>
+                    <li><a href="login.html">ログイン</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    
+    <!-- ヒーローセクション -->
+    <section class="hero">
+        <div class="hero-content fade-in">
+            <h1>効率的な代理店ネットワークを構築</h1>
+            <p class="hero-subtitle">
+                多段階報酬システムで、代理店の成長と収益を最大化<br>
+                直感的な管理画面で、複雑な階層構造もシンプルに管理
+            </p>
+            <div class="cta-buttons">
+                <a href="login.html" class="btn btn-primary">今すぐ始める</a>
+                <a href="#demo" class="btn btn-secondary">デモを見る</a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 特徴セクション -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2 class="section-title">システムの特徴</h2>
+            <div class="features-grid">
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🎯</div>
+                    <h3 class="feature-title">多段階報酬システム</h3>
+                    <p class="feature-description">
+                        最大4階層までの報酬体系に対応。<br>
+                        各階層で異なる報酬率を設定可能で、<br>
+                        上位代理店への階層ボーナスも自動計算。
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">リアルタイム分析</h3>
+                    <p class="feature-description">
+                        売上データや代理店パフォーマンスを<br>
+                        リアルタイムで可視化。<br>
+                        グラフやチャートで直感的に把握。
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🔒</div>
+                    <h3 class="feature-title">セキュアな環境</h3>
+                    <p class="feature-description">
+                        多層防御によるセキュリティ対策。<br>
+                        CSRF保護、レート制限、入力検証で<br>
+                        安全なシステム運用を実現。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 機能一覧セクション -->
+    <section class="functions" id="functions">
+        <div class="container">
+            <h2 class="section-title">充実した管理機能</h2>
+            <div class="functions-grid">
+                <div class="function-item">
+                    <h3>👥 代理店管理</h3>
+                    <p>代理店の登録、編集、承認、招待リンク発行など、代理店ライフサイクル全体を管理</p>
+                </div>
+                
+                <div class="function-item">
+                    <h3>💰 売上管理</h3>
+                    <p>売上の登録、追跡、レポート生成。商品別、期間別の詳細な分析が可能</p>
+                </div>
+                
+                <div class="function-item">
+                    <h3>💸 報酬計算</h3>
+                    <p>複雑な多段階報酬も自動計算。承認ワークフローで確実な支払い管理</p>
+                </div>
+                
+                <div class="function-item">
+                    <h3>📈 ダッシュボード</h3>
+                    <p>KPI、売上推移、代理店パフォーマンスを一目で把握できる高機能ダッシュボード</p>
+                </div>
+                
+                <div class="function-item">
+                    <h3>⚙️ 詳細設定</h3>
+                    <p>報酬率、通知、セキュリティポリシーなど、ビジネスニーズに合わせて柔軟に設定</p>
+                </div>
+                
+                <div class="function-item">
+                    <h3>📱 モバイル対応</h3>
+                    <p>レスポンシブデザインで、スマートフォンやタブレットからも快適に利用可能</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- デモセクション -->
+    <section class="demo-section" id="demo">
+        <div class="container">
+            <h2 class="section-title">デモアカウントで今すぐ体験</h2>
+            <p style="color: #636e72; margin-bottom: 40px;">
+                以下のアカウントでシステムの全機能をお試しいただけます
+            </p>
+            
+            <div class="demo-accounts">
+                <div class="demo-card">
+                    <h3>🔧 管理者アカウント</h3>
+                    <p style="margin-bottom: 15px;">システム全体の管理が可能</p>
+                    <div class="demo-credentials">
+                        メール: admin@example.com<br>
+                        パスワード: admin123
+                    </div>
+                    <a href="login.html" class="btn btn-primary" style="width: 100%;">管理者でログイン</a>
+                </div>
+                
+                <div class="demo-card">
+                    <h3>🏢 代理店アカウント</h3>
+                    <p style="margin-bottom: 15px;">代理店視点での機能を確認</p>
+                    <div class="demo-credentials">
+                        メール: agency@example.com<br>
+                        パスワード: agency123
+                    </div>
+                    <a href="login.html" class="btn btn-primary" style="width: 100%;">代理店でログイン</a>
+                </div>
+            </div>
+            
+            <div style="margin-top: 40px;">
+                <a href="login-secure.html" style="color: #6366f1; text-decoration: none;">
+                    🔒 セキュアログイン版でセキュリティ機能を確認 →
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- フッター -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="login.html">ログイン</a>
+                <a href="security-monitor.html">セキュリティモニター</a>
+                <a href="#features">特徴</a>
+                <a href="#functions">機能</a>
+            </div>
+            <p>&copy; 2024 多段階営業代理店管理システム. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <script>
+        // スムーズスクロール
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // フェードインアニメーション
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                }
+            });
+        }, observerOptions);
+        
+        document.querySelectorAll('.feature-card, .function-item').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
