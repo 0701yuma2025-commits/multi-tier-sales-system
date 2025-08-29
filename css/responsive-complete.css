@@ -1,0 +1,829 @@
+/* 完全レスポンシブCSS - 全デバイスサイズ対応 */
+
+/* ===================================
+   基本設定
+   =================================== */
+:root {
+    /* フォントサイズの基準値 */
+    --font-base-mobile: 14px;
+    --font-base-tablet: 15px;
+    --font-base-desktop: 16px;
+    
+    /* スペーシング */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: var(--font-base-mobile);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+}
+
+/* ===================================
+   デフォルト状態（PC表示）
+   =================================== */
+/* ナビゲーショントグルボタンをデフォルトで非表示 */
+.nav-toggle {
+    display: none;
+}
+
+/* ===================================
+   モバイル共通設定（768px以下）
+   =================================== */
+@media screen and (max-width: 768px) {
+    /* ナビゲーション */
+    .nav {
+        position: relative;
+    }
+    
+    /* ナビゲーショントグルボタン */
+    .nav-toggle {
+        display: block !important;
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        font-size: 24px;
+        padding: 8px;
+        cursor: pointer;
+        z-index: 1001;
+    }
+    
+    /* ナビゲーションリスト */
+    .nav-list {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 280px;
+        height: 100vh;
+        background: white;
+        flex-direction: column;
+        padding: 60px 20px 20px;
+        box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+        transition: right 0.3s ease;
+        z-index: 1000;
+        overflow-y: auto;
+        display: flex !important;
+    }
+    
+    .nav-list.active {
+        right: 0;
+    }
+    
+    /* ナビゲーション閉じるボタン */
+    .nav-close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: transparent;
+        border: none;
+        font-size: 24px;
+        padding: 8px;
+        cursor: pointer;
+        display: block !important;
+    }
+    
+    /* ナビゲーション項目 */
+    .nav-item {
+        width: 100%;
+        padding: 16px !important;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    /* サイドバートグル */
+    .sidebar-toggle {
+        display: block !important;
+        margin-bottom: 20px;
+        width: 100%;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    
+    /* サイドバー */
+    .sidebar {
+        position: fixed;
+        left: -100%;
+        top: 0;
+        width: 280px;
+        height: 100vh;
+        background: white;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        transition: left 0.3s ease;
+        z-index: 1000;
+        overflow-y: auto;
+        padding: 20px;
+    }
+    
+    .sidebar.active {
+        left: 0;
+    }
+}
+
+/* ===================================
+   〜320px: スマートフォン（標準）
+   =================================== */
+@media screen and (max-width: 320px) {
+    html {
+        font-size: 13px;
+    }
+    
+    /* ヘッダー */
+    .header {
+        padding: 10px 12px;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .header h1 {
+        font-size: 1.1rem;
+        line-height: 1.3;
+    }
+    
+    .user-info {
+        width: 100%;
+        font-size: 0.75rem;
+    }
+    
+    .logout-btn {
+        font-size: 0.75rem;
+        padding: 6px 10px;
+    }
+    
+    /* ナビゲーション */
+    .nav {
+        font-size: 0.85rem;
+    }
+    
+    .nav-list {
+        padding: 0 12px;
+        gap: 12px;
+    }
+    
+    .nav-item {
+        padding: 10px 0;
+    }
+    
+    /* メインコンテンツ */
+    .main-content {
+        padding: 12px;
+    }
+    
+    .page-title {
+        font-size: 1.3rem;
+        margin-bottom: 16px;
+    }
+    
+    /* 統計カード */
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .stat-card {
+        padding: 12px;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+    }
+    
+    .stat-value {
+        font-size: 1.2rem;
+    }
+    
+    .stat-subtext {
+        font-size: 0.7rem;
+    }
+    
+    /* テーブル */
+    table {
+        font-size: 0.7rem;
+    }
+    
+    th, td {
+        padding: 6px 4px;
+    }
+    
+    /* ボタン */
+    .btn {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+    }
+    
+    .btn-sm {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+    }
+    
+    /* フォーム */
+    .form-group label {
+        font-size: 0.8rem;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px; /* iOS zoom防止 */
+        padding: 8px;
+    }
+    
+    /* モーダル */
+    .modal-content {
+        padding: 16px;
+        margin: 0;
+        height: 100vh;
+        border-radius: 0;
+    }
+    
+    .modal-title {
+        font-size: 1.1rem;
+    }
+}
+
+/* ===================================
+   321px〜480px: スマートフォン（大型）
+   =================================== */
+@media screen and (min-width: 321px) and (max-width: 480px) {
+    html {
+        font-size: 14px;
+    }
+    
+    /* ヘッダー */
+    .header {
+        padding: 12px 16px;
+    }
+    
+    .header h1 {
+        font-size: 1.25rem;
+    }
+    
+    .user-info {
+        font-size: 0.85rem;
+    }
+    
+    .logout-btn {
+        font-size: 0.85rem;
+        padding: 6px 12px;
+    }
+    
+    /* ナビゲーション */
+    .nav {
+        font-size: 0.9rem;
+    }
+    
+    .nav-item {
+        padding: 12px 0;
+    }
+    
+    /* メインコンテンツ */
+    .main-content {
+        padding: 16px;
+    }
+    
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    /* 統計カード */
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .stat-card {
+        padding: 16px;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .stat-subtext {
+        font-size: 0.8rem;
+    }
+    
+    /* テーブル */
+    table {
+        font-size: 0.8rem;
+    }
+    
+    th, td {
+        padding: 8px 6px;
+    }
+    
+    /* ボタン */
+    .btn {
+        font-size: 0.9rem;
+        padding: 10px 16px;
+    }
+    
+    /* フォーム */
+    .form-group label {
+        font-size: 0.9rem;
+    }
+    
+    /* モーダル */
+    .modal-content {
+        padding: 20px;
+        margin: 20px;
+        max-height: calc(100vh - 40px);
+    }
+    
+    .modal-title {
+        font-size: 1.25rem;
+    }
+}
+
+/* ===================================
+   481px〜767px: タブレット（標準）
+   =================================== */
+@media screen and (min-width: 481px) and (max-width: 767px) {
+    html {
+        font-size: 15px;
+    }
+    
+    /* ヘッダー */
+    .header {
+        padding: 16px 20px;
+    }
+    
+    .header h1 {
+        font-size: 1.4rem;
+    }
+    
+    .user-info {
+        font-size: 0.9rem;
+    }
+    
+    .logout-btn {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+    }
+    
+    /* ナビゲーション */
+    .nav {
+        font-size: 0.95rem;
+        overflow-x: auto;
+    }
+    
+    .nav-list {
+        gap: 20px;
+        min-width: max-content;
+    }
+    
+    /* メインコンテンツ */
+    .main-content {
+        padding: 20px;
+    }
+    
+    .page-title {
+        font-size: 1.75rem;
+    }
+    
+    /* 統計カード */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+    }
+    
+    .stat-value {
+        font-size: 1.75rem;
+    }
+    
+    .stat-subtext {
+        font-size: 0.85rem;
+    }
+    
+    /* テーブル */
+    table {
+        font-size: 0.9rem;
+    }
+    
+    th, td {
+        padding: 10px 8px;
+    }
+    
+    /* ボタン */
+    .btn {
+        font-size: 0.95rem;
+        padding: 10px 18px;
+    }
+    
+    /* フォーム */
+    .form-group label {
+        font-size: 0.95rem;
+    }
+    
+    /* モーダル */
+    .modal-content {
+        padding: 24px;
+        max-width: 500px;
+    }
+    
+    .modal-title {
+        font-size: 1.4rem;
+    }
+}
+
+/* ===================================
+   768px〜1024px: タブレット（横）〜小型PC
+   =================================== */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+    html {
+        font-size: 15px;
+    }
+    
+    /* ヘッダー */
+    .header {
+        padding: 16px 24px;
+    }
+    
+    .header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .user-info {
+        font-size: 0.95rem;
+    }
+    
+    /* ナビゲーション */
+    .nav {
+        font-size: 1rem;
+    }
+    
+    .nav-list {
+        gap: 24px;
+    }
+    
+    /* メインコンテンツ */
+    .main-content {
+        padding: 24px;
+        max-width: 100%;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    /* 統計カード */
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+    }
+    
+    /* テーブル */
+    table {
+        font-size: 0.95rem;
+    }
+    
+    th, td {
+        padding: 12px;
+    }
+    
+    /* ボタン */
+    .btn {
+        font-size: 1rem;
+    }
+    
+    /* モーダル */
+    .modal-content {
+        max-width: 600px;
+    }
+    
+    .modal-title {
+        font-size: 1.5rem;
+    }
+}
+
+/* ===================================
+   769px以上: PC表示の復元
+   =================================== */
+@media screen and (min-width: 769px) {
+    /* ナビゲーションリストのリセット */
+    .nav-list {
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        flex-direction: row !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        transform: none !important;
+        right: auto !important;
+    }
+    
+    /* ナビゲーション項目のリセット */
+    .nav-item {
+        width: auto !important;
+        border-bottom: none !important;
+    }
+    
+    /* モバイルメニュー要素を非表示 */
+    .nav-toggle,
+    .nav-close,
+    .sidebar-toggle {
+        display: none !important;
+    }
+}
+
+/* ===================================
+   1025px〜1279px: PC・デスクトップ（標準）
+   =================================== */
+@media screen and (min-width: 1025px) and (max-width: 1279px) {
+    html {
+        font-size: 16px;
+    }
+    
+    /* メインコンテンツ */
+    .main-content {
+        padding: 32px 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .page-title {
+        font-size: 2.25rem;
+    }
+    
+    /* 統計カード */
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+    }
+    
+    .stat-value {
+        font-size: 2.25rem;
+    }
+    
+    /* テーブル */
+    table {
+        font-size: 1rem;
+    }
+    
+    th, td {
+        padding: 14px;
+    }
+}
+
+/* ===================================
+   1280px〜1440px: PC・デスクトップ（ワイド）
+   =================================== */
+@media screen and (min-width: 1280px) and (max-width: 1440px) {
+    html {
+        font-size: 16px;
+    }
+    
+    /* メインコンテンツ */
+    .main-content {
+        max-width: 1280px;
+    }
+    
+    /* 統計カード */
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    /* サイドバーレイアウト対応 */
+    .layout-with-sidebar {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 24px;
+    }
+}
+
+/* ===================================
+   1441px〜1919px: ウルトラワイドモニター
+   =================================== */
+@media screen and (min-width: 1441px) and (max-width: 1919px) {
+    html {
+        font-size: 17px;
+    }
+    
+    /* メインコンテンツ */
+    .main-content {
+        max-width: 1400px;
+        padding: 40px 32px;
+    }
+    
+    /* ヘッダー */
+    .header h1 {
+        font-size: 1.75rem;
+    }
+    
+    /* 統計カード */
+    .stats-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+    }
+    
+    /* フォーム要素の大型化 */
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 12px 16px;
+    }
+}
+
+/* ===================================
+   1920px以上: フルHD以上
+   =================================== */
+@media screen and (min-width: 1920px) {
+    html {
+        font-size: 18px;
+    }
+    
+    /* メインコンテンツ */
+    .main-content {
+        max-width: 1600px;
+        padding: 48px 40px;
+    }
+    
+    /* ヘッダー */
+    .header {
+        padding: 20px 40px;
+    }
+    
+    .header h1 {
+        font-size: 2rem;
+    }
+    
+    /* 統計カード */
+    .stats-grid {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 32px;
+    }
+    
+    .stat-card {
+        padding: 32px;
+    }
+    
+    .stat-value {
+        font-size: 3rem;
+    }
+    
+    /* テーブル */
+    table {
+        font-size: 1.1rem;
+    }
+    
+    th, td {
+        padding: 16px;
+    }
+    
+    /* マルチカラムレイアウト */
+    .content-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 32px;
+    }
+}
+
+/* ===================================
+   特殊なデバイス対応
+   =================================== */
+
+/* 超小型デバイス（Galaxy Fold等） */
+@media screen and (max-width: 280px) {
+    html {
+        font-size: 12px;
+    }
+    
+    .header h1 {
+        font-size: 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* 最小限のパディング */
+    .main-content {
+        padding: 8px;
+    }
+}
+
+/* 4K以上の超高解像度 */
+@media screen and (min-width: 2560px) {
+    html {
+        font-size: 20px;
+    }
+    
+    .main-content {
+        max-width: 2000px;
+    }
+    
+    /* より大きなグリッドレイアウト */
+    .stats-grid {
+        grid-template-columns: repeat(8, 1fr);
+    }
+}
+
+/* ===================================
+   印刷対応
+   =================================== */
+@media print {
+    html {
+        font-size: 12pt;
+    }
+    
+    body {
+        background: white;
+        color: black;
+    }
+    
+    .header,
+    .nav,
+    .btn,
+    .logout-btn {
+        display: none !important;
+    }
+    
+    .main-content {
+        padding: 0;
+        max-width: 100%;
+    }
+    
+    table {
+        font-size: 10pt;
+        border: 1px solid black;
+    }
+    
+    th, td {
+        border: 1px solid #ccc;
+    }
+}
+
+/* ===================================
+   アクセシビリティ対応
+   =================================== */
+
+/* ハイコントラストモード */
+@media (prefers-contrast: high) {
+    .btn-primary {
+        background-color: #000080;
+        border: 2px solid white;
+    }
+    
+    .status-badge {
+        border: 2px solid currentColor;
+    }
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-primary: #1a1a1a;
+        --text-primary: #e0e0e0;
+    }
+    
+    body {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+    }
+}
+
+/* モーション削減 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
