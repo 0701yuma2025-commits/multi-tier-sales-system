@@ -8,6 +8,7 @@
     <script src="js/common-functions.js"></script>
     <link rel="stylesheet" href="css/admin-common.css">
     <link rel="stylesheet" href="css/responsive-complete.css">
+    <link rel="stylesheet" href="css/ui-components.css">
     <script src="js/mobile-menu.js"></script>
     <style>
         * {
@@ -314,7 +315,7 @@
         <h1>多段階営業代理店管理システム【管理者】</h1>
         <div class="user-info">
             <span class="user-name" id="userDisplay">読み込み中...</span>
-            <button class="logout-btn" onclick="handleLogout()">ログアウト</button>
+            <button class="btn btn-error" onclick="handleLogout()">ログアウト</button>
         </div>
     </header>
     
@@ -332,6 +333,8 @@
     
     <!-- メインコンテンツ -->
     <main class="main-content">
+        <div id="errorMessage" class="alert alert-error" style="display: none;"></div>
+        <div id="successMessage" class="alert alert-success" style="display: none;"></div>
         <!-- グラフ版への固定ボタン -->
         <a href="dashboard-enhanced.html" class="graph-version-btn">
             <span class="icon">📊</span>
@@ -479,6 +482,26 @@
             } else if (tab !== 'dashboard') {
                 alert(`${tab} ページは準備中です`);
             }
+        }
+        
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.innerHTML = `<div class="alert-content">${message}</div>`;
+            errorElement.style.display = 'block';
+            
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showSuccess(message) {
+            const successElement = document.getElementById('successMessage');
+            successElement.innerHTML = `<div class="alert-content">${message}</div>`;
+            successElement.style.display = 'block';
+            
+            setTimeout(() => {
+                successElement.style.display = 'none';
+            }, 3000);
         }
         
         // ページ読み込み時にユーザー情報を表示

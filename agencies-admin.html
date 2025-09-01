@@ -8,6 +8,7 @@
     <script src="js/common-functions.js"></script>
     <link rel="stylesheet" href="css/admin-common.css">
     <link rel="stylesheet" href="css/responsive-complete.css">
+    <link rel="stylesheet" href="css/ui-components.css">
     <script src="js/mobile-menu.js"></script>
     <style>
         * {
@@ -444,7 +445,7 @@
         <h1>代理店管理</h1>
         <div class="user-info">
             <span class="user-name" id="userDisplay">読み込み中...</span>
-            <button class="logout-btn" onclick="handleLogout()">ログアウト</button>
+            <button class="btn btn-error" onclick="handleLogout()">ログアウト</button>
         </div>
     </header>
     
@@ -462,6 +463,8 @@
     
     <!-- メインコンテンツ -->
     <main class="main-content">
+        <div id="errorMessage" class="alert alert-error" style="display: none;"></div>
+        <div id="successMessage" class="alert alert-success" style="display: none;"></div>
         <!-- アクションバー -->
         <div class="action-bar">
             <h2 class="action-title">代理店一覧</h2>
@@ -578,29 +581,29 @@
             </div>
             <form onsubmit="handleInvite(event)">
                 <div class="form-group">
-                    <label for="inviteEmail">メールアドレス *</label>
-                    <input type="email" id="inviteEmail" required>
+                    <label class="form-label form-label-required" for="inviteEmail">メールアドレス</label>
+                    <input class="form-control" type="email" id="inviteEmail" required>
                     <small>招待メールが送信されます</small>
                 </div>
                 <div class="form-group">
-                    <label for="inviteCompanyType">会社形態 *</label>
-                    <select id="inviteCompanyType" required onchange="toggleInviteCompanyTypeFields()">
+                    <label class="form-label form-label-required" for="inviteCompanyType">会社形態</label>
+                    <select class="form-control" id="inviteCompanyType" required onchange="toggleInviteCompanyTypeFields()">
                         <option value="">選択してください</option>
                         <option value="corporation">法人</option>
                         <option value="individual">個人事業主</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="inviteName">代理店名（会社名/屋号） *</label>
-                    <input type="text" id="inviteName" required>
+                    <label class="form-label form-label-required" for="inviteName">代理店名（会社名/屋号）</label>
+                    <input class="form-control" type="text" id="inviteName" required>
                 </div>
                 <div class="form-group" id="inviteCorporateNumberGroup" style="display: none;">
                     <label for="inviteCorporateNumber">法人番号</label>
                     <input type="text" id="inviteCorporateNumber" placeholder="13桁の法人番号">
                 </div>
                 <div class="form-group">
-                    <label for="inviteRepName">代表者名 *</label>
-                    <input type="text" id="inviteRepName" required>
+                    <label class="form-label form-label-required" for="inviteRepName">代表者名</label>
+                    <input class="form-control" type="text" id="inviteRepName" required>
                 </div>
                 <div class="form-group" id="inviteBirthDateGroup" style="display: none;">
                     <label for="inviteBirthDate">生年月日 *</label>
@@ -608,8 +611,8 @@
                     <small>年齢確認のため必要です（個人事業主の場合）</small>
                 </div>
                 <div class="form-group">
-                    <label for="inviteTier">階層 *</label>
-                    <select id="inviteTier" required>
+                    <label class="form-label form-label-required" for="inviteTier">階層</label>
+                    <select class="form-control" id="inviteTier" required>
                         <option value="">選択してください</option>
                         <option value="1">Tier 1 - トップレベル</option>
                         <option value="2">Tier 2</option>
@@ -1298,7 +1301,7 @@
             filterAgencies();
             closeModal('inviteModal');
             
-            alert(`${name} への招待メールを送信しました（デモ）`);
+            showSuccess(`${name} への招待メールを送信しました（デモ）`);
         }
         
         // 年齢計算
@@ -1400,7 +1403,7 @@
                 
                 filterAgencies();
                 closeModal('editModal');
-                alert('代理店情報を更新しました');
+                showSuccess('代理店情報を更新しました');
             }
         }
         
@@ -1949,7 +1952,7 @@
             
             filterAgencies();
             closeModal('documentModal');
-            alert(`${agency.name}を承認しました`);
+            showSuccess(`${agency.name}を承認しました`);
         }
         
         // 最終却下
@@ -1971,6 +1974,26 @@
                 rejectAgency(agencyId);
                 closeModal('documentModal');
             }
+        }
+        
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.innerHTML = `<div class="alert-content">${message}</div>`;
+            errorElement.style.display = 'block';
+            
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showSuccess(message) {
+            const successElement = document.getElementById('successMessage');
+            successElement.innerHTML = `<div class="alert-content">${message}</div>`;
+            successElement.style.display = 'block';
+            
+            setTimeout(() => {
+                successElement.style.display = 'none';
+            }, 3000);
         }
         
         // ユーザー情報表示

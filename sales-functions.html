@@ -6,6 +6,7 @@
     <title>売上管理（機能版）- 多段階営業代理店管理システム</title>
     <link rel="stylesheet" href="css/admin-common.css">
     <link rel="stylesheet" href="css/responsive-complete.css">
+    <link rel="stylesheet" href="css/ui-components.css">
     <script src="js/api-error-codes.js"></script>
     <script src="js/common-functions.js"></script>
     <script src="js/mobile-menu.js"></script>
@@ -348,7 +349,7 @@
         </h1>
         <div class="user-info">
             <span class="user-name" id="userDisplay">読み込み中...</span>
-            <button class="logout-btn" onclick="handleLogout()">ログアウト</button>
+            <button class="btn btn-error" onclick="handleLogout()">ログアウト</button>
         </div>
     </header>
     
@@ -370,13 +371,14 @@
             データを読み込んでいます...
         </div>
         
-        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div id="errorMessage" class="alert alert-error" style="display: none;"></div>
+        <div id="successMessage" class="alert alert-success" style="display: none;"></div>
         
         <!-- アクションバー -->
         <div class="action-bar">
             <h2 class="page-title">売上管理</h2>
             <div style="display: flex; gap: 12px;">
-                <button class="btn-primary" onclick="showAddSalesModal()">新規売上登録</button>
+                <button class="btn btn-primary" onclick="showAddSalesModal()">新規売上登録</button>
                 <button class="btn btn-secondary" onclick="showReportModal()">レポート出力</button>
             </div>
         </div>
@@ -438,8 +440,8 @@
             
             <form id="reportForm" onsubmit="generateReport(event)">
                 <div class="form-group">
-                    <label for="reportType">レポートタイプ *</label>
-                    <select id="reportType" name="reportType" required onchange="updateReportOptions()">
+                    <label class="form-label form-label-required" for="reportType">レポートタイプ</label>
+                    <select class="form-control" id="reportType" name="reportType" required onchange="updateReportOptions()">
                         <option value="">選択してください</option>
                         <option value="sales_summary">売上サマリー</option>
                         <option value="agency_sales">代理店別売上</option>
@@ -506,13 +508,13 @@
             
             <form id="salesForm" onsubmit="saveSales(event)">
                 <div class="form-group">
-                    <label for="saleDate">売上日 *</label>
-                    <input type="date" id="saleDate" name="saleDate" required max="">
+                    <label class="form-label form-label-required" for="saleDate">売上日</label>
+                    <input class="form-control" type="date" id="saleDate" name="saleDate" required max="">
                 </div>
                 
                 <div class="form-group">
-                    <label for="agencyId">代理店 *</label>
-                    <select id="agencyId" name="agencyId" required>
+                    <label class="form-label form-label-required" for="agencyId">代理店</label>
+                    <select class="form-control" id="agencyId" name="agencyId" required>
                         <option value="">選択してください</option>
                     </select>
                 </div>
@@ -525,8 +527,8 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="customerName">顧客名 *</label>
-                    <input type="text" id="customerName" name="customerName" required>
+                    <label class="form-label form-label-required" for="customerName">顧客名</label>
+                    <input class="form-control" type="text" id="customerName" name="customerName" required>
                 </div>
                 
                 <div class="form-group">
@@ -893,7 +895,7 @@
                 await calculateHierarchyBonuses(salesData);
                 
                 // 成功メッセージ
-                alert('売上を登録し、階層ボーナスを計算しました');
+                showSuccess('売上を登録し、階層ボーナスを計算しました');
                 
                 // データをリロード
                 if (supabaseDb) {
@@ -923,7 +925,7 @@
             
             try {
                 await supabaseDb.deleteSale(id);
-                alert('売上を削除しました');
+                showSuccess('売上を削除しました');
                 
                 // データをリロード
                 await loadSalesData();
@@ -1040,12 +1042,22 @@
         
         function showError(message) {
             const errorElement = document.getElementById('errorMessage');
-            errorElement.textContent = message;
+            errorElement.innerHTML = `<div class="alert-content">${message}</div>`;
             errorElement.style.display = 'block';
             
             setTimeout(() => {
                 errorElement.style.display = 'none';
             }, 5000);
+        }
+        
+        function showSuccess(message) {
+            const successElement = document.getElementById('successMessage');
+            successElement.innerHTML = `<div class="alert-content">${message}</div>`;
+            successElement.style.display = 'block';
+            
+            setTimeout(() => {
+                successElement.style.display = 'none';
+            }, 3000);
         }
         
         // レポートモーダル表示
