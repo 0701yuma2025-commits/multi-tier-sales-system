@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>設定 - 多段階営業代理店管理システム</title>
+    <script src="js/auth-check-simple.js"></script>
+    <link rel="stylesheet" href="css/admin-common.css">
+    <link rel="stylesheet" href="css/responsive-complete.css">
+    <script src="js/mobile-menu.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f3f4f6;
+            min-height: 100vh;
+        }
+        
+        /* ヘッダー */
+        .header {
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #1f2937;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .user-name {
+            color: #4b5563;
+            font-size: 14px;
+        }
+        
+        .logout-btn {
+            padding: 8px 16px;
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background-color: #dc2626;
+        }
+        
+        /* ナビゲーション */
+        .nav {
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0 24px;
+        }
+        
+        .nav-list {
+            display: flex;
+            list-style: none;
+            gap: 32px;
+        }
+        
+        .nav-item {
+            padding: 16px 0;
+            position: relative;
+            cursor: pointer;
+            color: #6b7280;
+            font-size: 15px;
+            transition: color 0.2s;
+        }
+        
+        .nav-item:hover {
+            color: #3b82f6;
+        }
+        
+        .nav-item.active {
+            color: #3b82f6;
+            font-weight: 500;
+        }
+        
+        .nav-item.active::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #3b82f6;
+        }
+        
+        /* メインコンテンツ */
+        .main-content {
+            padding: 32px;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 32px;
+        }
+        
+        /* サイドバー */
+        .sidebar {
+            background: white;
+            border-radius: 8px;
+            padding: 20px 0;
+            height: fit-content;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar-item {
+            padding: 12px 24px;
+            cursor: pointer;
+            color: #4b5563;
+            font-size: 15px;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .sidebar-item:hover {
+            color: #3b82f6;
+            background-color: #f3f4f6;
+        }
+        
+        .sidebar-item.active {
+            color: #3b82f6;
+            background-color: #eff6ff;
+            font-weight: 500;
+        }
+        
+        .sidebar-item.active::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background-color: #3b82f6;
+        }
+        
+        /* 設定コンテンツ */
+        .settings-content {
+            background: white;
+            border-radius: 8px;
+            padding: 32px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .settings-section {
+            display: none;
+        }
+        
+        .settings-section.active {
+            display: block;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        
+        .section-description {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+        
+        /* フォーム要素 */
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .form-hint {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        
+        /* スイッチ */
+        .switch-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .switch-label {
+            flex: 1;
+        }
+        
+        .switch-title {
+            font-weight: 500;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        
+        .switch-description {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #d1d5db;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #3b82f6;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        
+        /* ボタン */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: #6b7280;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+        }
+        
+        /* 情報ボックス */
+        .info-box {
+            background-color: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .info-box-title {
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-box-content {
+            color: #3730a3;
+            font-size: 14px;
+        }
+        
+        .warning-box {
+            background-color: #fef3c7;
+            border: 1px solid #fde68a;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .warning-box-title {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .warning-box-content {
+            color: #78350f;
+            font-size: 14px;
+        }
+        
+        /* APIキー表示 */
+        .api-key-container {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .api-key-input {
+            flex: 1;
+            font-family: monospace;
+            background-color: #f3f4f6;
+        }
+        
+        .api-key-toggle {
+            padding: 8px 12px;
+            background-color: #6b7280;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        /* テーブル */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        
+        th {
+            text-align: left;
+            padding: 12px;
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: 600;
+            font-size: 14px;
+            color: #4b5563;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+        }
+        
+        /* レート設定 */
+        .rate-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-top: 24px;
+        }
+        
+        .rate-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 20px;
+        }
+        
+        .rate-tier {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        .rate-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .rate-label {
+            flex: 1;
+            font-size: 14px;
+            color: #4b5563;
+        }
+        
+        .rate-input {
+            width: 80px;
+            text-align: right;
+        }
+        
+        .rate-suffix {
+            color: #6b7280;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <h1>多段階営業代理店管理システム【管理者】</h1>
+        <div class="user-info">
+            <span class="user-name" id="userDisplay">読み込み中...</span>
+            <button class="logout-btn" onclick="handleLogout()">ログアウト</button>
+        </div>
+    </header>
+    
+    <!-- ナビゲーション -->
+    <nav class="nav">
+        <ul class="nav-list">
+            <li class="nav-item" onclick="location.href='dashboard-admin.html'">ダッシュボード</li>
+            <li class="nav-item" onclick="location.href='agencies-admin.html'">代理店管理</li>
+            <li class="nav-item" onclick="location.href='sales-functions.html'">売上管理</li>
+            <li class="nav-item" onclick="location.href='commissions-admin.html'">報酬管理</li>
+            <li class="nav-item active">設定</li>
+        </ul>
+    </nav>
+    
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <!-- サイドバー -->
+        <aside class="sidebar">
+            <div class="sidebar-item active" onclick="switchSection('general')">
+                一般設定
+            </div>
+            <div class="sidebar-item" onclick="switchSection('commission')">
+                報酬設定
+            </div>
+            <div class="sidebar-item" onclick="switchSection('notification')">
+                通知設定
+            </div>
+            <div class="sidebar-item" onclick="switchSection('security')">
+                セキュリティ
+            </div>
+            <div class="sidebar-item" onclick="switchSection('api')">
+                API設定
+            </div>
+            <div class="sidebar-item" onclick="switchSection('export')">
+                データ管理
+            </div>
+        </aside>
+        
+        <!-- 設定コンテンツ -->
+        <div class="settings-content">
+            <!-- 一般設定 -->
+            <div class="settings-section active" id="general-section">
+                <h2 class="section-title">一般設定</h2>
+                <p class="section-description">システムの基本的な設定を管理します</p>
+                
+                <div class="form-group">
+                    <label class="form-label">システム名</label>
+                    <input type="text" class="form-input" value="多段階営業代理店管理システム" id="systemName">
+                    <p class="form-hint">ログイン画面やメールに表示されるシステム名です</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">会社名</label>
+                    <input type="text" class="form-input" value="株式会社サンプル" id="companyName">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">管理者メールアドレス</label>
+                    <input type="email" class="form-input" value="admin@example.com" id="adminEmail">
+                    <p class="form-hint">システム通知の送信元として使用されます</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">タイムゾーン</label>
+                    <select class="form-select" id="timezone">
+                        <option value="Asia/Tokyo" selected>Asia/Tokyo (JST)</option>
+                        <option value="UTC">UTC</option>
+                        <option value="America/New_York">America/New_York (EST)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">言語</label>
+                    <select class="form-select" id="language">
+                        <option value="ja" selected>日本語</option>
+                        <option value="en">English</option>
+                        <option value="zh">中文</option>
+                    </select>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="saveGeneralSettings()">保存</button>
+                    <button class="btn btn-secondary" onclick="resetGeneralSettings()">リセット</button>
+                </div>
+            </div>
+            
+            <!-- 報酬設定 -->
+            <div class="settings-section" id="commission-section">
+                <h2 class="section-title">報酬設定</h2>
+                <p class="section-description">階層別の報酬率と各種ボーナスの設定を管理します</p>
+                
+                <div class="info-box">
+                    <div class="info-box-title">
+                        💡 報酬計算について
+                    </div>
+                    <div class="info-box-content">
+                        報酬は売上を達成した代理店から上位階層に向かって計算されます。
+                        各階層で設定された報酬率が適用され、さらに階層ボーナスが加算されます。
+                    </div>
+                </div>
+                
+                <h3 style="font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 16px;">基本報酬率</h3>
+                <div class="rate-grid">
+                    <div class="rate-card">
+                        <div class="rate-tier">Tier 1（最上位）</div>
+                        <div class="rate-input-group">
+                            <span class="rate-label">基本報酬率</span>
+                            <input type="number" class="form-input rate-input" value="30" min="0" max="100" id="tier1Rate">
+                            <span class="rate-suffix">%</span>
+                        </div>
+                        <div class="rate-input-group">
+                            <span class="rate-label">階層ボーナス</span>
+                            <input type="number" class="form-input rate-input" value="10" min="0" max="100" id="tier1Bonus">
+                            <span class="rate-suffix">%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rate-card">
+                        <div class="rate-tier">Tier 2</div>
+                        <div class="rate-input-group">
+                            <span class="rate-label">基本報酬率</span>
+                            <input type="number" class="form-input rate-input" value="25" min="0" max="100" id="tier2Rate">
+                            <span class="rate-suffix">%</span>
+                        </div>
+                        <div class="rate-input-group">
+                            <span class="rate-label">階層ボーナス</span>
+                            <input type="number" class="form-input rate-input" value="8" min="0" max="100" id="tier2Bonus">
+                            <span class="rate-suffix">%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rate-card">
+                        <div class="rate-tier">Tier 3</div>
+                        <div class="rate-input-group">
+                            <span class="rate-label">基本報酬率</span>
+                            <input type="number" class="form-input rate-input" value="20" min="0" max="100" id="tier3Rate">
+                            <span class="rate-suffix">%</span>
+                        </div>
+                        <div class="rate-input-group">
+                            <span class="rate-label">階層ボーナス</span>
+                            <input type="number" class="form-input rate-input" value="6" min="0" max="100" id="tier3Bonus">
+                            <span class="rate-suffix">%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rate-card">
+                        <div class="rate-tier">Tier 4</div>
+                        <div class="rate-input-group">
+                            <span class="rate-label">基本報酬率</span>
+                            <input type="number" class="form-input rate-input" value="15" min="0" max="100" id="tier4Rate">
+                            <span class="rate-suffix">%</span>
+                        </div>
+                        <div class="rate-input-group">
+                            <span class="rate-label">階層ボーナス</span>
+                            <input type="number" class="form-input rate-input" value="4" min="0" max="100" id="tier4Bonus">
+                            <span class="rate-suffix">%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 style="font-size: 18px; font-weight: 600; color: #1f2937; margin: 32px 0 16px;">その他の設定</h3>
+                
+                <div class="switch-group">
+                    <div class="switch-label">
+                        <div class="switch-title">自動承認</div>
+                        <div class="switch-description">売上登録時に報酬を自動的に承認します</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="autoApprove">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="switch-group">
+                    <div class="switch-label">
+                        <div class="switch-title">階層ボーナスの有効化</div>
+                        <div class="switch-description">上位階層への追加ボーナスを有効にします</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="hierarchyBonus" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="switch-group">
+                    <div class="switch-label">
+                        <div class="switch-title">月次キャンペーンボーナス</div>
+                        <div class="switch-description">目標達成時の特別ボーナスを有効にします</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="campaignBonus">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="saveCommissionSettings()">保存</button>
+                    <button class="btn btn-secondary" onclick="resetCommissionSettings()">デフォルトに戻す</button>
+                </div>
+            </div>
+            
+            <!-- 通知設定 -->
+            <div class="settings-section" id="notification-section">
+                <h2 class="section-title">通知設定</h2>
+                <p class="section-description">メール通知やシステム通知の設定を管理します</p>
+                
+                <h3 style="font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 16px;">メール通知</h3>
+                
+                <div class="switch-group">
+                    <div class="switch-label">
+                        <div class="switch-title">新規代理店登録</div>
+                        <div class="switch-description">新しい代理店が登録された際に通知します</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="notifyNewAgency" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="switch-group">
+                    <div class="switch-label">
+                        <div class="switch-title">売上登録</div>
+                        <div class="switch-description">新しい売上が登録された際に通知します</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="notifyNewSale" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="switch-group">
+                    <div class="switch-label">
+                        <div class="switch-title">報酬支払い</div>
+                        <div class="switch-description">報酬の支払い処理が完了した際に通知します</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="notifyPayment" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="switch-group">
+                    <div class="switch-label">
+                        <div class="switch-title">月次レポート</div>
+                        <div class="switch-description">毎月1日に前月のサマリーレポートを送信します</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="monthlyReport" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <h3 style="font-size: 18px; font-weight: 600; color: #1f2937; margin: 32px 0 16px;">通知方法</h3>
+                
+                <div class="form-group">
+                    <label class="form-label">デフォルトの通知方法</label>
+                    <select class="form-select" id="notificationMethod">
+                        <option value="email">メールのみ</option>
+                        <option value="dashboard">ダッシュボード通知のみ</option>
+                        <option value="both" selected>メール + ダッシュボード</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">通知の頻度制限</label>
+                    <select class="form-select" id="notificationFrequency">
+                        <option value="realtime">リアルタイム</option>
+                        <option value="hourly">1時間ごとにまとめて</option>
+                        <option value="daily" selected>1日1回まとめて</option>
+                    </select>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="saveNotificationSettings()">保存</button>
+                    <button class="btn btn-secondary" onclick="testNotification()">テスト通知を送信</button>
+                </div>
+            </div>
+            
+            <!-- セキュリティ設定 -->
+            <div class="settings-section" id="security-section">
+                <h2 class="section-title">セキュリティ設定</h2>
+                <p class="section-description">アカウントのセキュリティとアクセス制御を管理します</p>
+                
+                <div class="warning-box">
+                    <div class="warning-box-title">
+                        ⚠️ 重要な設定です
+                    </div>
+                    <div class="warning-box-content">
+                        セキュリティ設定を変更すると、ユーザーのアクセスに影響を与える可能性があります。
+                    </div>
+                </div>
+                
+                <h3 style="font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 16px;">パスワードポリシー</h3>
+                
+                <div class="form-group">
+                    <label class="form-label">最小パスワード長</label>
+                    <input type="number" class="form-input" value="8" min="6" max="32" id="minPasswordLength">
+                    <p class="form-hint">6文字以上32文字以下で設定してください</p>
+                </div>
+                
+                <div class="switch-group">
+                    <div class="switch-label">
+                        <div class="switch-title">大文字を必須にする</div>
+                        <div class="switch-description">パスワードに最低1文字の大文字を要求します</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="requireUppercase" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="switch-group">
+                    <div class="switch-label">
+                        <div class="switch-title">数字を必須にする</div>
+                        <div class="switch-description">パスワードに最低1文字の数字を要求します</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="requireNumbers" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="switch-group">
+                    <div class="switch-label">
+                        <div class="switch-title">特殊文字を必須にする</div>
+                        <div class="switch-description">パスワードに最低1文字の特殊文字を要求します</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="requireSpecial">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <h3 style="font-size: 18px; font-weight: 600; color: #1f2937; margin: 32px 0 16px;">ログインセキュリティ</h3>
+                
+                <div class="form-group">
+                    <label class="form-label">ログイン試行回数の制限</label>
+                    <input type="number" class="form-input" value="5" min="3" max="10" id="maxLoginAttempts">
+                    <p class="form-hint">指定回数失敗するとアカウントが一時的にロックされます</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">ロック時間（分）</label>
+                    <input type="number" class="form-input" value="30" min="5" max="1440" id="lockDuration">
+                </div>
+                
+                <div class="switch-group">
+                    <div class="switch-label">
+                        <div class="switch-title">二要素認証</div>
+                        <div class="switch-description">ログイン時に追加の認証を要求します</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="require2FA">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="switch-group">
+                    <div class="switch-label">
+                        <div class="switch-title">IP制限</div>
+                        <div class="switch-description">特定のIPアドレスからのみアクセスを許可します</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="ipRestriction">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="saveSecuritySettings()">保存</button>
+                    <button class="btn btn-secondary" onclick="resetSecuritySettings()">デフォルトに戻す</button>
+                    <a href="security-monitor.html" class="btn btn-secondary" style="text-decoration: none; display: inline-block;">セキュリティモニター →</a>
+                </div>
+            </div>
+            
+            <!-- API設定 -->
+            <div class="settings-section" id="api-section">
+                <h2 class="section-title">API設定</h2>
+                <p class="section-description">外部連携用のAPI設定とアクセスキーを管理します</p>
+                
+                <div class="info-box">
+                    <div class="info-box-title">
+                        🔐 APIキーについて
+                    </div>
+                    <div class="info-box-content">
+                        APIキーは外部システムとの連携に使用されます。安全に管理し、定期的に更新してください。
+                    </div>
+                </div>
+                
+                <h3 style="font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 16px;">現在のAPIキー</h3>
+                
+                <div class="form-group">
+                    <label class="form-label">公開キー（Public Key）</label>
+                    <div class="api-key-container">
+                        <input type="text" class="form-input api-key-input" value="pk_test_51234567890abcdefghijk" readonly id="publicKey">
+                        <button class="api-key-toggle" onclick="toggleKeyVisibility('publicKey')">表示</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">秘密キー（Secret Key）</label>
+                    <div class="api-key-container">
+                        <input type="password" class="form-input api-key-input" value="sk_test_51234567890abcdefghijk" readonly id="secretKey">
+                        <button class="api-key-toggle" onclick="toggleKeyVisibility('secretKey')">表示</button>
+                    </div>
+                    <p class="form-hint">秘密キーは絶対に公開しないでください</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Webhook URL</label>
+                    <input type="url" class="form-input" value="https://api.example.com/webhook" id="webhookUrl">
+                    <p class="form-hint">イベント通知を受け取るエンドポイントURL</p>
+                </div>
+                
+                <h3 style="font-size: 18px; font-weight: 600; color: #1f2937; margin: 32px 0 16px;">API使用状況</h3>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>日付</th>
+                            <th>リクエスト数</th>
+                            <th>成功率</th>
+                            <th>平均レスポンス時間</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>2024-03-15</td>
+                            <td>1,234</td>
+                            <td>99.2%</td>
+                            <td>124ms</td>
+                        </tr>
+                        <tr>
+                            <td>2024-03-14</td>
+                            <td>1,189</td>
+                            <td>99.5%</td>
+                            <td>118ms</td>
+                        </tr>
+                        <tr>
+                            <td>2024-03-13</td>
+                            <td>1,302</td>
+                            <td>98.9%</td>
+                            <td>132ms</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="regenerateApiKeys()">APIキーを再生成</button>
+                    <button class="btn btn-secondary" onclick="testApiConnection()">接続テスト</button>
+                </div>
+            </div>
+            
+            <!-- データ管理 -->
+            <div class="settings-section" id="export-section">
+                <h2 class="section-title">データ管理</h2>
+                <p class="section-description">システムデータのエクスポートとバックアップを管理します</p>
+                
+                <h3 style="font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 16px;">データエクスポート</h3>
+                
+                <div class="form-group">
+                    <label class="form-label">エクスポート対象</label>
+                    <select class="form-select" id="exportTarget">
+                        <option value="all">すべてのデータ</option>
+                        <option value="agencies">代理店データ</option>
+                        <option value="sales">売上データ</option>
+                        <option value="commissions">報酬データ</option>
+                        <option value="users">ユーザーデータ</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">期間</label>
+                    <select class="form-select" id="exportPeriod">
+                        <option value="all">全期間</option>
+                        <option value="year">過去1年</option>
+                        <option value="quarter">過去3ヶ月</option>
+                        <option value="month">過去1ヶ月</option>
+                        <option value="custom">カスタム期間</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">フォーマット</label>
+                    <select class="form-select" id="exportFormat">
+                        <option value="csv">CSV</option>
+                        <option value="excel">Excel (XLSX)</option>
+                        <option value="json">JSON</option>
+                        <option value="pdf">PDF</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary" onclick="exportData()">データをエクスポート</button>
+                
+                <h3 style="font-size: 18px; font-weight: 600; color: #1f2937; margin: 32px 0 16px;">自動バックアップ</h3>
+                
+                <div class="switch-group">
+                    <div class="switch-label">
+                        <div class="switch-title">自動バックアップを有効化</div>
+                        <div class="switch-description">毎日深夜にシステムデータを自動的にバックアップします</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="autoBackup" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">バックアップ保持期間</label>
+                    <select class="form-select" id="backupRetention">
+                        <option value="7">7日間</option>
+                        <option value="14">14日間</option>
+                        <option value="30" selected>30日間</option>
+                        <option value="90">90日間</option>
+                    </select>
+                </div>
+                
+                <h3 style="font-size: 18px; font-weight: 600; color: #1f2937; margin: 32px 0 16px;">最近のバックアップ</h3>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>日時</th>
+                            <th>サイズ</th>
+                            <th>ステータス</th>
+                            <th>アクション</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>2024-03-15 02:00:00</td>
+                            <td>124.5 MB</td>
+                            <td style="color: #10b981;">成功</td>
+                            <td>
+                                <a href="#" style="color: #3b82f6; text-decoration: none;">ダウンロード</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2024-03-14 02:00:00</td>
+                            <td>123.8 MB</td>
+                            <td style="color: #10b981;">成功</td>
+                            <td>
+                                <a href="#" style="color: #3b82f6; text-decoration: none;">ダウンロード</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2024-03-13 02:00:00</td>
+                            <td>122.9 MB</td>
+                            <td style="color: #10b981;">成功</td>
+                            <td>
+                                <a href="#" style="color: #3b82f6; text-decoration: none;">ダウンロード</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="createBackup()">今すぐバックアップ</button>
+                    <button class="btn btn-danger" onclick="clearOldBackups()">古いバックアップを削除</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // セクション切り替え
+        function switchSection(section) {
+            // サイドバーアイテムのアクティブ状態を更新
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // セクションの表示を切り替え
+            document.querySelectorAll('.settings-section').forEach(sec => {
+                sec.classList.remove('active');
+            });
+            document.getElementById(section + '-section').classList.add('active');
+        }
+        
+        // 一般設定の保存
+        function saveGeneralSettings() {
+            const settings = {
+                systemName: document.getElementById('systemName').value,
+                companyName: document.getElementById('companyName').value,
+                adminEmail: document.getElementById('adminEmail').value,
+                timezone: document.getElementById('timezone').value,
+                language: document.getElementById('language').value
+            };
+            
+            console.log('一般設定を保存:', settings);
+            alert('一般設定を保存しました');
+        }
+        
+        // 一般設定のリセット
+        function resetGeneralSettings() {
+            if (confirm('一般設定をデフォルトに戻しますか？')) {
+                document.getElementById('systemName').value = '多段階営業代理店管理システム';
+                document.getElementById('companyName').value = '株式会社サンプル';
+                document.getElementById('adminEmail').value = 'admin@example.com';
+                document.getElementById('timezone').value = 'Asia/Tokyo';
+                document.getElementById('language').value = 'ja';
+                alert('一般設定をリセットしました');
+            }
+        }
+        
+        // 報酬設定の保存
+        function saveCommissionSettings() {
+            const settings = {
+                tier1: {
+                    rate: document.getElementById('tier1Rate').value,
+                    bonus: document.getElementById('tier1Bonus').value
+                },
+                tier2: {
+                    rate: document.getElementById('tier2Rate').value,
+                    bonus: document.getElementById('tier2Bonus').value
+                },
+                tier3: {
+                    rate: document.getElementById('tier3Rate').value,
+                    bonus: document.getElementById('tier3Bonus').value
+                },
+                tier4: {
+                    rate: document.getElementById('tier4Rate').value,
+                    bonus: document.getElementById('tier4Bonus').value
+                },
+                autoApprove: document.getElementById('autoApprove').checked,
+                hierarchyBonus: document.getElementById('hierarchyBonus').checked,
+                campaignBonus: document.getElementById('campaignBonus').checked
+            };
+            
+            console.log('報酬設定を保存:', settings);
+            alert('報酬設定を保存しました');
+        }
+        
+        // 報酬設定のリセット
+        function resetCommissionSettings() {
+            if (confirm('報酬設定をデフォルトに戻しますか？')) {
+                document.getElementById('tier1Rate').value = 30;
+                document.getElementById('tier1Bonus').value = 10;
+                document.getElementById('tier2Rate').value = 25;
+                document.getElementById('tier2Bonus').value = 8;
+                document.getElementById('tier3Rate').value = 20;
+                document.getElementById('tier3Bonus').value = 6;
+                document.getElementById('tier4Rate').value = 15;
+                document.getElementById('tier4Bonus').value = 4;
+                document.getElementById('autoApprove').checked = false;
+                document.getElementById('hierarchyBonus').checked = true;
+                document.getElementById('campaignBonus').checked = false;
+                alert('報酬設定をリセットしました');
+            }
+        }
+        
+        // 通知設定の保存
+        function saveNotificationSettings() {
+            const settings = {
+                newAgency: document.getElementById('notifyNewAgency').checked,
+                newSale: document.getElementById('notifyNewSale').checked,
+                payment: document.getElementById('notifyPayment').checked,
+                monthlyReport: document.getElementById('monthlyReport').checked,
+                method: document.getElementById('notificationMethod').value,
+                frequency: document.getElementById('notificationFrequency').value
+            };
+            
+            console.log('通知設定を保存:', settings);
+            alert('通知設定を保存しました');
+        }
+        
+        // テスト通知
+        function testNotification() {
+            alert('テスト通知を送信しました。メールをご確認ください。');
+        }
+        
+        // セキュリティ設定の保存
+        function saveSecuritySettings() {
+            const settings = {
+                minPasswordLength: document.getElementById('minPasswordLength').value,
+                requireUppercase: document.getElementById('requireUppercase').checked,
+                requireNumbers: document.getElementById('requireNumbers').checked,
+                requireSpecial: document.getElementById('requireSpecial').checked,
+                maxLoginAttempts: document.getElementById('maxLoginAttempts').value,
+                lockDuration: document.getElementById('lockDuration').value,
+                require2FA: document.getElementById('require2FA').checked,
+                ipRestriction: document.getElementById('ipRestriction').checked
+            };
+            
+            console.log('セキュリティ設定を保存:', settings);
+            alert('セキュリティ設定を保存しました');
+        }
+        
+        // セキュリティ設定のリセット
+        function resetSecuritySettings() {
+            if (confirm('セキュリティ設定をデフォルトに戻しますか？')) {
+                document.getElementById('minPasswordLength').value = 8;
+                document.getElementById('requireUppercase').checked = true;
+                document.getElementById('requireNumbers').checked = true;
+                document.getElementById('requireSpecial').checked = false;
+                document.getElementById('maxLoginAttempts').value = 5;
+                document.getElementById('lockDuration').value = 30;
+                document.getElementById('require2FA').checked = false;
+                document.getElementById('ipRestriction').checked = false;
+                alert('セキュリティ設定をリセットしました');
+            }
+        }
+        
+        // APIキーの表示/非表示
+        function toggleKeyVisibility(keyId) {
+            const input = document.getElementById(keyId);
+            const button = event.target;
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '隠す';
+            } else {
+                input.type = 'password';
+                button.textContent = '表示';
+            }
+        }
+        
+        // APIキーの再生成
+        function regenerateApiKeys() {
+            if (confirm('APIキーを再生成しますか？\n既存の連携は動作しなくなります。')) {
+                // 新しいキーを生成（デモ用）
+                const newPublicKey = 'pk_test_' + Math.random().toString(36).substring(2, 15);
+                const newSecretKey = 'sk_test_' + Math.random().toString(36).substring(2, 15);
+                
+                document.getElementById('publicKey').value = newPublicKey;
+                document.getElementById('secretKey').value = newSecretKey;
+                
+                alert('APIキーを再生成しました');
+            }
+        }
+        
+        // API接続テスト
+        function testApiConnection() {
+            alert('API接続テストを実行中...\n\n結果: 正常に接続できました');
+        }
+        
+        // データエクスポート
+        function exportData() {
+            const target = document.getElementById('exportTarget').value;
+            const period = document.getElementById('exportPeriod').value;
+            const format = document.getElementById('exportFormat').value;
+            
+            alert(`エクスポートを開始しました\n対象: ${target}\n期間: ${period}\nフォーマット: ${format}`);
+        }
+        
+        // バックアップ作成
+        function createBackup() {
+            if (confirm('今すぐバックアップを作成しますか？')) {
+                alert('バックアップを開始しました。完了後に通知されます。');
+            }
+        }
+        
+        // 古いバックアップの削除
+        function clearOldBackups() {
+            if (confirm('30日以上前のバックアップをすべて削除しますか？')) {
+                alert('古いバックアップを削除しました');
+            }
+        }
+        
+        // ログアウト処理
+        function handleLogout() {
+            if (confirm('ログアウトしますか？')) {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('supabase.auth.token');
+                window.location.replace('login.html?logout=true');
+            }
+        }
+        
+        // ページ読み込み時の処理
+        document.addEventListener('DOMContentLoaded', function() {
+            // ユーザー情報表示
+            const userStr = localStorage.getItem('currentUser');
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    document.getElementById('userDisplay').textContent = `${user.email} (${user.role === 'admin' ? '管理者' : '代理店'})`;
+                } catch (e) {
+                    document.getElementById('userDisplay').textContent = 'admin@example.com (管理者)';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
