@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>支払い管理 - 多段階営業代理店管理システム</title>
+    <link rel="stylesheet" href="css/admin-common.css">
+    <link rel="stylesheet" href="css/responsive-complete.css">
+    <script src="js/mobile-menu.js"></script>
+    <style>
+        /* 支払い管理特有のスタイル */
+        .payment-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .summary-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        
+        .summary-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        
+        .payment-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .btn-execute {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .btn-execute:hover {
+            background-color: #059669;
+        }
+        
+        .btn-export {
+            background-color: #6366f1;
+            color: white;
+        }
+        
+        .btn-export:hover {
+            background-color: #4f46e5;
+        }
+        
+        .payment-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .payment-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .payment-table th {
+            background-color: #f9fafb;
+            padding: 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4b5563;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .payment-table td {
+            padding: 12px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+        
+        .payment-table tr:hover {
+            background-color: #f9fafb;
+        }
+        
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .status-processing {
+            background-color: #dbeafe;
+            color: #1e40af;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .status-completed {
+            background-color: #d1fae5;
+            color: #065f46;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .status-below-minimum {
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .checkbox-column {
+            width: 40px;
+        }
+        
+        .actions-column {
+            width: 120px;
+        }
+        
+        .amount-below-minimum {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            margin: 50px auto;
+            padding: 24px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        
+        .batch-summary {
+            background-color: #f3f4f6;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .batch-summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .batch-summary-total {
+            font-weight: bold;
+            border-top: 1px solid #d1d5db;
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <h1>多段階営業代理店管理システム【管理者】</h1>
+        <div class="user-info">
+            <span id="userDisplay" class="user-name">admin@example.com (管理者)</span>
+            <button class="logout-btn" onclick="handleLogout()">ログアウト</button>
+        </div>
+    </header>
+    
+    <!-- ナビゲーション -->
+    <nav class="nav">
+        <ul class="nav-list">
+            <li class="nav-item" onclick="switchTab('dashboard')">ダッシュボード</li>
+            <li class="nav-item" onclick="switchTab('agencies')">代理店管理</li>
+            <li class="nav-item" onclick="switchTab('sales')">売上管理</li>
+            <li class="nav-item" onclick="switchTab('commissions')">報酬管理</li>
+            <li class="nav-item active">支払い管理</li>
+            <li class="nav-item" onclick="switchTab('campaigns')">キャンペーン</li>
+            <li class="nav-item" onclick="switchTab('settings')">設定</li>
+        </ul>
+    </nav>
+    
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <h2 class="page-title">支払い管理</h2>
+        
+        <!-- サマリー情報 -->
+        <div class="payment-summary">
+            <div class="summary-card">
+                <div class="summary-label">今月の支払い予定総額</div>
+                <div class="summary-value" id="totalPayment">¥0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">支払い対象件数</div>
+                <div class="summary-value" id="paymentCount">0件</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">最低支払額未満</div>
+                <div class="summary-value" id="belowMinimumCount">0件</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">ステータス</div>
+                <div class="summary-value" id="monthlyStatus">未処理</div>
+            </div>
+        </div>
+        
+        <!-- アクションボタン -->
+        <div class="payment-actions">
+            <button class="btn btn-execute" onclick="executeMonthlyClosing()">
+                月次締め処理実行
+            </button>
+            <button class="btn btn-export" onclick="exportPaymentData()">
+                振込データCSV出力
+            </button>
+            <button class="btn btn-primary" onclick="showBatchPaymentModal()">
+                一括支払い処理
+            </button>
+        </div>
+        
+        <!-- 支払い一覧テーブル -->
+        <div class="payment-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="checkbox-column">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                        </th>
+                        <th>代理店名</th>
+                        <th>対象期間</th>
+                        <th>報酬額（税引前）</th>
+                        <th>控除額</th>
+                        <th>支払額（税引後）</th>
+                        <th>銀行口座</th>
+                        <th>ステータス</th>
+                        <th class="actions-column">アクション</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentTableBody">
+                    <!-- JavaScriptで動的に生成 -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+    
+    <!-- 一括支払いモーダル -->
+    <div class="modal" id="batchPaymentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">一括支払い処理</h3>
+                <button class="modal-close" onclick="closeModal('batchPaymentModal')">×</button>
+            </div>
+            
+            <div class="batch-summary">
+                <div class="batch-summary-item">
+                    <span>選択件数：</span>
+                    <span id="selectedCount">0件</span>
+                </div>
+                <div class="batch-summary-item">
+                    <span>支払い総額（税引前）：</span>
+                    <span id="selectedGrossAmount">¥0</span>
+                </div>
+                <div class="batch-summary-item">
+                    <span>控除総額：</span>
+                    <span id="selectedDeductions">¥0</span>
+                </div>
+                <div class="batch-summary-item batch-summary-total">
+                    <span>支払い総額（税引後）：</span>
+                    <span id="selectedNetAmount">¥0</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>支払い実行日</label>
+                <input type="date" id="paymentDate" value="">
+            </div>
+            
+            <div class="form-group">
+                <label>備考</label>
+                <textarea id="paymentNote" placeholder="支払いに関する備考を入力"></textarea>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('batchPaymentModal')">キャンセル</button>
+                <button class="btn btn-primary" onclick="executeBatchPayment()">支払い実行</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 最低支払額設定
+        const MINIMUM_PAYMENT = 10000;
+        
+        // 支払いデータ（デモ用）
+        let paymentData = [];
+        
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // ユーザー情報表示
+            const userStr = localStorage.getItem('currentUser');
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    document.getElementById('userDisplay').textContent = `${user.email} (${user.role === 'admin' ? '管理者' : '代理店'})`;
+                } catch (e) {
+                    document.getElementById('userDisplay').textContent = 'admin@example.com (管理者)';
+                }
+            }
+            
+            // 支払いデータを生成
+            generatePaymentData();
+            
+            // 支払い日のデフォルト値を設定
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('paymentDate').value = today;
+        });
+        
+        // 支払いデータ生成
+        function generatePaymentData() {
+            // 報酬管理データから支払いデータを生成
+            const commissions = [
+                {
+                    agencyId: '001',
+                    agencyName: '株式会社ABC商事',
+                    period: '2024-03',
+                    grossAmount: 354000,
+                    invoiceDeduction: 0,
+                    withholdingTax: 0,
+                    netAmount: 354000,
+                    bankAccount: '三菱UFJ銀行 新宿支店 普通 1234567',
+                    status: 'pending'
+                },
+                {
+                    agencyId: '002',
+                    agencyName: 'XYZ営業株式会社',
+                    period: '2024-03',
+                    grossAmount: 147500,
+                    invoiceDeduction: 0,
+                    withholdingTax: 0,
+                    netAmount: 147500,
+                    bankAccount: 'みずほ銀行 渋谷支店 普通 7654321',
+                    status: 'pending'
+                },
+                {
+                    agencyId: '003',
+                    agencyName: '田中商店',
+                    period: '2024-03',
+                    grossAmount: 72800,
+                    invoiceDeduction: 1456,
+                    withholdingTax: 7129,
+                    netAmount: 64215,
+                    bankAccount: '三井住友銀行 品川支店 普通 9876543',
+                    status: 'pending'
+                },
+                {
+                    agencyId: '004',
+                    agencyName: 'スズキ販売',
+                    period: '2024-03',
+                    grossAmount: 7500,
+                    invoiceDeduction: 150,
+                    withholdingTax: 749,
+                    netAmount: 6601,
+                    bankAccount: 'りそな銀行 池袋支店 普通 5432109',
+                    status: 'below_minimum'
+                }
+            ];
+            
+            paymentData = commissions;
+            updateSummary();
+            renderPaymentTable();
+        }
+        
+        // サマリー情報更新
+        function updateSummary() {
+            const total = paymentData.reduce((sum, p) => sum + (p.netAmount >= MINIMUM_PAYMENT ? p.netAmount : 0), 0);
+            const payableCount = paymentData.filter(p => p.netAmount >= MINIMUM_PAYMENT).length;
+            const belowMinimum = paymentData.filter(p => p.netAmount < MINIMUM_PAYMENT).length;
+            
+            document.getElementById('totalPayment').textContent = `¥${total.toLocaleString()}`;
+            document.getElementById('paymentCount').textContent = `${payableCount}件`;
+            document.getElementById('belowMinimumCount').textContent = `${belowMinimum}件`;
+        }
+        
+        // 支払いテーブル描画
+        function renderPaymentTable() {
+            const tbody = document.getElementById('paymentTableBody');
+            tbody.innerHTML = '';
+            
+            paymentData.forEach((payment, index) => {
+                const tr = document.createElement('tr');
+                const isBelowMinimum = payment.netAmount < MINIMUM_PAYMENT;
+                
+                tr.innerHTML = `
+                    <td>
+                        <input type="checkbox" name="paymentSelect" value="${index}" 
+                               ${isBelowMinimum ? 'disabled' : ''} 
+                               onchange="updateBatchSummary()">
+                    </td>
+                    <td>${payment.agencyName}</td>
+                    <td>${payment.period}</td>
+                    <td>¥${payment.grossAmount.toLocaleString()}</td>
+                    <td>¥${(payment.invoiceDeduction + payment.withholdingTax).toLocaleString()}</td>
+                    <td>
+                        ¥${payment.netAmount.toLocaleString()}
+                        ${isBelowMinimum ? '<div class="amount-below-minimum">最低支払額未満</div>' : ''}
+                    </td>
+                    <td style="font-size: 12px;">${payment.bankAccount}</td>
+                    <td>${getStatusBadge(payment.status)}</td>
+                    <td>
+                        ${!isBelowMinimum && payment.status === 'pending' ? 
+                            `<button class="btn btn-sm btn-primary" onclick="markAsPaid(${index})">支払済</button>` : 
+                            '-'
+                        }
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        // ステータスバッジ取得
+        function getStatusBadge(status) {
+            const statusMap = {
+                'pending': '<span class="status-pending">支払い待ち</span>',
+                'processing': '<span class="status-processing">処理中</span>',
+                'completed': '<span class="status-completed">支払済</span>',
+                'below_minimum': '<span class="status-below-minimum">最低額未満</span>'
+            };
+            return statusMap[status] || status;
+        }
+        
+        // 全選択切り替え
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll').checked;
+            const checkboxes = document.querySelectorAll('input[name="paymentSelect"]:not(:disabled)');
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll;
+            });
+            updateBatchSummary();
+        }
+        
+        // 一括支払いモーダル表示
+        function showBatchPaymentModal() {
+            const selectedCount = document.querySelectorAll('input[name="paymentSelect"]:checked').length;
+            if (selectedCount === 0) {
+                alert('支払い対象を選択してください');
+                return;
+            }
+            updateBatchSummary();
+            document.getElementById('batchPaymentModal').style.display = 'block';
+        }
+        
+        // 一括支払いサマリー更新
+        function updateBatchSummary() {
+            const selected = Array.from(document.querySelectorAll('input[name="paymentSelect"]:checked'))
+                .map(cb => parseInt(cb.value));
+            
+            let totalGross = 0;
+            let totalDeductions = 0;
+            let totalNet = 0;
+            
+            selected.forEach(index => {
+                const payment = paymentData[index];
+                totalGross += payment.grossAmount;
+                totalDeductions += payment.invoiceDeduction + payment.withholdingTax;
+                totalNet += payment.netAmount;
+            });
+            
+            document.getElementById('selectedCount').textContent = `${selected.length}件`;
+            document.getElementById('selectedGrossAmount').textContent = `¥${totalGross.toLocaleString()}`;
+            document.getElementById('selectedDeductions').textContent = `¥${totalDeductions.toLocaleString()}`;
+            document.getElementById('selectedNetAmount').textContent = `¥${totalNet.toLocaleString()}`;
+        }
+        
+        // 月次締め処理
+        function executeMonthlyClosing() {
+            if (confirm('月次締め処理を実行しますか？\n\n※最低支払額未満の報酬は翌月に繰り越されます')) {
+                // 処理実行
+                document.getElementById('monthlyStatus').textContent = '処理済';
+                alert('月次締め処理が完了しました');
+            }
+        }
+        
+        // 振込データエクスポート
+        function exportPaymentData() {
+            const payableData = paymentData.filter(p => p.netAmount >= MINIMUM_PAYMENT && p.status === 'pending');
+            
+            if (payableData.length === 0) {
+                alert('エクスポート可能な支払いデータがありません');
+                return;
+            }
+            
+            // CSV生成
+            let csv = '代理店名,銀行名,支店名,口座種別,口座番号,振込金額,摘要\n';
+            payableData.forEach(payment => {
+                // 銀行口座情報を分解（簡易版）
+                const bankInfo = payment.bankAccount.split(' ');
+                csv += `"${payment.agencyName}","${bankInfo[0]}","${bankInfo[1]}","${bankInfo[2]}","${bankInfo[3]}",${payment.netAmount},"${payment.period}報酬"\n`;
+            });
+            
+            // ダウンロード
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            const today = new Date().toISOString().split('T')[0];
+            link.download = `payment_data_${today}.csv`;
+            link.click();
+        }
+        
+        // 一括支払い実行
+        function executeBatchPayment() {
+            const paymentDate = document.getElementById('paymentDate').value;
+            const note = document.getElementById('paymentNote').value;
+            
+            if (!paymentDate) {
+                alert('支払い実行日を入力してください');
+                return;
+            }
+            
+            const selected = Array.from(document.querySelectorAll('input[name="paymentSelect"]:checked'))
+                .map(cb => parseInt(cb.value));
+            
+            // 選択された支払いを処理済みに更新
+            selected.forEach(index => {
+                paymentData[index].status = 'completed';
+            });
+            
+            renderPaymentTable();
+            updateSummary();
+            closeModal('batchPaymentModal');
+            
+            alert(`${selected.length}件の支払い処理が完了しました`);
+        }
+        
+        // 個別支払い済み処理
+        function markAsPaid(index) {
+            if (confirm('この支払いを完了としてマークしますか？')) {
+                paymentData[index].status = 'completed';
+                renderPaymentTable();
+                updateSummary();
+            }
+        }
+        
+        // モーダルを閉じる
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // タブ切り替え
+        function switchTab(tab) {
+            if (tab === 'dashboard') {
+                window.location.href = 'dashboard-admin.html';
+            } else if (tab === 'agencies') {
+                window.location.href = 'agencies-admin.html';
+            } else if (tab === 'sales') {
+                window.location.href = 'sales-functions.html';
+            } else if (tab === 'commissions') {
+                window.location.href = 'commissions-admin.html';
+            } else if (tab === 'campaigns') {
+                window.location.href = 'campaigns-admin.html';
+            } else if (tab === 'settings') {
+                window.location.href = 'settings-admin.html';
+            }
+        }
+        
+        // ログアウト処理
+        function handleLogout() {
+            if (confirm('ログアウトしますか？')) {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('supabase.auth.token');
+                window.location.replace('login.html?logout=true');
+            }
+        }
+        
+        // モーダルの外側クリックで閉じる
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
