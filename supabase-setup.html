@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase セットアップガイド - 多段階営業代理店管理システム</title>
+    <link rel="stylesheet" href="css/admin-common.css">
+    <link rel="stylesheet" href="css/ui-components.css">
+    <style>
+        body {
+            background-color: #f3f4f6;
+            padding: 20px;
+        }
+        
+        .setup-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .setup-header {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .setup-header h1 {
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        
+        .setup-header p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        .setup-section {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .setup-section h2 {
+            color: #1f2937;
+            font-size: 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .step-number {
+            background: #3b82f6;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .code-block {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 16px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 12px 0;
+            position: relative;
+        }
+        
+        .copy-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #374151;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .copy-button:hover {
+            background: #4b5563;
+        }
+        
+        .status-box {
+            padding: 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .checklist {
+            list-style: none;
+            padding: 0;
+            margin: 16px 0;
+        }
+        
+        .checklist li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .checklist li:before {
+            content: "☐";
+            font-size: 20px;
+            color: #9ca3af;
+        }
+        
+        .checklist li.completed:before {
+            content: "☑";
+            color: #10b981;
+        }
+        
+        .external-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .external-link:hover {
+            text-decoration: underline;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .tab-button {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+        
+        .tab-button.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-header">
+            <h1>🚀 Supabase セットアップガイド</h1>
+            <p>本番環境のSupabaseプロジェクトをセットアップして、多段階営業代理店管理システムに接続します。</p>
+        </div>
+
+        <!-- タブナビゲーション -->
+        <div class="setup-section">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="switchTab('setup')">セットアップ</button>
+                <button class="tab-button" onclick="switchTab('test')">接続テスト</button>
+                <button class="tab-button" onclick="switchTab('migration')">データ移行</button>
+            </div>
+
+            <!-- セットアップタブ -->
+            <div id="setup-tab" class="tab-content active">
+                <h2><span class="step-number">1</span>Supabaseプロジェクト作成</h2>
+                <ol>
+                    <li>1. <a href="https://supabase.com" target="_blank" class="external-link">Supabase</a> にアクセス</li>
+                    <li>2. 「Start your project」をクリック</li>
+                    <li>3. GitHubアカウントでサインアップ（推奨）</li>
+                    <li>4. 「New Project」をクリック</li>
+                    <li>5. 以下の情報を入力：
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li>Project name: <strong>multi-tier-sales-system</strong></li>
+                            <li>Database Password: 強力なパスワードを生成</li>
+                            <li>Region: <strong>Northeast Asia (Tokyo)</strong>を選択</li>
+                        </ul>
+                    </li>
+                    <li>6. 「Create new project」をクリック</li>
+                </ol>
+
+                <div class="status-box status-pending">
+                    ⏳ プロジェクト作成には約2分かかります。作成が完了したら次のステップに進んでください。
+                </div>
+
+                <h2 style="margin-top: 40px;"><span class="step-number">2</span>API設定の取得</h2>
+                <p>プロジェクトが作成されたら、Settings → API から以下の情報を取得してください：</p>
+                
+                <form id="supabase-config-form">
+                    <div class="form-group">
+                        <label for="project-url">Project URL</label>
+                        <input type="text" id="project-url" placeholder="https://xxxxx.supabase.co" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="anon-key">anon public key</label>
+                        <input type="text" id="anon-key" placeholder="eyJhbGc..." required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">設定を保存</button>
+                </form>
+
+                <div id="config-status" style="margin-top: 16px;"></div>
+
+                <h2 style="margin-top: 40px;"><span class="step-number">3</span>データベーステーブル作成</h2>
+                <p>以下のSQLをSupabaseのSQL Editorで実行してください：</p>
+                
+                <div class="code-block">
+                    <button class="copy-button" onclick="copySQL('create-tables')">コピー</button>
+                    <pre id="create-tables">-- UUIDエクステンションを有効化
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 代理店テーブル
+CREATE TABLE agencies (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    company_name VARCHAR(255) NOT NULL,
+    company_type VARCHAR(20) CHECK (company_type IN ('法人', '個人')),
+    representative JSONB NOT NULL,
+    tier_level INTEGER CHECK (tier_level BETWEEN 1 AND 4),
+    parent_agency_id UUID REFERENCES agencies(id),
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 商品テーブル
+CREATE TABLE products (
+    id VARCHAR(10) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    price INTEGER NOT NULL,
+    base_rate DECIMAL(5,2),
+    tier_rates JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 売上テーブル
+CREATE TABLE sales (
+    id VARCHAR(20) PRIMARY KEY,
+    agency_id UUID REFERENCES agencies(id),
+    product_id VARCHAR(10) REFERENCES products(id),
+    customer_name VARCHAR(255) NOT NULL,
+    amount INTEGER NOT NULL,
+    status VARCHAR(20) DEFAULT 'confirmed',
+    sale_date DATE NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 報酬テーブル
+CREATE TABLE commissions (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    sale_id VARCHAR(20) REFERENCES sales(id),
+    agency_id UUID REFERENCES agencies(id),
+    amount INTEGER NOT NULL,
+    rate DECIMAL(5,3),
+    type VARCHAR(20),
+    status VARCHAR(20) DEFAULT 'unpaid',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);</pre>
+                </div>
+
+                <h2 style="margin-top: 40px;"><span class="step-number">4</span>初期データ投入</h2>
+                <p>テスト用の初期データを投入します：</p>
+                
+                <div class="code-block">
+                    <button class="copy-button" onclick="copySQL('insert-data')">コピー</button>
+                    <pre id="insert-data">-- 商品データ
+INSERT INTO products (id, name, price, base_rate, tier_rates) VALUES
+('PRD001', '商品A', 100000, 10.0, '{"1": 10.0, "2": 8.0, "3": 6.0, "4": 4.0}'),
+('PRD002', '商品B', 50000, 8.0, '{"1": 8.0, "2": 6.0, "3": 4.0, "4": 3.0}'),
+('PRD003', '商品C', 30000, 6.0, '{"1": 6.0, "2": 5.0, "3": 3.0, "4": 2.0}');
+
+-- テスト用代理店データ
+INSERT INTO agencies (company_name, company_type, representative, tier_level, status) VALUES
+('株式会社ABC商事', '法人', 
+ '{"name": "山田太郎", "email": "abc@example.com", "phone": "03-1234-5678", "birth_date": "1980-01-01"}',
+ 1, 'active');</pre>
+                </div>
+
+                <h2 style="margin-top: 40px;"><span class="step-number">5</span>Row Level Security (RLS) 設定</h2>
+                <p>セキュリティのためRLSを有効化します：</p>
+                
+                <div class="code-block">
+                    <button class="copy-button" onclick="copySQL('enable-rls')">コピー</button>
+                    <pre id="enable-rls">-- 各テーブルでRLSを有効化
+ALTER TABLE agencies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
+ALTER TABLE commissions ENABLE ROW LEVEL SECURITY;
+
+-- ポリシー作成（一旦全て許可 - 後で調整）
+CREATE POLICY "agencies_select_policy" ON agencies FOR SELECT USING (true);
+CREATE POLICY "products_select_policy" ON products FOR SELECT USING (true);
+CREATE POLICY "sales_select_policy" ON sales FOR SELECT USING (true);
+CREATE POLICY "commissions_select_policy" ON commissions FOR SELECT USING (true);</pre>
+                </div>
+
+                <ul class="checklist" id="setup-checklist">
+                    <li>Supabaseアカウント作成</li>
+                    <li>プロジェクト作成</li>
+                    <li>API設定取得・保存</li>
+                    <li>テーブル作成</li>
+                    <li>初期データ投入</li>
+                    <li>RLS設定</li>
+                </ul>
+            </div>
+
+            <!-- 接続テストタブ -->
+            <div id="test-tab" class="tab-content">
+                <h2>接続テスト</h2>
+                <p>Supabaseへの接続をテストします。</p>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="testConnection()">接続テスト実行</button>
+                    <button class="btn btn-secondary" onclick="loadTestData()">テストデータ読み込み</button>
+                </div>
+                
+                <div id="test-results" style="margin-top: 20px;"></div>
+            </div>
+
+            <!-- データ移行タブ -->
+            <div id="migration-tab" class="tab-content">
+                <h2>データ移行</h2>
+                <p>LocalStorageのデモデータをSupabaseに移行します。</p>
+                
+                <div class="status-box status-pending">
+                    ⚠️ 注意：この操作により、既存のSupabaseデータは上書きされる可能性があります。
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="migrateData()">データ移行開始</button>
+                    <button class="btn btn-secondary" onclick="checkMigrationStatus()">移行状況確認</button>
+                </div>
+                
+                <div id="migration-results" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- 設定ファイル -->
+    <script src="js/supabase-config.js"></script>
+    
+    <script>
+        // タブ切り替え
+        function switchTab(tabName) {
+            // タブボタンの切り替え
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // タブコンテンツの切り替え
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+        
+        // SQLコピー機能
+        function copySQL(elementId) {
+            const sqlText = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(sqlText).then(() => {
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'コピーしました！';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        }
+        
+        // 設定保存
+        document.getElementById('supabase-config-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const projectUrl = document.getElementById('project-url').value;
+            const anonKey = document.getElementById('anon-key').value;
+            
+            // 設定を保存
+            localStorage.setItem('supabase_url', projectUrl);
+            localStorage.setItem('supabase_anon_key', anonKey);
+            
+            // supabase-config.jsの設定を更新
+            SUPABASE_CONFIG.url = projectUrl;
+            SUPABASE_CONFIG.anonKey = anonKey;
+            
+            const statusDiv = document.getElementById('config-status');
+            statusDiv.className = 'status-box status-success';
+            statusDiv.innerHTML = '✅ 設定を保存しました！「接続テスト」タブで接続を確認してください。';
+            
+            // チェックリストを更新
+            const checklist = document.getElementById('setup-checklist');
+            checklist.children[2].classList.add('completed');
+        });
+        
+        // 接続テスト
+        async function testConnection() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<div class="status-box status-pending">接続テスト中...</div>';
+            
+            try {
+                const client = initializeSupabase();
+                if (!client) {
+                    throw new Error('Supabaseクライアントの初期化に失敗しました');
+                }
+                
+                // 商品データを取得してテスト
+                const { data, error } = await client.from('products').select('*').limit(1);
+                
+                if (error) {
+                    throw error;
+                }
+                
+                resultsDiv.innerHTML = `
+                    <div class="status-box status-success">
+                        ✅ 接続成功！Supabaseに正常に接続できました。
+                    </div>
+                    <div class="code-block">
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="status-box status-error">
+                        ❌ 接続エラー: ${error.message}
+                    </div>
+                    <p style="margin-top: 12px;">設定を確認してください：</p>
+                    <ul style="margin-left: 20px;">
+                        <li>Project URLとanon keyが正しく入力されているか</li>
+                        <li>Supabaseプロジェクトが作成完了しているか</li>
+                        <li>テーブルが作成されているか</li>
+                    </ul>
+                `;
+            }
+        }
+        
+        // テストデータ読み込み
+        async function loadTestData() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<div class="status-box status-pending">データ読み込み中...</div>';
+            
+            try {
+                // 各テーブルからデータを取得
+                const { data: agencies, error: agenciesError } = await supabaseDB.getAgencies();
+                const { data: products, error: productsError } = await supabaseDB.getProducts();
+                const { data: sales, error: salesError } = await supabaseDB.getSales();
+                const { data: commissions, error: commissionsError } = await supabaseDB.getCommissions();
+                
+                if (agenciesError || productsError || salesError || commissionsError) {
+                    throw new Error('データ取得エラー');
+                }
+                
+                resultsDiv.innerHTML = `
+                    <div class="status-box status-success">
+                        ✅ データ読み込み成功！
+                    </div>
+                    <h3>取得データ数</h3>
+                    <ul style="margin: 12px 0;">
+                        <li>代理店: ${agencies?.length || 0}件</li>
+                        <li>商品: ${products?.length || 0}件</li>
+                        <li>売上: ${sales?.length || 0}件</li>
+                        <li>報酬: ${commissions?.length || 0}件</li>
+                    </ul>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="status-box status-error">
+                        ❌ データ読み込みエラー: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // データ移行（今後実装）
+        function migrateData() {
+            const resultsDiv = document.getElementById('migration-results');
+            resultsDiv.innerHTML = `
+                <div class="status-box status-pending">
+                    この機能は現在準備中です。LocalStorageのデータをSupabaseに移行する機能を実装予定です。
+                </div>
+            `;
+        }
+        
+        function checkMigrationStatus() {
+            const resultsDiv = document.getElementById('migration-results');
+            resultsDiv.innerHTML = `
+                <div class="status-box status-pending">
+                    移行状況確認機能は準備中です。
+                </div>
+            `;
+        }
+        
+        // ページ読み込み時に保存済み設定を復元
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedUrl = localStorage.getItem('supabase_url');
+            const savedKey = localStorage.getItem('supabase_anon_key');
+            
+            if (savedUrl) document.getElementById('project-url').value = savedUrl;
+            if (savedKey) document.getElementById('anon-key').value = savedKey;
+            
+            if (savedUrl && savedKey) {
+                SUPABASE_CONFIG.url = savedUrl;
+                SUPABASE_CONFIG.anonKey = savedKey;
+            }
+        });
+    </script>
+</body>
+</html>
