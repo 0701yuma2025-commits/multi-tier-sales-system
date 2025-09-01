@@ -6,6 +6,7 @@
     <title>支払い管理 - 多段階営業代理店管理システム</title>
     <link rel="stylesheet" href="css/admin-common.css">
     <link rel="stylesheet" href="css/responsive-complete.css">
+    <script src="js/common-functions.js"></script>
     <script src="js/mobile-menu.js"></script>
     <style>
         /* 支払い管理特有のスタイル */
@@ -342,15 +343,7 @@
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
             // ユーザー情報表示
-            const userStr = localStorage.getItem('currentUser');
-            if (userStr) {
-                try {
-                    const user = JSON.parse(userStr);
-                    document.getElementById('userDisplay').textContent = `${user.email} (${user.role === 'admin' ? '管理者' : '代理店'})`;
-                } catch (e) {
-                    document.getElementById('userDisplay').textContent = 'admin@example.com (管理者)';
-                }
-            }
+            displayUserInfo('userDisplay');
             
             // 支払いデータを生成
             generatePaymentData();
@@ -608,14 +601,6 @@
             }
         }
         
-        // ログアウト処理
-        function handleLogout() {
-            if (confirm('ログアウトしますか？')) {
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('supabase.auth.token');
-                window.location.replace('login.html?logout=true');
-            }
-        }
         
         // モーダルの外側クリックで閉じる
         window.onclick = function(event) {

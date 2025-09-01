@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>報酬管理 - 多段階営業代理店管理システム</title>
     <script src="js/auth-check-simple.js"></script>
+    <script src="js/common-functions.js"></script>
     <link rel="stylesheet" href="css/admin-common.css">
     <link rel="stylesheet" href="css/responsive-complete.css">
     <script src="js/mobile-menu.js"></script>
@@ -938,14 +939,6 @@
             bonus4: 4
         };
         
-        // ログアウト処理
-        function handleLogout() {
-            if (confirm('ログアウトしますか？')) {
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('supabase.auth.token');
-                window.location.replace('login.html?logout=true');
-            }
-        }
         
         // タブ切り替え
         function switchTab(tab) {
@@ -1400,27 +1393,18 @@
             renderSummaryTable();
         }
         
-        // モーダル表示
+        // モーダル制御はModalControllerを使用
         function showModal(modalId) {
-            document.getElementById(modalId).classList.add('active');
+            ModalController.open(modalId);
         }
         
-        // モーダル閉じる
         function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
+            ModalController.close(modalId);
         }
         
         // ユーザー情報表示
         document.addEventListener('DOMContentLoaded', function() {
-            const userStr = localStorage.getItem('currentUser');
-            if (userStr) {
-                try {
-                    const user = JSON.parse(userStr);
-                    document.getElementById('userDisplay').textContent = `${user.email} (${user.role === 'admin' ? '管理者' : '代理店'})`;
-                } catch (e) {
-                    document.getElementById('userDisplay').textContent = 'admin@example.com (管理者)';
-                }
-            }
+            displayUserInfo('userDisplay');
             
             // 初期表示
             renderSummaryTable();

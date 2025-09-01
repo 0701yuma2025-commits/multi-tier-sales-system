@@ -6,6 +6,7 @@
     <title>ダッシュボード（グラフ機能拡張版） - 多段階営業代理店管理システム</title>
     <script src="js/auth-check-simple.js"></script>
     <script src="js/api-error-codes.js"></script>
+    <script src="js/common-functions.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
     <link rel="stylesheet" href="css/responsive-complete.css">
     <script src="js/mobile-menu.js"></script>
@@ -834,27 +835,11 @@
             link.click();
         }
         
-        // ログアウト処理
-        function handleLogout() {
-            if (confirm('ログアウトしますか？')) {
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('supabase.auth.token');
-                window.location.replace('login.html?logout=true');
-            }
-        }
         
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
             // ユーザー情報表示
-            const userStr = localStorage.getItem('currentUser');
-            if (userStr) {
-                try {
-                    const user = JSON.parse(userStr);
-                    document.getElementById('userDisplay').textContent = `${user.email} (${user.role === 'admin' ? '管理者' : '代理店'})`;
-                } catch (e) {
-                    document.getElementById('userDisplay').textContent = 'ゲストユーザー';
-                }
-            }
+            displayUserInfo('userDisplay');
             
             // グラフを初期化
             initSalesChart();

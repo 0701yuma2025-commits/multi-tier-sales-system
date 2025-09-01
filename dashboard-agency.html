@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>代理店ダッシュボード - 多段階営業代理店管理システム</title>
     <script src="js/auth-check-simple.js"></script>
+    <script src="js/common-functions.js"></script>
     <script src="js/mobile-menu.js"></script>
     <style>
         * {
@@ -323,7 +324,7 @@
         <h1>多段階営業代理店管理システム【代理店】</h1>
         <div class="user-info">
             <span class="tier-badge">Tier 2</span>
-            <span class="user-name">agency@example.com (代理店)</span>
+            <span class="user-name" id="userDisplay">読み込み中...</span>
             <button class="logout-btn" onclick="handleLogout()">ログアウト</button>
         </div>
     </header>
@@ -469,16 +470,6 @@
     </main>
     
     <script>
-        function handleLogout() {
-            if (confirm('ログアウトしますか？')) {
-                console.log('ログアウト処理開始');
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('supabase.auth.token');
-                console.log('LocalStorage cleared:', localStorage.getItem('currentUser'));
-                // キャッシュを無視してリロード
-                window.location.replace('login.html?logout=true');
-            }
-        }
         
         function switchTab(tab) {
             // タブ切り替えの視覚的フィードバック
@@ -508,6 +499,11 @@
                 copyBtn.style.backgroundColor = '#3b82f6';
             }, 2000);
         }
+        
+        // ページ読み込み時にユーザー情報を表示
+        document.addEventListener('DOMContentLoaded', function() {
+            displayUserInfo('userDisplay');
+        });
     </script>
 </body>
 </html>

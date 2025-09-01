@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理者ダッシュボード - 多段階営業代理店管理システム</title>
     <script src="js/auth-check-simple.js"></script>
+    <script src="js/common-functions.js"></script>
     <link rel="stylesheet" href="css/admin-common.css">
     <link rel="stylesheet" href="css/responsive-complete.css">
     <script src="js/mobile-menu.js"></script>
@@ -455,16 +456,7 @@
     </main>
     
     <script>
-        function handleLogout() {
-            if (confirm('ログアウトしますか？')) {
-                console.log('ログアウト処理開始');
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('supabase.auth.token');
-                console.log('LocalStorage cleared:', localStorage.getItem('currentUser'));
-                // キャッシュを無視してリロード
-                window.location.replace('login.html?logout=true');
-            }
-        }
+        // handleLogoutはcommon-functions.jsから使用
         
         function switchTab(tab, event) {
             // タブ切り替えの視覚的フィードバック
@@ -491,15 +483,8 @@
         
         // ページ読み込み時にユーザー情報を表示
         document.addEventListener('DOMContentLoaded', function() {
-            const userStr = localStorage.getItem('currentUser');
-            if (userStr) {
-                try {
-                    const user = JSON.parse(userStr);
-                    document.getElementById('userDisplay').textContent = `${user.email} (${user.role === 'admin' ? '管理者' : '代理店'})`;
-                } catch (e) {
-                    document.getElementById('userDisplay').textContent = 'admin@example.com (管理者)';
-                }
-            }
+            // 共通関数を使用してユーザー情報を表示
+            displayUserInfo('userDisplay');
         });
     </script>
     
