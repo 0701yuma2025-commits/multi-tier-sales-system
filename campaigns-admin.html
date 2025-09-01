@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キャンペーン管理 - 多段階営業代理店管理システム</title>
+    <script src="js/auth-check-simple.js"></script>
+    <link rel="stylesheet" href="css/admin-common.css">
+    <link rel="stylesheet" href="css/responsive-complete.css">
+    <script src="js/mobile-menu.js"></script>
+    <style>
+        /* キャンペーン管理特有のスタイル */
+        .campaign-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .campaign-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        
+        .campaign-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        
+        .campaign-period {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .campaign-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .campaign-status.active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .campaign-status.scheduled {
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
+        
+        .campaign-status.ended {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .campaign-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        .detail-value {
+            font-size: 14px;
+            color: #1f2937;
+            font-weight: 600;
+        }
+        
+        .campaign-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 40px auto;
+            padding: 32px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .close {
+            color: #6b7280;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+        }
+        
+        .close:hover {
+            color: #1f2937;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .form-row.single {
+            grid-template-columns: 1fr;
+        }
+        
+        .bonus-type-selector {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .target-selector {
+            margin-top: 16px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+        
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        /* 統計カード */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .stat-subtext {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <h1>キャンペーン管理</h1>
+        <div class="user-info">
+            <span class="user-name" id="userDisplay">読み込み中...</span>
+            <button class="logout-btn" onclick="handleLogout()">ログアウト</button>
+        </div>
+    </header>
+    
+    <!-- ナビゲーション -->
+    <nav class="nav">
+        <ul class="nav-list">
+            <li class="nav-item" onclick="location.href='dashboard-admin.html'">ダッシュボード</li>
+            <li class="nav-item" onclick="location.href='agencies-admin.html'">代理店管理</li>
+            <li class="nav-item" onclick="location.href='sales-functions.html'">売上管理</li>
+            <li class="nav-item" onclick="location.href='commissions-admin.html'">報酬管理</li>
+            <li class="nav-item active">キャンペーン</li>
+            <li class="nav-item" onclick="location.href='settings-admin.html'">設定</li>
+        </ul>
+    </nav>
+    
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <!-- 統計情報 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">実施中キャンペーン</div>
+                <div class="stat-value" id="activeCampaigns">3</div>
+                <div class="stat-subtext">現在有効</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">今月のボーナス総額</div>
+                <div class="stat-value" id="totalBonus">¥423,500</div>
+                <div class="stat-subtext">前月比 +25.3%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">対象代理店数</div>
+                <div class="stat-value" id="targetAgencies">87</div>
+                <div class="stat-subtext">全142店中</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">平均ボーナス額</div>
+                <div class="stat-value" id="avgBonus">¥4,867</div>
+                <div class="stat-subtext">1代理店あたり</div>
+            </div>
+        </div>
+        
+        <!-- アクションバー -->
+        <div class="action-bar">
+            <h2 class="page-title">キャンペーン一覧</h2>
+            <button class="btn btn-primary" onclick="openCampaignModal()">
+                ＋ 新規キャンペーン
+            </button>
+        </div>
+        
+        <!-- キャンペーンリスト -->
+        <div id="campaignList">
+            <!-- 実施中のキャンペーン -->
+            <div class="campaign-card">
+                <div class="campaign-header">
+                    <div>
+                        <h3 class="campaign-title">春の新規契約キャンペーン</h3>
+                        <p class="campaign-period">2024/03/01 〜 2024/04/30</p>
+                    </div>
+                    <span class="campaign-status active">
+                        <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>
+                        実施中
+                    </span>
+                </div>
+                
+                <div class="campaign-details">
+                    <div class="detail-item">
+                        <span class="detail-label">ボーナスタイプ</span>
+                        <span class="detail-value">売上の15%</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">対象商品</span>
+                        <span class="detail-value">プレミアムプラン</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">対象代理店</span>
+                        <span class="detail-value">全代理店</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">現在の実績</span>
+                        <span class="detail-value">¥234,500</span>
+                    </div>
+                </div>
+                
+                <div class="campaign-actions">
+                    <button class="btn btn-sm btn-secondary" onclick="viewCampaignDetails(1)">詳細</button>
+                    <button class="btn btn-sm btn-secondary" onclick="editCampaign(1)">編集</button>
+                    <button class="btn btn-sm btn-secondary" onclick="endCampaign(1)">終了</button>
+                </div>
+            </div>
+            
+            <!-- 予定されているキャンペーン -->
+            <div class="campaign-card">
+                <div class="campaign-header">
+                    <div>
+                        <h3 class="campaign-title">ゴールデンウィーク特別ボーナス</h3>
+                        <p class="campaign-period">2024/04/27 〜 2024/05/06</p>
+                    </div>
+                    <span class="campaign-status scheduled">
+                        <span style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%;"></span>
+                        開始予定
+                    </span>
+                </div>
+                
+                <div class="campaign-details">
+                    <div class="detail-item">
+                        <span class="detail-label">ボーナスタイプ</span>
+                        <span class="detail-value">固定額 ¥10,000</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">対象商品</span>
+                        <span class="detail-value">全商品</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">対象代理店</span>
+                        <span class="detail-value">ティア1〜2</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">開始まで</span>
+                        <span class="detail-value">12日</span>
+                    </div>
+                </div>
+                
+                <div class="campaign-actions">
+                    <button class="btn btn-sm btn-secondary" onclick="viewCampaignDetails(2)">詳細</button>
+                    <button class="btn btn-sm btn-secondary" onclick="editCampaign(2)">編集</button>
+                    <button class="btn btn-sm btn-secondary" onclick="deleteCampaign(2)">削除</button>
+                </div>
+            </div>
+            
+            <!-- 終了したキャンペーン -->
+            <div class="campaign-card">
+                <div class="campaign-header">
+                    <div>
+                        <h3 class="campaign-title">年度末決算キャンペーン</h3>
+                        <p class="campaign-period">2024/02/01 〜 2024/02/29</p>
+                    </div>
+                    <span class="campaign-status ended">
+                        <span style="width: 8px; height: 8px; background: #9ca3af; border-radius: 50%;"></span>
+                        終了
+                    </span>
+                </div>
+                
+                <div class="campaign-details">
+                    <div class="detail-item">
+                        <span class="detail-label">ボーナスタイプ</span>
+                        <span class="detail-value">売上の20%</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">対象商品</span>
+                        <span class="detail-value">スタンダードプラン</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">対象代理店</span>
+                        <span class="detail-value">35店舗</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">総支払額</span>
+                        <span class="detail-value">¥567,800</span>
+                    </div>
+                </div>
+                
+                <div class="campaign-actions">
+                    <button class="btn btn-sm btn-secondary" onclick="viewCampaignDetails(3)">詳細</button>
+                    <button class="btn btn-sm btn-secondary" onclick="duplicateCampaign(3)">複製</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- キャンペーン作成/編集モーダル -->
+    <div id="campaignModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">新規キャンペーン作成</h2>
+                <button class="close" onclick="closeCampaignModal()">&times;</button>
+            </div>
+            
+            <form id="campaignForm" onsubmit="saveCampaign(event)">
+                <div class="form-group">
+                    <label>キャンペーン名 <span style="color: #ef4444;">*</span></label>
+                    <input type="text" id="campaignName" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>開始日 <span style="color: #ef4444;">*</span></label>
+                        <input type="date" id="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>終了日 <span style="color: #ef4444;">*</span></label>
+                        <input type="date" id="endDate" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>ボーナスタイプ</label>
+                    <div class="bonus-type-selector">
+                        <div class="radio-option">
+                            <input type="radio" id="bonusPercent" name="bonusType" value="percent" checked onchange="toggleBonusInput()">
+                            <label for="bonusPercent">売上の割合</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="bonusFixed" name="bonusType" value="fixed" onchange="toggleBonusInput()">
+                            <label for="bonusFixed">固定額</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group" id="percentGroup">
+                        <label>ボーナス率（%） <span style="color: #ef4444;">*</span></label>
+                        <input type="number" id="bonusPercent" min="0" max="100" step="0.1" placeholder="例: 15">
+                    </div>
+                    <div class="form-group" id="fixedGroup" style="display: none;">
+                        <label>ボーナス額（円） <span style="color: #ef4444;">*</span></label>
+                        <input type="number" id="bonusAmount" min="0" placeholder="例: 10000">
+                    </div>
+                    <div class="form-group">
+                        <label>上限額（円）</label>
+                        <input type="number" id="maxBonus" min="0" placeholder="上限なしの場合は空欄">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>対象商品</label>
+                    <select id="targetProducts" multiple style="height: 100px;">
+                        <option value="all" selected>全商品</option>
+                        <option value="premium">プレミアムプラン</option>
+                        <option value="standard">スタンダードプラン</option>
+                        <option value="basic">ベーシックプラン</option>
+                    </select>
+                    <small>複数選択可（Ctrlキーを押しながらクリック）</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>対象代理店</label>
+                    <div class="target-selector">
+                        <div class="radio-option">
+                            <input type="radio" id="targetAll" name="targetType" value="all" checked onchange="toggleTargetSelector()">
+                            <label for="targetAll">全代理店</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="targetTier" name="targetType" value="tier" onchange="toggleTargetSelector()">
+                            <label for="targetTier">階層で指定</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="targetSpecific" name="targetType" value="specific" onchange="toggleTargetSelector()">
+                            <label for="targetSpecific">個別指定</label>
+                        </div>
+                    </div>
+                    
+                    <div id="tierSelector" class="checkbox-group" style="display: none;">
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="tier1" value="1">
+                            <label for="tier1">ティア1（30%）</label>
+                        </div>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="tier2" value="2">
+                            <label for="tier2">ティア2（25%）</label>
+                        </div>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="tier3" value="3">
+                            <label for="tier3">ティア3（20%）</label>
+                        </div>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="tier4" value="4">
+                            <label for="tier4">ティア4（15%）</label>
+                        </div>
+                    </div>
+                    
+                    <div id="agencySelector" class="checkbox-group" style="display: none;">
+                        <!-- 代理店リストは動的に生成 -->
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>備考</label>
+                    <textarea id="campaignNotes" rows="3" placeholder="キャンペーンの詳細や注意事項"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCampaignModal()">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // ログアウト処理
+        function handleLogout() {
+            if (confirm('ログアウトしますか？')) {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('supabase.auth.token');
+                window.location.replace('login.html?logout=true');
+            }
+        }
+        
+        // モーダル制御
+        function openCampaignModal() {
+            document.getElementById('campaignModal').style.display = 'block';
+            document.getElementById('modalTitle').textContent = '新規キャンペーン作成';
+            document.getElementById('campaignForm').reset();
+        }
+        
+        function closeCampaignModal() {
+            document.getElementById('campaignModal').style.display = 'none';
+        }
+        
+        // ボーナスタイプ切り替え
+        function toggleBonusInput() {
+            const bonusType = document.querySelector('input[name="bonusType"]:checked').value;
+            document.getElementById('percentGroup').style.display = bonusType === 'percent' ? 'block' : 'none';
+            document.getElementById('fixedGroup').style.display = bonusType === 'fixed' ? 'block' : 'none';
+        }
+        
+        // 対象選択切り替え
+        function toggleTargetSelector() {
+            const targetType = document.querySelector('input[name="targetType"]:checked').value;
+            document.getElementById('tierSelector').style.display = targetType === 'tier' ? 'block' : 'none';
+            document.getElementById('agencySelector').style.display = targetType === 'specific' ? 'block' : 'none';
+            
+            if (targetType === 'specific') {
+                loadAgencyList();
+            }
+        }
+        
+        // 代理店リスト読み込み
+        function loadAgencyList() {
+            const selector = document.getElementById('agencySelector');
+            const agencies = getAgenciesFromStorage();
+            
+            selector.innerHTML = agencies.map(agency => `
+                <div class="checkbox-option">
+                    <input type="checkbox" id="agency${agency.id}" value="${agency.id}">
+                    <label for="agency${agency.id}">${agency.name}</label>
+                </div>
+            `).join('');
+        }
+        
+        // キャンペーン保存
+        function saveCampaign(event) {
+            event.preventDefault();
+            
+            const campaignData = {
+                name: document.getElementById('campaignName').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                bonusType: document.querySelector('input[name="bonusType"]:checked').value,
+                bonusValue: document.querySelector('input[name="bonusType"]:checked').value === 'percent' 
+                    ? document.getElementById('bonusPercent').value 
+                    : document.getElementById('bonusAmount').value,
+                maxBonus: document.getElementById('maxBonus').value,
+                targetProducts: Array.from(document.getElementById('targetProducts').selectedOptions).map(opt => opt.value),
+                targetType: document.querySelector('input[name="targetType"]:checked').value,
+                notes: document.getElementById('campaignNotes').value,
+                createdAt: new Date().toISOString()
+            };
+            
+            // LocalStorageに保存
+            const campaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+            campaigns.push(campaignData);
+            localStorage.setItem('campaigns', JSON.stringify(campaigns));
+            
+            alert('キャンペーンを作成しました');
+            closeCampaignModal();
+            loadCampaigns();
+        }
+        
+        // キャンペーン詳細表示
+        function viewCampaignDetails(id) {
+            alert(`キャンペーンID: ${id} の詳細画面（実装予定）`);
+        }
+        
+        // キャンペーン編集
+        function editCampaign(id) {
+            openCampaignModal();
+            document.getElementById('modalTitle').textContent = 'キャンペーン編集';
+            // 編集データの読み込み処理
+        }
+        
+        // キャンペーン終了
+        function endCampaign(id) {
+            if (confirm('このキャンペーンを終了しますか？')) {
+                alert('キャンペーンを終了しました');
+                loadCampaigns();
+            }
+        }
+        
+        // キャンペーン削除
+        function deleteCampaign(id) {
+            if (confirm('このキャンペーンを削除しますか？')) {
+                alert('キャンペーンを削除しました');
+                loadCampaigns();
+            }
+        }
+        
+        // キャンペーン複製
+        function duplicateCampaign(id) {
+            if (confirm('このキャンペーンを複製しますか？')) {
+                alert('キャンペーンを複製しました');
+                openCampaignModal();
+            }
+        }
+        
+        // データ取得補助関数
+        function getAgenciesFromStorage() {
+            const storedAgencies = localStorage.getItem('agencies');
+            if (storedAgencies) {
+                return JSON.parse(storedAgencies);
+            }
+            // デモデータ
+            return [
+                { id: 1, name: '株式会社ABC商事' },
+                { id: 2, name: 'XYZ営業株式会社' },
+                { id: 3, name: '田中商店' },
+                { id: 4, name: '山田エージェンシー' },
+                { id: 5, name: '佐藤企画' }
+            ];
+        }
+        
+        // キャンペーン一覧更新
+        function loadCampaigns() {
+            // 実際の実装では、LocalStorageまたはAPIからデータを取得
+            console.log('キャンペーン一覧を更新');
+        }
+        
+        // ページ読み込み時
+        document.addEventListener('DOMContentLoaded', function() {
+            const userStr = localStorage.getItem('currentUser');
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    document.getElementById('userDisplay').textContent = `${user.email} (${user.role === 'admin' ? '管理者' : '代理店'})`;
+                } catch (e) {
+                    document.getElementById('userDisplay').textContent = 'admin@example.com (管理者)';
+                }
+            }
+            
+            loadCampaigns();
+        });
+        
+        // モーダル外クリックで閉じる
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('campaignModal')) {
+                closeCampaignModal();
+            }
+        }
+    </script>
+</body>
+</html>
