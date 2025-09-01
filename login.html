@@ -292,17 +292,26 @@
     
     <!-- Supabase設定 -->
     <script>
-        const savedConfig = localStorage.getItem('supabaseConfig');
-        if (savedConfig) {
-            try {
-                const config = JSON.parse(savedConfig);
-                window.SUPABASE_URL = config.url;
-                window.SUPABASE_ANON_KEY = config.key;
-            } catch (e) {
-                console.error('Supabase設定の読み込みエラー:', e);
-                localStorage.removeItem('supabaseConfig');
-            }
+        // Supabase設定の読み込み
+        const savedUrl = localStorage.getItem('supabase_url');
+        const savedKey = localStorage.getItem('supabase_anon_key');
+        
+        if (savedUrl && savedKey) {
+            window.SUPABASE_URL = savedUrl;
+            window.SUPABASE_ANON_KEY = savedKey;
         } else {
+            // 旧形式の設定も確認
+            const savedConfig = localStorage.getItem('supabaseConfig');
+            if (savedConfig) {
+                try {
+                    const config = JSON.parse(savedConfig);
+                    window.SUPABASE_URL = config.url;
+                    window.SUPABASE_ANON_KEY = config.key;
+                } catch (e) {
+                    console.error('Supabase設定の読み込みエラー:', e);
+                    localStorage.removeItem('supabaseConfig');
+                }
+            }
         }
     </script>
     
@@ -351,6 +360,20 @@
             const successDiv = document.getElementById('successMessage');
             const messageElement = successDiv.querySelector('.alert-message');
             messageElement.textContent = message;
+            successDiv.style.display = 'flex';
+            setTimeout(hideMessages, 5000);
+        }
+        
+        // 情報メッセージ表示
+        function showInfo(message) {
+            const successDiv = document.getElementById('successMessage');
+            const messageElement = successDiv.querySelector('.alert-message');
+            const existingText = messageElement.textContent;
+            if (existingText) {
+                messageElement.textContent = existingText + '\n' + message;
+            } else {
+                messageElement.textContent = message;
+            }
             successDiv.style.display = 'flex';
             setTimeout(hideMessages, 5000);
         }
@@ -538,10 +561,12 @@
                 }, 2000);
                 
             } catch (error) {
+                console.error('Signup error:', error);
                 if (error instanceof ApiError) {
                     ErrorHandler.handle(error);
                 } else {
-                    ErrorHandler.handle(new ApiError('SYSTEM_001'));
+                    // より詳細なエラー情報を表示
+                    showError(`エラー: ${error.message || '新規登録に失敗しました'}`);
                 }
             } finally {
                 setButtonLoading('signupBtn', false);
