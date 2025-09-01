@@ -240,6 +240,11 @@
                 <div class="demo-account" onclick="fillDemo('agency')">
                     <strong>代理店:</strong> agency@example.com / agency123
                 </div>
+                <div style="margin-top: 12px; text-align: center;">
+                    <a href="supabase-setup.html" style="color: #3b82f6; text-decoration: none; font-size: 14px;">
+                        🚀 Supabaseセットアップガイド
+                    </a>
+                </div>
             </div>
         </div>
         
@@ -403,35 +408,11 @@
                     return;
                 }
                 
-                // Supabase設定がない場合は、LocalStorageベースの認証を使用
+                // Supabase設定がない場合はエラー
                 if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-                    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-                    const user = registeredUsers.find(u => u.email === email && u.password === password);
-                    
-                    if (user) {
-                        // ログイン成功
-                        const sessionUser = {
-                            id: user.id,
-                            email: user.email,
-                            name: user.name || email.split('@')[0],
-                            role: user.role || 'agency',
-                            loginTime: new Date().toISOString()
-                        };
-                        
-                        localStorage.setItem('currentUser', JSON.stringify(sessionUser));
-                        showSuccess('ログインに成功しました！');
-                        
-                        setTimeout(() => {
-                            if (sessionUser.role === 'admin') {
-                                window.location.href = 'dashboard-admin.html';
-                            } else {
-                                window.location.href = 'dashboard-agency.html';
-                            }
-                        }, 1000);
-                        return;
-                    } else {
-                        throw new ApiError('AUTH_003');
-                    }
+                    showError('Supabaseが設定されていません。');
+                    showInfo('Supabaseセットアップガイドから設定してください。');
+                    return;
                 }
                 
                 // Supabase認証
@@ -517,54 +498,10 @@
                     throw new ApiError('VALIDATION_001', { field: 'パスワード', requirement: '6文字以上' });
                 }
                 
-                // Supabase設定がない場合は、LocalStorageベースの登録を使用
+                // Supabase設定がない場合はエラー
                 if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-                    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-                    
-                    // 既存ユーザーチェック
-                    if (registeredUsers.find(u => u.email === email)) {
-                        throw new ApiError('AUTH_002', 'このメールアドレスは既に登録されています');
-                    }
-                    
-                    // 新規ユーザー作成
-                    const newUser = {
-                        id: 'user_' + Date.now(),
-                        email: email,
-                        password: password, // 本番環境では必ずハッシュ化すること
-                        name: email.split('@')[0],
-                        role: inviteCode === 'ADMIN2024' ? 'admin' : 'agency',
-                        createdAt: new Date().toISOString()
-                    };
-                    
-                    // ユーザーを保存
-                    registeredUsers.push(newUser);
-                    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-                    
-                    // 代理店情報も作成
-                    if (newUser.role === 'agency') {
-                        const agencies = JSON.parse(localStorage.getItem('agenciesData') || '[]');
-                        agencies.push({
-                            id: newUser.id,
-                            name: newUser.name + '商事',
-                            email: newUser.email,
-                            tier: 1,
-                            status: 'pending',
-                            joinDate: newUser.createdAt
-                        });
-                        localStorage.setItem('agenciesData', JSON.stringify(agencies));
-                    }
-                    
-                    showSuccess(`登録が完了しました！`);
-                    showSuccess('登録したメールアドレスとパスワードでログインしてください。');
-                    
-                    // ログインタブに切り替え
-                    setTimeout(() => {
-                        document.querySelector('.tab:first-child').click();
-                        // メールアドレスを自動入力
-                        document.getElementById('loginEmail').value = email;
-                        document.getElementById('loginPassword').value = '';
-                    }, 2000);
-                    
+                    showError('Supabaseが設定されていません。');
+                    showInfo('Supabaseセットアップガイドから設定してください。');
                     return;
                 }
                 
@@ -635,32 +572,10 @@
                     return;
                 }
                 
-                // Supabase設定がない場合は、LocalStorageベースのリセットを使用
+                // Supabase設定がない場合はエラー
                 if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-                    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-                    const user = registeredUsers.find(u => u.email === email);
-                    
-                    if (user) {
-                        // デモ用：新しいパスワードを生成
-                        const newPassword = 'reset' + Date.now().toString().slice(-6);
-                        user.password = newPassword;
-                        
-                        // 更新を保存
-                        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-                        
-                        showSuccess(`パスワードをリセットしました`);
-                        showInfo(`新しいパスワード: ${newPassword}`);
-                        showInfo('このパスワードをメモして、ログインしてください。');
-                        
-                        // ログインタブに切り替え
-                        setTimeout(() => {
-                            document.querySelector('.tab:first-child').click();
-                            document.getElementById('loginEmail').value = email;
-                        }, 3000);
-                    } else {
-                        showError('登録されていないメールアドレスです');
-                    }
-                    
+                    showError('Supabaseが設定されていません。');
+                    showInfo('Supabaseセットアップガイドから設定してください。');
                     return;
                 }
                 
