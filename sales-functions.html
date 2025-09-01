@@ -656,7 +656,6 @@
                     updateConnectionStatus('エラー', 'error');
                 }
             } else {
-                console.log('Supabase設定がないため、デモモードで動作します');
                 updateConnectionStatus('デモモード', 'connected');
                 // デモモードでも初期データを設定
                 populateAgencySelect();
@@ -881,17 +880,13 @@
                 return;
             }
             
-            // デバッグ用ログ
-            console.log('送信するデータ:', salesData);
             
             try {
                 if (supabaseDb) {
                     // Supabaseに保存
                     const savedSale = await supabaseDb.addSale(salesData);
-                    console.log('保存された売上:', savedSale);
                 } else {
                     // デモモード：ローカルに保存
-                    console.log('デモモード：売上データ', salesData);
                 }
                 
                 // 階層ボーナスを計算
@@ -990,7 +985,6 @@
             storedBonuses.push(...hierarchyBonuses);
             localStorage.setItem('hierarchyBonuses', JSON.stringify(storedBonuses));
             
-            console.log('計算された階層ボーナス:', hierarchyBonuses);
             return hierarchyBonuses;
         }
         

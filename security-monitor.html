@@ -424,6 +424,7 @@
         <div class="header-controls">
             <span id="lastUpdate">最終更新: --:--:--</span>
             <button class="refresh-btn" onclick="refreshData()">🔄 更新</button>
+            <a href="settings-admin.html" style="padding: 8px 16px; background-color: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block;">← 設定に戻る</a>
         </div>
     </header>
     
@@ -758,7 +759,6 @@
             event.target.classList.add('active');
             
             // 実際のフィルタリング実装は省略
-            console.log('フィルタ:', type);
         }
         
         // アラート表示

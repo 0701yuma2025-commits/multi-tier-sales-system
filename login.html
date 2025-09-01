@@ -346,13 +346,11 @@
                 const config = JSON.parse(savedConfig);
                 window.SUPABASE_URL = config.url;
                 window.SUPABASE_ANON_KEY = config.key;
-                console.log('Supabase設定が読み込まれました:', config.url);
             } catch (e) {
                 console.error('Supabase設定の読み込みエラー:', e);
                 localStorage.removeItem('supabaseConfig');
             }
         } else {
-            console.log('Supabase設定がありません。デモモードで動作します。');
         }
     </script>
     
@@ -439,7 +437,6 @@
                 
                 // デモアカウントの場合、またはSupabase設定がない場合はデモモードを使用
                 if (isDemoAccount || !window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-                    console.log('デモモードでのログイン試行:', email);
                     if (isDemoAccount) {
                         
                         // ユーザー情報を保存
@@ -448,20 +445,17 @@
                             role: email.includes('admin') ? 'admin' : 'agency',
                             isDemo: true
                         };
-                        console.log('ユーザー情報を保存:', userInfo);
                         localStorage.setItem('currentUser', JSON.stringify(userInfo));
                         
                         showSuccess('ログインに成功しました');
                         
                         // ダッシュボードへリダイレクト
-                        console.log('リダイレクト準備:', userInfo.role === 'admin' ? 'dashboard-admin.html' : 'dashboard-agency.html');
                         setTimeout(() => {
                             window.location.href = userInfo.role === 'admin' 
                                 ? 'dashboard-admin.html' 
                                 : 'dashboard-agency.html';
                         }, 1000);
                     } else {
-                        console.log('デモ認証失敗:', email, password);
                         throw new ApiError('AUTH_003');
                     }
                     return;
@@ -541,7 +535,6 @@
             try {
                 if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
                     // デモモードでの新規登録
-                    console.log('デモモードでの新規登録:', email);
                     
                     // バリデーション
                     if (!email || !password) {
@@ -627,7 +620,6 @@
             try {
                 if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
                     // デモモードでのパスワードリセット
-                    console.log('デモモードでのパスワードリセット:', email);
                     
                     if (!email) {
                         throw new ApiError('VALIDATION_001', { field: 'メールアドレス' });
@@ -687,7 +679,6 @@
             // ログアウトパラメータがある場合はリダイレクトしない
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('logout') === 'true') {
-                console.log('ログアウト後のアクセスです');
                 // URLからパラメータを削除
                 window.history.replaceState({}, '', 'login.html');
                 
@@ -711,7 +702,6 @@
                     const user = JSON.parse(currentUser);
                     // 有効なユーザー情報がある場合のみリダイレクト
                     if (user && user.email && user.role) {
-                        console.log('既存のログインセッションを検出:', user.email);
                         // 少し遅延を入れてデバッグしやすくする
                         setTimeout(() => {
                             window.location.href = user.role === 'admin' 

@@ -527,7 +527,6 @@
         
         // デバッグ画面への通知を受け取る関数
         window.notifyDebugScreen = function(type, data) {
-            console.log('Debug notification:', type, data);
             
             // エラーが通知されたら自動的に表示を更新
             if (type === 'error') {

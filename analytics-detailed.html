@@ -809,7 +809,6 @@
         
         // フィルター適用
         function applyFilters() {
-            console.log('フィルタを適用しました');
             // 実際の実装では、選択されたフィルタに基づいてデータを再取得し、チャートを更新
         }
         
@@ -818,14 +817,12 @@
             document.querySelectorAll('.chart-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
             // 実際の実装では、ビューに応じてチャートデータを更新
-            console.log('コホートビュー切り替え:', view);
         }
         
         function switchFunnelPeriod(period) {
             document.querySelectorAll('.chart-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
             // 実際の実装では、期間に応じてファネルデータを更新
-            console.log('ファネル期間切り替え:', period);
         }
         
         // 初期化
