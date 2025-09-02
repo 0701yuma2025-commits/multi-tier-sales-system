@@ -274,19 +274,20 @@
                 <p>確認メールのリダイレクトURLを設定する必要があります：</p>
                 <ol style="margin-left: 20px;">
                     <li>Supabaseダッシュボードで「Authentication」→「URL Configuration」へ移動</li>
-                    <li>「Site URL」に以下を設定：
+                    <li>「Site URL」にアプリケーションのルートURLを設定：
                         <div class="code-block" style="margin: 10px 0;">
                             <pre style="margin: 0;">https://your-domain.com/</pre>
                         </div>
-                        ※ローカル開発の場合：<code>http://localhost:3000/</code>
+                        ※現在のURL: <code id="current-site-url">計算中...</code>
                     </li>
-                    <li>「Redirect URLs」に以下のURLを追加（複数可）：
+                    <li>「Redirect URLs」に以下のパターンを追加（ワイルドカード可）：
                         <div class="code-block" style="margin: 10px 0;">
-                            <pre style="margin: 0;">http://localhost:3000/login.html
-http://localhost:3000/reset-password.html
-https://your-domain.com/login.html
-https://your-domain.com/reset-password.html</pre>
+                            <pre style="margin: 0;">https://your-domain.com/**
+http://localhost/**</pre>
                         </div>
+                        <p style="margin-top: 10px; font-size: 13px; color: #6b7280;">
+                            ※ワイルドカード(**) を使用することで、すべてのページへのリダイレクトを許可できます
+                        </p>
                     </li>
                     <li>設定を保存</li>
                 </ol>
@@ -598,6 +599,10 @@ CREATE POLICY "commissions_select_policy" ON commissions FOR SELECT USING (true)
                 SUPABASE_CONFIG.url = savedUrl;
                 SUPABASE_CONFIG.anonKey = savedKey;
             }
+            
+            // 現在のSite URLを表示
+            const currentSiteUrl = window.location.origin + '/';
+            document.getElementById('current-site-url').textContent = currentSiteUrl;
         });
     </script>
 </body>
