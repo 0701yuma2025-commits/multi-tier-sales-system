@@ -542,9 +542,13 @@
                     })
                 });
                 
+                // レスポンスの詳細をログ出力（デバッグ用）
+                const responseData = await response.json();
+                console.log('Signup response:', response.status, responseData);
+                
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    if (errorData.msg && errorData.msg.includes('already registered')) {
+                    // Supabaseは既存ユーザーでも200を返す場合がある
+                    if (responseData.msg && responseData.msg.includes('already registered')) {
                         showError('このメールアドレスは既に登録されています。');
                         showInfo('確認メールが届いていない場合は、パスワードリセット機能をお試しください。');
                         return;
@@ -555,7 +559,13 @@
                     }
                 }
                 
-                showSuccess('確認メールを送信しました。メールをご確認ください。');
+                // Supabaseは既存ユーザーでも成功レスポンスを返すことがある
+                if (responseData.user && responseData.user.identities && responseData.user.identities.length === 0) {
+                    showInfo('このメールアドレスは既に登録されている可能性があります。');
+                    showInfo('メールが届かない場合は、ログインをお試しください。');
+                } else {
+                    showSuccess('確認メールを送信しました。メールをご確認ください。');
+                }
                 
                 // ログインタブに切り替え
                 setTimeout(() => {
