@@ -265,7 +265,7 @@
                 <div class="form-group">
                     <label for="inviteCode" class="form-label">招待コード</label>
                     <input type="text" id="inviteCode" class="form-control" placeholder="招待コードをお持ちの場合">
-                    <span class="form-help-text">上位代理店から受け取った招待コードを入力してください</span>
+                    <span class="form-help-text">管理者として登録する場合は「ADMIN2024」を入力してください</span>
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-block" id="signupBtn">
@@ -550,8 +550,14 @@
                 console.log('Signup response:', response.status, responseData);
                 
                 if (!response.ok) {
+                    // 重複エラーの場合
+                    if (response.status === 500 && responseData.code === '23505') {
+                        showError('このメールアドレスは既に登録されています。');
+                        showInfo('ログインするか、パスワードリセット機能をご利用ください。');
+                        return;
+                    }
                     // Supabaseは既存ユーザーでも200を返す場合がある
-                    if (responseData.msg && responseData.msg.includes('already registered')) {
+                    else if (responseData.msg && responseData.msg.includes('already registered')) {
                         showError('このメールアドレスは既に登録されています。');
                         showInfo('確認メールが届いていない場合は、パスワードリセット機能をお試しください。');
                         return;
