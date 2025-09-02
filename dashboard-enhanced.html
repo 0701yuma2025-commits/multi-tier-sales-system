@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ダッシュボード（グラフ機能拡張版） - 多段階営業代理店管理システム</title>
     <script src="js/auth-check-simple.js"></script>
+    
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- 共通スクリプト -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/sales-supabase.js"></script>
     <script src="js/api-error-codes.js"></script>
     <script src="js/common-functions.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
@@ -365,10 +372,10 @@
             <div class="kpi-header">
                 <div class="kpi-content">
                     <div class="kpi-label">総売上高</div>
-                    <div class="kpi-value">¥12.5M</div>
-                    <div class="kpi-change positive">
-                        <span>↑</span>
-                        <span>+23.5% 前月比</span>
+                    <div class="kpi-value" id="totalSales">¥0</div>
+                    <div class="kpi-change" id="salesGrowth">
+                        <span>-</span>
+                        <span>0% 前月比</span>
                     </div>
                 </div>
                 <div class="kpi-icon blue">💰</div>
@@ -379,10 +386,10 @@
             <div class="kpi-header">
                 <div class="kpi-content">
                     <div class="kpi-label">アクティブ代理店数</div>
-                    <div class="kpi-value">248</div>
-                    <div class="kpi-change positive">
-                        <span>↑</span>
-                        <span>+18 新規登録</span>
+                    <div class="kpi-value" id="activeAgencies">0</div>
+                    <div class="kpi-change" id="agencyGrowth">
+                        <span>-</span>
+                        <span>0 新規登録</span>
                     </div>
                 </div>
                 <div class="kpi-icon green">👥</div>
@@ -393,10 +400,10 @@
             <div class="kpi-header">
                 <div class="kpi-content">
                     <div class="kpi-label">総報酬額</div>
-                    <div class="kpi-value">¥3.75M</div>
-                    <div class="kpi-change positive">
-                        <span>↑</span>
-                        <span>+28.3% 前月比</span>
+                    <div class="kpi-value" id="totalCommissions">¥0</div>
+                    <div class="kpi-change" id="commissionGrowth">
+                        <span>-</span>
+                        <span>0% 前月比</span>
                     </div>
                 </div>
                 <div class="kpi-icon purple">💸</div>
@@ -407,10 +414,10 @@
             <div class="kpi-header">
                 <div class="kpi-content">
                     <div class="kpi-label">平均コンバージョン率</div>
-                    <div class="kpi-value">14.2%</div>
-                    <div class="kpi-change positive">
-                        <span>↑</span>
-                        <span>+2.1% 改善</span>
+                    <div class="kpi-value" id="conversionRate">0%</div>
+                    <div class="kpi-change" id="conversionGrowth">
+                        <span>-</span>
+                        <span>0% 改善</span>
                     </div>
                 </div>
                 <div class="kpi-icon yellow">📈</div>
@@ -483,41 +490,13 @@
                     <h3 class="data-title">トップパフォーマー</h3>
                     <a href="agencies-admin.html" class="view-all">すべて見る →</a>
                 </div>
-                <ul class="data-list">
+                <ul class="data-list" id="topPerformers">
                     <li class="data-item">
                         <div class="data-info">
-                            <div class="data-name">株式会社ABC商事</div>
-                            <div class="data-details">Tier 1 · 関東エリア</div>
+                            <div class="data-name">データを読み込み中...</div>
+                            <div class="data-details"></div>
                         </div>
-                        <div class="data-value">¥2.5M</div>
-                    </li>
-                    <li class="data-item">
-                        <div class="data-info">
-                            <div class="data-name">XYZエージェンシー</div>
-                            <div class="data-details">Tier 2 · 関西エリア</div>
-                        </div>
-                        <div class="data-value">¥1.8M</div>
-                    </li>
-                    <li class="data-item">
-                        <div class="data-info">
-                            <div class="data-name">山田営業企画</div>
-                            <div class="data-details">Tier 1 · 中部エリア</div>
-                        </div>
-                        <div class="data-value">¥1.6M</div>
-                    </li>
-                    <li class="data-item">
-                        <div class="data-info">
-                            <div class="data-name">田中セールス</div>
-                            <div class="data-details">Tier 2 · 東北エリア</div>
-                        </div>
-                        <div class="data-value">¥1.4M</div>
-                    </li>
-                    <li class="data-item">
-                        <div class="data-info">
-                            <div class="data-name">グローバル営業</div>
-                            <div class="data-details">Tier 1 · 九州エリア</div>
-                        </div>
-                        <div class="data-value">¥1.2M</div>
+                        <div class="data-value"></div>
                     </li>
                 </ul>
             </div>
@@ -528,41 +507,13 @@
                     <h3 class="data-title">最近の活動</h3>
                     <a href="#" class="view-all">すべて見る →</a>
                 </div>
-                <ul class="data-list">
+                <ul class="data-list" id="recentActivities">
                     <li class="data-item">
                         <div class="data-info">
-                            <div class="data-name">新規代理店登録</div>
-                            <div class="data-details">佐藤商事が参加しました</div>
+                            <div class="data-name">データを読み込み中...</div>
+                            <div class="data-details"></div>
                         </div>
-                        <span class="status-badge status-active">新規</span>
-                    </li>
-                    <li class="data-item">
-                        <div class="data-info">
-                            <div class="data-name">大型売上成立</div>
-                            <div class="data-details">ABC商事 - ¥500,000</div>
-                        </div>
-                        <span class="status-badge status-active">成約</span>
-                    </li>
-                    <li class="data-item">
-                        <div class="data-info">
-                            <div class="data-name">報酬支払い承認待ち</div>
-                            <div class="data-details">15件の申請</div>
-                        </div>
-                        <span class="status-badge status-pending">承認待ち</span>
-                    </li>
-                    <li class="data-item">
-                        <div class="data-info">
-                            <div class="data-name">階層ボーナス発生</div>
-                            <div class="data-details">XYZエージェンシー</div>
-                        </div>
-                        <span class="status-badge status-active">自動計算</span>
-                    </li>
-                    <li class="data-item">
-                        <div class="data-info">
-                            <div class="data-name">代理店更新期限</div>
-                            <div class="data-details">3社が30日以内</div>
-                        </div>
-                        <span class="status-badge status-pending">要確認</span>
+                        <span class="status-badge status-pending"></span>
                     </li>
                 </ul>
             </div>
@@ -835,8 +786,234 @@
         }
         
         
+        // Supabaseクライアント
+        let supabaseDb = null;
+        let salesData = [];
+        let agencyData = [];
+        let commissionData = [];
+        
+        // ダッシュボードデータを読み込み
+        async function loadDashboardData() {
+            try {
+                // Supabase設定の確認
+                const hasValidConfig = SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_PROJECT_URL' && 
+                                     SUPABASE_CONFIG.anonKey !== 'YOUR_SUPABASE_ANON_KEY';
+                
+                if (hasValidConfig) {
+                    supabaseDb = new SalesSupabaseDB();
+                    
+                    // データを取得
+                    salesData = await supabaseDb.getSales();
+                    agencyData = await supabaseDb.getAgencies();
+                    
+                    // KPIを更新
+                    updateKPIs();
+                    
+                    // グラフを更新
+                    updateChartsWithRealData();
+                    
+                    // リストを更新
+                    updateDataLists();
+                    
+                } else {
+                    // デモモードでデータを表示
+                    displayDemoData();
+                }
+            } catch (error) {
+                console.error('ダッシュボードデータ読み込みエラー:', error);
+                displayDemoData();
+            }
+        }
+        
+        // KPIを更新
+        function updateKPIs() {
+            const now = new Date();
+            const thisMonth = salesData.filter(s => {
+                const saleDate = new Date(s.sale_date);
+                return saleDate.getMonth() === now.getMonth() && 
+                       saleDate.getFullYear() === now.getFullYear();
+            });
+            
+            const totalSales = thisMonth.reduce((sum, s) => sum + s.amount, 0);
+            document.getElementById('totalSales').textContent = `¥${(totalSales / 1000000).toFixed(1)}M`;
+            
+            const activeAgencyCount = agencyData.filter(a => a.status === 'active').length;
+            document.getElementById('activeAgencies').textContent = activeAgencyCount;
+            
+            // TODO: 実際の報酬データから計算
+            const totalCommissions = Math.floor(totalSales * 0.3);
+            document.getElementById('totalCommissions').textContent = `¥${(totalCommissions / 1000000).toFixed(1)}M`;
+            
+            // コンバージョン率（デモ）
+            document.getElementById('conversionRate').textContent = '14.2%';
+            
+            // 成長率を設定（デモ）
+            setGrowthIndicator('salesGrowth', '+23.5% 前月比', true);
+            setGrowthIndicator('agencyGrowth', `+${Math.floor(activeAgencyCount * 0.1)} 新規登録`, true);
+            setGrowthIndicator('commissionGrowth', '+28.3% 前月比', true);
+            setGrowthIndicator('conversionGrowth', '+2.1% 改善', true);
+        }
+        
+        function setGrowthIndicator(id, text, isPositive) {
+            const element = document.getElementById(id);
+            element.innerHTML = `<span>${isPositive ? '↑' : '↓'}</span><span>${text}</span>`;
+            element.className = `kpi-change ${isPositive ? 'positive' : 'negative'}`;
+        }
+        
+        // グラフを実データで更新
+        function updateChartsWithRealData() {
+            // 売上推移グラフを更新
+            updateSalesChartWithData();
+            
+            // 階層分布グラフを更新
+            updateTierChartWithData();
+            
+            // 報酬トレンドグラフを更新
+            updateCommissionChartWithData();
+        }
+        
+        function updateSalesChartWithData() {
+            const days = 30;
+            const labels = generateDateLabels(days);
+            const data = new Array(days).fill(0);
+            
+            // 実際の売上データをプロット
+            salesData.forEach(sale => {
+                const saleDate = new Date(sale.sale_date);
+                const today = new Date();
+                const diffDays = Math.floor((today - saleDate) / (1000 * 60 * 60 * 24));
+                
+                if (diffDays >= 0 && diffDays < days) {
+                    const index = days - 1 - diffDays;
+                    data[index] += sale.amount;
+                }
+            });
+            
+            window.salesChart.data.labels = labels;
+            window.salesChart.data.datasets[0].data = data;
+            window.salesChart.update();
+        }
+        
+        function updateTierChartWithData() {
+            const tierCounts = [0, 0, 0, 0];
+            agencyData.forEach(agency => {
+                if (agency.tier_level >= 1 && agency.tier_level <= 4) {
+                    tierCounts[agency.tier_level - 1]++;
+                }
+            });
+            
+            window.tierChart.data.datasets[0].data = tierCounts;
+            window.tierChart.update();
+        }
+        
+        function updateCommissionChartWithData() {
+            // TODO: 実際の報酬データから計算
+            // 現在はデモデータを使用
+        }
+        
+        // データリストを更新
+        function updateDataLists() {
+            // トップパフォーマーを更新
+            updateTopPerformers();
+            
+            // 最近の活動を更新
+            updateRecentActivities();
+        }
+        
+        function updateTopPerformers() {
+            const topPerformers = agencyData
+                .filter(a => a.status === 'active')
+                .sort((a, b) => (b.total_sales || 0) - (a.total_sales || 0))
+                .slice(0, 5);
+            
+            const list = document.getElementById('topPerformers');
+            if (topPerformers.length > 0) {
+                list.innerHTML = topPerformers.map(agency => `
+                    <li class="data-item">
+                        <div class="data-info">
+                            <div class="data-name">${agency.company_name}</div>
+                            <div class="data-details">Tier ${agency.tier_level}</div>
+                        </div>
+                        <div class="data-value">¥${((agency.total_sales || 0) / 1000000).toFixed(1)}M</div>
+                    </li>
+                `).join('');
+            }
+        }
+        
+        function updateRecentActivities() {
+            const recentSales = salesData
+                .sort((a, b) => new Date(b.sale_date) - new Date(a.sale_date))
+                .slice(0, 5);
+            
+            const list = document.getElementById('recentActivities');
+            if (recentSales.length > 0) {
+                list.innerHTML = recentSales.map(sale => `
+                    <li class="data-item">
+                        <div class="data-info">
+                            <div class="data-name">売上成立</div>
+                            <div class="data-details">${sale.agencies?.company_name || '不明'} - ¥${sale.amount.toLocaleString()}</div>
+                        </div>
+                        <span class="status-badge status-active">成約</span>
+                    </li>
+                `).join('');
+            }
+        }
+        
+        // デモデータを表示
+        function displayDemoData() {
+            // デモ用KPI
+            document.getElementById('totalSales').textContent = '¥12.5M';
+            setGrowthIndicator('salesGrowth', '+23.5% 前月比', true);
+            
+            document.getElementById('activeAgencies').textContent = '248';
+            setGrowthIndicator('agencyGrowth', '+18 新規登録', true);
+            
+            document.getElementById('totalCommissions').textContent = '¥3.75M';
+            setGrowthIndicator('commissionGrowth', '+28.3% 前月比', true);
+            
+            document.getElementById('conversionRate').textContent = '14.2%';
+            setGrowthIndicator('conversionGrowth', '+2.1% 改善', true);
+            
+            // デモリスト
+            const demoTopPerformers = `
+                <li class="data-item">
+                    <div class="data-info">
+                        <div class="data-name">株式会社ABC商事</div>
+                        <div class="data-details">Tier 1 · 関東エリア</div>
+                    </div>
+                    <div class="data-value">¥2.5M</div>
+                </li>
+                <li class="data-item">
+                    <div class="data-info">
+                        <div class="data-name">XYZエージェンシー</div>
+                        <div class="data-details">Tier 2 · 関西エリア</div>
+                    </div>
+                    <div class="data-value">¥1.8M</div>
+                </li>
+            `;
+            document.getElementById('topPerformers').innerHTML = demoTopPerformers;
+            
+            const demoActivities = `
+                <li class="data-item">
+                    <div class="data-info">
+                        <div class="data-name">新規代理店登録</div>
+                        <div class="data-details">佐藤商事が参加しました</div>
+                    </div>
+                    <span class="status-badge status-active">新規</span>
+                </li>
+                <li class="data-item">
+                    <div class="data-info">
+                        <div class="data-name">大型売上成立</div>
+                        <div class="data-details">ABC商事 - ¥500,000</div>
+                    </div>
+                    <span class="status-badge status-active">成約</span>
+                </li>
+            `;
+            document.getElementById('recentActivities').innerHTML = demoActivities;
+        }
+        
         // 初期化
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             // ユーザー情報表示
             displayUserInfo('userDisplay');
             
@@ -844,6 +1021,9 @@
             initSalesChart();
             initTierChart();
             initCommissionChart();
+            
+            // ダッシュボードデータを読み込み
+            await loadDashboardData();
         });
     </script>
 </body>
