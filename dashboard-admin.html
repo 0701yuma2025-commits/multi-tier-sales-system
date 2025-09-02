@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理者ダッシュボード - 多段階営業代理店管理システム</title>
     <script src="js/auth-check-simple.js"></script>
+    
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- 共通スクリプト -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/sales-supabase.js"></script>
+    <script src="js/api-error-codes.js"></script>
     <script src="js/common-functions.js"></script>
     <link rel="stylesheet" href="css/admin-common.css">
     <link rel="stylesheet" href="css/responsive-complete.css">
@@ -345,37 +353,37 @@
         <div class="kpi-grid">
             <div class="kpi-card">
                 <div class="kpi-label">システム全体売上</div>
-                <div class="kpi-value">¥5,850,000</div>
-                <div class="kpi-change positive">
-                    <span>↑</span>
-                    <span>+15.3%</span>
+                <div class="kpi-value" id="monthSales">¥0</div>
+                <div class="kpi-change" id="salesGrowth">
+                    <span>-</span>
+                    <span>0%</span>
                 </div>
             </div>
             
             <div class="kpi-card">
                 <div class="kpi-label">総代理店数</div>
-                <div class="kpi-value">142</div>
-                <div class="kpi-change positive">
-                    <span>↑</span>
-                    <span>+12</span>
+                <div class="kpi-value" id="totalAgencies">0</div>
+                <div class="kpi-change" id="agencyGrowth">
+                    <span>-</span>
+                    <span>0</span>
                 </div>
             </div>
             
             <div class="kpi-card">
                 <div class="kpi-label">承認待ち代理店</div>
-                <div class="kpi-value">8</div>
-                <div class="kpi-change negative">
-                    <span>↑</span>
-                    <span>+3</span>
+                <div class="kpi-value" id="pendingAgencies">0</div>
+                <div class="kpi-change" id="pendingGrowth">
+                    <span>-</span>
+                    <span>0</span>
                 </div>
             </div>
             
             <div class="kpi-card">
                 <div class="kpi-label">今月の総報酬額</div>
-                <div class="kpi-value">¥1,755,000</div>
-                <div class="kpi-change positive">
-                    <span>↑</span>
-                    <span>+18.2%</span>
+                <div class="kpi-value" id="monthCommissions">¥0</div>
+                <div class="kpi-change" id="commissionGrowth">
+                    <span>-</span>
+                    <span>0%</span>
                 </div>
             </div>
         </div>
@@ -424,34 +432,9 @@
                         <th>ステータス</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="recentSalesTableBody">
                     <tr>
-                        <td>2024-03-15</td>
-                        <td>株式会社ABC商事</td>
-                        <td>プレミアムプラン</td>
-                        <td>¥50,000</td>
-                        <td><span class="status-badge status-paid">支払済</span></td>
-                    </tr>
-                    <tr>
-                        <td>2024-03-14</td>
-                        <td>XYZ営業株式会社</td>
-                        <td>スタンダードプラン</td>
-                        <td>¥30,000</td>
-                        <td><span class="status-badge status-pending">処理中</span></td>
-                    </tr>
-                    <tr>
-                        <td>2024-03-14</td>
-                        <td>田中商店</td>
-                        <td>ベーシックプラン</td>
-                        <td>¥20,000</td>
-                        <td><span class="status-badge status-paid">支払済</span></td>
-                    </tr>
-                    <tr>
-                        <td>2024-03-13</td>
-                        <td>山田エージェンシー</td>
-                        <td>プレミアムプラン</td>
-                        <td>¥50,000</td>
-                        <td><span class="status-badge status-paid">支払済</span></td>
+                        <td colspan="5" style="text-align: center;">データを読み込み中...</td>
                     </tr>
                 </tbody>
             </table>
@@ -504,10 +487,166 @@
             }, 3000);
         }
         
+        // Supabaseクライアント
+        let supabaseDb = null;
+        
+        // ダッシュボードデータを読み込み
+        async function loadDashboardData() {
+            try {
+                // Supabase設定の確認
+                const hasValidConfig = SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_PROJECT_URL' && 
+                                     SUPABASE_CONFIG.anonKey !== 'YOUR_SUPABASE_ANON_KEY';
+                
+                if (hasValidConfig) {
+                    supabaseDb = new SalesSupabaseDB();
+                    
+                    // 売上統計を取得
+                    const stats = await supabaseDb.getSalesStats();
+                    updateSalesKPI(stats);
+                    
+                    // 最近の売上を取得
+                    const recentSales = await supabaseDb.getSales({ limit: 5 });
+                    displayRecentSales(recentSales);
+                    
+                    // 代理店統計を取得
+                    const agencies = await supabaseDb.getAgencies();
+                    updateAgencyKPI(agencies);
+                    
+                    // 報酬統計を計算
+                    await updateCommissionKPI();
+                    
+                } else {
+                    // デモモードでデータを表示
+                    displayDemoData();
+                }
+            } catch (error) {
+                console.error('ダッシュボードデータ読み込みエラー:', error);
+                displayDemoData();
+            }
+        }
+        
+        // 売上KPIを更新
+        function updateSalesKPI(stats) {
+            document.getElementById('monthSales').textContent = `¥${stats.total.toLocaleString()}`;
+            const salesGrowthElement = document.getElementById('salesGrowth');
+            salesGrowthElement.innerHTML = `
+                <span>${stats.growth >= 0 ? '↑' : '↓'}</span>
+                <span>${Math.abs(stats.growth)}%</span>
+            `;
+            salesGrowthElement.className = `kpi-change ${stats.growth >= 0 ? 'positive' : 'negative'}`;
+        }
+        
+        // 代理店KPIを更新
+        function updateAgencyKPI(agencies) {
+            const totalCount = agencies.length;
+            const pendingCount = agencies.filter(a => a.status === 'pending').length;
+            
+            document.getElementById('totalAgencies').textContent = totalCount;
+            document.getElementById('pendingAgencies').textContent = pendingCount;
+            
+            // TODO: 前月比較のロジックを追加
+            document.getElementById('agencyGrowth').innerHTML = `
+                <span>↑</span>
+                <span>+${Math.floor(totalCount * 0.1)}</span>
+            `;
+            document.getElementById('agencyGrowth').className = 'kpi-change positive';
+        }
+        
+        // 報酬KPIを更新
+        async function updateCommissionKPI() {
+            try {
+                const client = initializeSupabase();
+                const { data: commissions } = await client
+                    .from('commissions')
+                    .select('amount')
+                    .eq('status', 'unpaid');
+                
+                const total = commissions ? commissions.reduce((sum, c) => sum + c.amount, 0) : 0;
+                document.getElementById('monthCommissions').textContent = `¥${total.toLocaleString()}`;
+                
+                // TODO: 成長率計算
+                document.getElementById('commissionGrowth').innerHTML = `
+                    <span>↑</span>
+                    <span>+18.2%</span>
+                `;
+                document.getElementById('commissionGrowth').className = 'kpi-change positive';
+            } catch (error) {
+                console.error('報酬統計取得エラー:', error);
+            }
+        }
+        
+        // 最近の売上を表示
+        function displayRecentSales(sales) {
+            const tbody = document.getElementById('recentSalesTableBody');
+            
+            if (sales.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">売上データがありません</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = sales.slice(0, 5).map(sale => {
+                const statusClass = sale.status === 'confirmed' ? 'paid' : 'pending';
+                const statusText = sale.status === 'confirmed' ? '確定' : '処理中';
+                
+                return `
+                    <tr>
+                        <td>${sale.sale_date}</td>
+                        <td>${sale.agencies?.company_name || '不明'}</td>
+                        <td>${sale.products?.name || '不明'}</td>
+                        <td>¥${sale.amount.toLocaleString()}</td>
+                        <td><span class="status-badge status-${statusClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // デモデータを表示
+        function displayDemoData() {
+            // デモ用KPI
+            document.getElementById('monthSales').textContent = '¥8,750,000';
+            document.getElementById('salesGrowth').innerHTML = '<span>↑</span><span>+15.3%</span>';
+            document.getElementById('salesGrowth').className = 'kpi-change positive';
+            
+            document.getElementById('totalAgencies').textContent = '142';
+            document.getElementById('agencyGrowth').innerHTML = '<span>↑</span><span>+12</span>';
+            document.getElementById('agencyGrowth').className = 'kpi-change positive';
+            
+            document.getElementById('pendingAgencies').textContent = '8';
+            document.getElementById('monthCommissions').textContent = '¥1,755,000';
+            document.getElementById('commissionGrowth').innerHTML = '<span>↑</span><span>+18.2%</span>';
+            document.getElementById('commissionGrowth').className = 'kpi-change positive';
+            
+            // デモ用売上データ
+            const demoSales = [
+                { sale_date: '2024-03-15', company: '株式会社ABC商事', product: '商品A', amount: 100000, status: 'confirmed' },
+                { sale_date: '2024-03-14', company: 'XYZ営業株式会社', product: '商品B', amount: 50000, status: 'pending' },
+                { sale_date: '2024-03-14', company: '田中商店', product: '商品C', amount: 30000, status: 'confirmed' }
+            ];
+            
+            const tbody = document.getElementById('recentSalesTableBody');
+            tbody.innerHTML = demoSales.map(sale => {
+                const statusClass = sale.status === 'confirmed' ? 'paid' : 'pending';
+                const statusText = sale.status === 'confirmed' ? '確定' : '処理中';
+                
+                return `
+                    <tr>
+                        <td>${sale.sale_date}</td>
+                        <td>${sale.company}</td>
+                        <td>${sale.product}</td>
+                        <td>¥${sale.amount.toLocaleString()}</td>
+                        <td><span class="status-badge status-${statusClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
         // ページ読み込み時にユーザー情報を表示
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             // 共通関数を使用してユーザー情報を表示
             displayUserInfo('userDisplay');
+            
+            // ダッシュボードデータを読み込み
+            await loadDashboardData();
         });
     </script>
     
