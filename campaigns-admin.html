@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>キャンペーン管理 - 多段階営業代理店管理システム</title>
     <script src="js/auth-check-simple.js"></script>
+    
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- 共通スクリプト -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/campaigns-supabase.js"></script>
+    <script src="js/api-error-codes.js"></script>
     <script src="js/common-functions.js"></script>
     <link rel="stylesheet" href="css/admin-common.css">
     <link rel="stylesheet" href="css/responsive-complete.css">
@@ -532,6 +540,9 @@
     </div>
     
     <script>
+        // Supabaseクライアント
+        let campaignsDb = null;
+        let currentCampaignId = null;
         
         // モーダル制御
         function openCampaignModal() {
@@ -542,6 +553,7 @@
         
         function closeCampaignModal() {
             document.getElementById('campaignModal').style.display = 'none';
+            currentCampaignId = null;
         }
         
         // ボーナスタイプ切り替え
@@ -563,9 +575,9 @@
         }
         
         // 代理店リスト読み込み
-        function loadAgencyList() {
+        async function loadAgencyList() {
             const selector = document.getElementById('agencySelector');
-            const agencies = getAgenciesFromStorage();
+            const agencies = await getAgenciesFromStorage();
             
             selector.innerHTML = agencies.map(agency => `
                 <div class="checkbox-option">
@@ -576,32 +588,73 @@
         }
         
         // キャンペーン保存
-        function saveCampaign(event) {
+        async function saveCampaign(event) {
             event.preventDefault();
             
+            const bonusType = document.querySelector('input[name="bonusType"]:checked').value;
             const campaignData = {
                 name: document.getElementById('campaignName').value,
-                startDate: document.getElementById('startDate').value,
-                endDate: document.getElementById('endDate').value,
-                bonusType: document.querySelector('input[name="bonusType"]:checked').value,
-                bonusValue: document.querySelector('input[name="bonusType"]:checked').value === 'percent' 
-                    ? document.getElementById('bonusPercent').value 
-                    : document.getElementById('bonusAmount').value,
-                maxBonus: document.getElementById('maxBonus').value,
-                targetProducts: Array.from(document.getElementById('targetProducts').selectedOptions).map(opt => opt.value),
-                targetType: document.querySelector('input[name="targetType"]:checked').value,
-                notes: document.getElementById('campaignNotes').value,
-                createdAt: new Date().toISOString()
+                type: '期間限定',
+                start_date: document.getElementById('startDate').value,
+                end_date: document.getElementById('endDate').value,
+                status: 'scheduled',
+                bonus_type: bonusType === 'percent' ? 'percentage' : 'fixed',
+                bonus_rate: bonusType === 'percent' 
+                    ? parseFloat(document.getElementById('bonusPercent').value)
+                    : parseFloat(document.getElementById('bonusAmount').value),
+                min_bonus: null,
+                max_bonus: document.getElementById('maxBonus').value ? parseInt(document.getElementById('maxBonus').value) : null,
+                target_products: Array.from(document.getElementById('targetProducts').selectedOptions).map(opt => opt.value),
+                target_type: document.querySelector('input[name="targetType"]:checked').value,
+                target_agencies: getSelectedTargets(),
+                notes: document.getElementById('campaignNotes').value
             };
             
-            // LocalStorageに保存
-            const campaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
-            campaigns.push(campaignData);
-            localStorage.setItem('campaigns', JSON.stringify(campaigns));
+            try {
+                if (campaignsDb) {
+                    // Supabaseに保存
+                    const { data, error } = currentCampaignId
+                        ? await campaignsDb.updateCampaign(currentCampaignId, campaignData)
+                        : await campaignsDb.createCampaign(campaignData);
+                    
+                    if (error) throw error;
+                    
+                    alert(currentCampaignId ? 'キャンペーンを更新しました' : 'キャンペーンを作成しました');
+                    closeCampaignModal();
+                    await loadCampaigns();
+                } else {
+                    // デモモード（LocalStorage）
+                    const campaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+                    if (currentCampaignId) {
+                        const index = campaigns.findIndex(c => c.id === currentCampaignId);
+                        campaigns[index] = { ...campaignData, id: currentCampaignId };
+                    } else {
+                        campaigns.push({ ...campaignData, id: Date.now().toString() });
+                    }
+                    localStorage.setItem('campaigns', JSON.stringify(campaigns));
+                    
+                    alert(currentCampaignId ? 'キャンペーンを更新しました' : 'キャンペーンを作成しました');
+                    closeCampaignModal();
+                    loadCampaigns();
+                }
+            } catch (error) {
+                console.error('保存エラー:', error);
+                alert('保存に失敗しました: ' + error.message);
+            }
+        }
+        
+        // 選択された対象を取得
+        function getSelectedTargets() {
+            const targetType = document.querySelector('input[name="targetType"]:checked').value;
             
-            alert('キャンペーンを作成しました');
-            closeCampaignModal();
-            loadCampaigns();
+            if (targetType === 'all') return null;
+            if (targetType === 'tier') {
+                return Array.from(document.querySelectorAll('#tierSelector input:checked')).map(cb => parseInt(cb.value));
+            }
+            if (targetType === 'specific') {
+                return Array.from(document.querySelectorAll('#agencySelector input:checked')).map(cb => cb.value);
+            }
+            return null;
         }
         
         // キャンペーン詳細表示
@@ -610,25 +663,103 @@
         }
         
         // キャンペーン編集
-        function editCampaign(id) {
-            openCampaignModal();
-            document.getElementById('modalTitle').textContent = 'キャンペーン編集';
-            // 編集データの読み込み処理
+        async function editCampaign(id) {
+            try {
+                currentCampaignId = id;
+                let campaign = null;
+                
+                if (campaignsDb) {
+                    // Supabaseから取得
+                    const { data: campaigns } = await campaignsDb.getCampaigns();
+                    campaign = campaigns?.find(c => c.id === id);
+                } else {
+                    // デモモード
+                    const campaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+                    campaign = campaigns.find(c => c.id === id);
+                }
+                
+                if (campaign) {
+                    openCampaignModal();
+                    document.getElementById('modalTitle').textContent = 'キャンペーン編集';
+                    
+                    // フォームに値を設定
+                    document.getElementById('campaignName').value = campaign.name;
+                    document.getElementById('startDate').value = campaign.start_date;
+                    document.getElementById('endDate').value = campaign.end_date;
+                    
+                    // ボーナスタイプ
+                    if (campaign.bonus_type === 'percentage') {
+                        document.getElementById('bonusPercent').checked = true;
+                        document.getElementById('bonusPercent').value = campaign.bonus_rate;
+                    } else {
+                        document.getElementById('bonusFixed').checked = true;
+                        document.getElementById('bonusAmount').value = campaign.bonus_rate;
+                    }
+                    toggleBonusInput();
+                    
+                    document.getElementById('maxBonus').value = campaign.max_bonus || '';
+                    
+                    // 対象タイプ
+                    document.querySelector(`input[name="targetType"][value="${campaign.target_type}"]`).checked = true;
+                    toggleTargetSelector();
+                    
+                    // 対象を選択
+                    if (campaign.target_type === 'tier' && campaign.target_agencies) {
+                        campaign.target_agencies.forEach(tier => {
+                            const checkbox = document.querySelector(`#tier${tier}`);
+                            if (checkbox) checkbox.checked = true;
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('編集データ読み込みエラー:', error);
+                alert('データの読み込みに失敗しました');
+            }
         }
         
         // キャンペーン終了
-        function endCampaign(id) {
+        async function endCampaign(id) {
             if (confirm('このキャンペーンを終了しますか？')) {
-                alert('キャンペーンを終了しました');
-                loadCampaigns();
+                try {
+                    if (campaignsDb) {
+                        const { error } = await campaignsDb.endCampaign(id);
+                        if (error) throw error;
+                    } else {
+                        // デモモード
+                        const campaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+                        const campaign = campaigns.find(c => c.id === id);
+                        if (campaign) campaign.status = 'ended';
+                        localStorage.setItem('campaigns', JSON.stringify(campaigns));
+                    }
+                    alert('キャンペーンを終了しました');
+                    await loadCampaigns();
+                } catch (error) {
+                    console.error('終了エラー:', error);
+                    alert('終了に失敗しました: ' + error.message);
+                }
             }
         }
         
         // キャンペーン削除
-        function deleteCampaign(id) {
+        async function deleteCampaign(id) {
             if (confirm('このキャンペーンを削除しますか？')) {
-                alert('キャンペーンを削除しました');
-                loadCampaigns();
+                try {
+                    if (campaignsDb) {
+                        const { error } = await campaignsDb.deleteCampaign(id);
+                        if (error) throw error;
+                    } else {
+                        // デモモード
+                        const campaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+                        const index = campaigns.findIndex(c => c.id === id);
+                        if (index !== -1) campaigns.splice(index, 1);
+                        localStorage.setItem('campaigns', JSON.stringify(campaigns));
+                    }
+                    alert('キャンペーンを削除しました');
+                    await loadCampaigns();
+                } catch (error) {
+                    console.error('削除エラー:', error);
+                    alert('削除に失敗しました: ' + error.message);
+                }
             }
         }
         
@@ -641,32 +772,202 @@
         }
         
         // データ取得補助関数
-        function getAgenciesFromStorage() {
-            const storedAgencies = localStorage.getItem('agencies');
-            if (storedAgencies) {
-                return JSON.parse(storedAgencies);
+        async function getAgenciesFromStorage() {
+            try {
+                if (campaignsDb && campaignsDb.client) {
+                    // Supabaseから取得
+                    const { data, error } = await campaignsDb.client
+                        .from('agencies')
+                        .select('id, company_name')
+                        .eq('status', 'active');
+                    
+                    if (error) throw error;
+                    return data.map(a => ({ id: a.id, name: a.company_name }));
+                }
+            } catch (error) {
+                console.error('代理店取得エラー:', error);
             }
+            
             // デモデータ
             return [
-                { id: 1, name: '株式会社ABC商事' },
-                { id: 2, name: 'XYZ営業株式会社' },
-                { id: 3, name: '田中商店' },
-                { id: 4, name: '山田エージェンシー' },
-                { id: 5, name: '佐藤企画' }
+                { id: '1', name: '株式会社ABC商事' },
+                { id: '2', name: 'XYZ営業株式会社' },
+                { id: '3', name: '田中商店' },
+                { id: '4', name: '山田エージェンシー' },
+                { id: '5', name: '佐藤企画' }
             ];
         }
         
         // キャンペーン一覧更新
-        function loadCampaigns() {
-            // 実際の実装では、LocalStorageまたはAPIからデータを取得
+        async function loadCampaigns() {
+            try {
+                let campaigns = [];
+                
+                if (campaignsDb) {
+                    // Supabaseから取得
+                    const { data, error } = await campaignsDb.getCampaigns();
+                    if (error) throw error;
+                    campaigns = data || [];
+                } else {
+                    // デモモード
+                    campaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+                }
+                
+                displayCampaigns(campaigns);
+            } catch (error) {
+                console.error('キャンペーン読み込みエラー:', error);
+                displayDemoCampaigns();
+            }
+        }
+        
+        // キャンペーン表示
+        function displayCampaigns(campaigns) {
+            const campaignList = document.getElementById('campaignList');
+            
+            if (campaigns.length === 0) {
+                campaignList.innerHTML = '<p style="text-align: center; color: #6b7280;">キャンペーンがありません</p>';
+                return;
+            }
+            
+            campaignList.innerHTML = campaigns.map(campaign => {
+                const status = getStatus(campaign);
+                const statusClass = status === '実施中' ? 'active' : status === '開始予定' ? 'scheduled' : 'ended';
+                const statusColor = status === '実施中' ? '#10b981' : status === '開始予定' ? '#3b82f6' : '#9ca3af';
+                
+                return `
+                    <div class="campaign-card">
+                        <div class="campaign-header">
+                            <div>
+                                <h3 class="campaign-title">${campaign.name}</h3>
+                                <p class="campaign-period">${campaign.start_date} 〜 ${campaign.end_date}</p>
+                            </div>
+                            <span class="campaign-status ${statusClass}">
+                                <span style="width: 8px; height: 8px; background: ${statusColor}; border-radius: 50%;"></span>
+                                ${status}
+                            </span>
+                        </div>
+                        
+                        <div class="campaign-details">
+                            <div class="detail-item">
+                                <span class="detail-label">ボーナスタイプ</span>
+                                <span class="detail-value">${campaign.bonus_type === 'percentage' ? `売上の${campaign.bonus_rate}%` : `固定額 ¥${campaign.bonus_rate.toLocaleString()}`}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">対象商品</span>
+                                <span class="detail-value">${campaign.target_products?.length > 0 ? campaign.target_products.join(', ') : '全商品'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">対象代理店</span>
+                                <span class="detail-value">${getTargetDisplay(campaign)}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">上限額</span>
+                                <span class="detail-value">${campaign.max_bonus ? `¥${campaign.max_bonus.toLocaleString()}` : '上限なし'}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="campaign-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="viewCampaignDetails('${campaign.id}')">詳細</button>
+                            <button class="btn btn-sm btn-secondary" onclick="editCampaign('${campaign.id}')">編集</button>
+                            ${status !== '終了' ? `<button class="btn btn-sm btn-secondary" onclick="endCampaign('${campaign.id}')">終了</button>` : ''}
+                            <button class="btn btn-sm btn-secondary" onclick="deleteCampaign('${campaign.id}')">削除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // ステータス判定
+        function getStatus(campaign) {
+            const today = new Date().toISOString().split('T')[0];
+            if (campaign.status === 'ended') return '終了';
+            if (campaign.start_date > today) return '開始予定';
+            if (campaign.end_date >= today) return '実施中';
+            return '終了';
+        }
+        
+        // 対象表示
+        function getTargetDisplay(campaign) {
+            if (campaign.target_type === 'all') return '全代理店';
+            if (campaign.target_type === 'tier') {
+                return `ティア ${campaign.target_agencies?.join(', ')}`;
+            }
+            return `${campaign.target_agencies?.length || 0}店舗`;
+        }
+        
+        // デモキャンペーン表示
+        function displayDemoCampaigns() {
+            const demoCampaigns = [
+                {
+                    id: '1',
+                    name: '春の新規契約キャンペーン',
+                    start_date: '2024-03-01',
+                    end_date: '2024-04-30',
+                    status: 'active',
+                    bonus_type: 'percentage',
+                    bonus_rate: 15,
+                    target_products: ['プレミアムプラン'],
+                    target_type: 'all',
+                    max_bonus: null
+                },
+                {
+                    id: '2',
+                    name: 'ゴールデンウィーク特別ボーナス',
+                    start_date: '2024-04-27',
+                    end_date: '2024-05-06',
+                    status: 'scheduled',
+                    bonus_type: 'fixed',
+                    bonus_rate: 10000,
+                    target_products: [],
+                    target_type: 'tier',
+                    target_agencies: [1, 2],
+                    max_bonus: null
+                }
+            ];
+            displayCampaigns(demoCampaigns);
         }
         
         // ページ読み込み時
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             displayUserInfo('userDisplay');
             
-            loadCampaigns();
+            // Supabase初期化
+            try {
+                const hasValidConfig = SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_PROJECT_URL' && 
+                                     SUPABASE_CONFIG.anonKey !== 'YOUR_SUPABASE_ANON_KEY';
+                
+                if (hasValidConfig) {
+                    campaignsDb = new CampaignsSupabaseDB();
+                }
+            } catch (error) {
+                console.error('Supabase初期化エラー:', error);
+            }
+            
+            await loadCampaigns();
+            await loadStatistics();
         });
+        
+        // 統計情報を読み込み
+        async function loadStatistics() {
+            try {
+                if (campaignsDb) {
+                    // アクティブなキャンペーン数
+                    const { data: activeCampaigns } = await campaignsDb.getActiveCampaigns();
+                    document.getElementById('activeCampaigns').textContent = activeCampaigns?.length || 0;
+                    
+                    // その他の統計はSupabaseから計算
+                    // TODO: 実際の統計計算を実装
+                } else {
+                    // デモ統計を表示
+                    document.getElementById('activeCampaigns').textContent = '3';
+                    document.getElementById('totalBonus').textContent = '¥423,500';
+                    document.getElementById('targetAgencies').textContent = '87';
+                    document.getElementById('avgBonus').textContent = '¥4,867';
+                }
+            } catch (error) {
+                console.error('統計読み込みエラー:', error);
+            }
+        }
         
         // モーダル外クリックで閉じる
         window.onclick = function(event) {
