@@ -545,7 +545,9 @@
                 if (!response.ok) {
                     const errorData = await response.json();
                     if (errorData.msg && errorData.msg.includes('already registered')) {
-                        throw new ApiError('AGENCY_002');
+                        showError('このメールアドレスは既に登録されています。');
+                        showInfo('確認メールが届いていない場合は、パスワードリセット機能をお試しください。');
+                        return;
                     } else if (response.status === 400) {
                         throw new ApiError('VALIDATION_001');
                     } else {

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>確認メール再送信 - 多段階営業代理店管理システム</title>
+    <link rel="stylesheet" href="css/ui-components.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            color: #1f2937;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        .info-box {
+            background: #f3f4f6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            color: #4b5563;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 24px;
+            color: #6366f1;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>確認メール再送信</h1>
+        
+        <div class="info-box">
+            <strong>すでに登録済みのメールアドレスについて：</strong><br><br>
+            
+            セキュリティ上の理由から、確認メールの再送信は以下の方法で行ってください：
+            
+            <ol style="margin-top: 12px; margin-left: 20px;">
+                <li style="margin-bottom: 8px;">
+                    <strong>Supabaseダッシュボードから手動で再送信：</strong><br>
+                    Authentication → Users → 該当ユーザーを選択 → 「Resend confirmation email」
+                </li>
+                
+                <li style="margin-bottom: 8px;">
+                    <strong>パスワードリセット機能を使用：</strong><br>
+                    ログイン画面の「パスワードリセット」から、メールアドレスを入力して送信
+                </li>
+                
+                <li>
+                    <strong>管理者に連絡：</strong><br>
+                    システム管理者に連絡して、手動で確認状態を更新してもらう
+                </li>
+            </ol>
+        </div>
+        
+        <form id="resendForm" style="display: none;">
+            <div class="form-group">
+                <label for="email" class="form-label form-label-required">登録済みメールアドレス</label>
+                <input type="email" id="email" class="form-control" required placeholder="example@company.com">
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block">
+                確認メールを再送信
+            </button>
+        </form>
+        
+        <div id="message" class="alert" style="display: none; margin-top: 16px;"></div>
+        
+        <a href="login.html" class="back-link">← ログイン画面に戻る</a>
+    </div>
+    
+    <script>
+        // 将来的に実装する場合のプレースホルダー
+        document.getElementById('resendForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const messageDiv = document.getElementById('message');
+            messageDiv.style.display = 'block';
+            messageDiv.className = 'alert alert-info';
+            messageDiv.textContent = 'この機能は現在準備中です。上記の方法をお試しください。';
+        });
+    </script>
+</body>
+</html>
