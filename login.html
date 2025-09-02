@@ -265,15 +265,7 @@
                 <div class="form-group">
                     <label for="inviteCode" class="form-label">招待コード</label>
                     <input type="text" id="inviteCode" class="form-control" placeholder="招待コードをお持ちの場合">
-                    <span class="form-help-text">管理者として登録する場合は「ADMIN2024」を入力してください</span>
-                </div>
-                
-                <div class="form-group">
-                    <label for="userRole" class="form-label">アカウントタイプ</label>
-                    <select id="userRole" class="form-control">
-                        <option value="agency">代理店</option>
-                        <option value="admin">管理者（開発用）</option>
-                    </select>
+                    <span class="form-help-text">上位代理店から受け取った招待コードを入力してください</span>
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-block" id="signupBtn">
@@ -516,7 +508,6 @@
             const email = document.getElementById('signupEmail').value;
             const password = document.getElementById('signupPassword').value;
             const inviteCode = document.getElementById('inviteCode').value;
-            const userRole = document.getElementById('userRole').value;
             
             try {
                 // バリデーション
@@ -549,7 +540,7 @@
                         password,
                         data: { 
                             invite_code: inviteCode,
-                            role: userRole || 'agency'
+                            role: inviteCode === 'ADMIN2024' ? 'admin' : 'agency'
                         }
                     })
                 });
