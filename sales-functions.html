@@ -559,19 +559,14 @@
         </div>
     </div>
     
-    <!-- Supabase設定を先に読み込み -->
-    <script>
-        // Supabase設定をLocalStorageから読み込み
-        const savedConfig = localStorage.getItem('supabaseConfig');
-        if (savedConfig) {
-            const config = JSON.parse(savedConfig);
-            window.SUPABASE_URL = config.url;
-            window.SUPABASE_ANON_KEY = config.key;
-        }
-    </script>
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- Supabaseクライアント読み込み -->
-    <script src="/js/supabase-client.js"></script>
+    <!-- 設定ファイル -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/sales-supabase.js"></script>
+    <script src="js/api-error-codes.js"></script>
+    <script src="js/common-functions.js"></script>
     
     <script>
         let supabaseDb = null;
@@ -638,24 +633,27 @@
         document.addEventListener('DOMContentLoaded', async function() {
             // ユーザー情報表示
             displayUserInfo('userDisplay');
-            const savedConfig = localStorage.getItem('supabaseConfig');
-            if (savedConfig) {
-                const config = JSON.parse(savedConfig);
-                window.SUPABASE_URL = config.url;
-                window.SUPABASE_ANON_KEY = config.key;
-                
+            
+            // Supabase設定の確認
+            const hasValidConfig = SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_PROJECT_URL' && 
+                                 SUPABASE_CONFIG.anonKey !== 'YOUR_SUPABASE_ANON_KEY';
+            
+            if (hasValidConfig) {
                 try {
                     // Supabaseクライアントを初期化
-                    window.supabaseDb = new SupabaseDatabase();
-                    supabaseDb = window.supabaseDb;
-                    updateConnectionStatus('接続中', 'connected');
+                    supabaseDb = new SalesSupabaseDB();
+                    updateConnectionStatus('Supabase接続中', 'connected');
                     
                     // 初期データを読み込み
                     await loadInitialData();
                 } catch (error) {
                     console.error('Supabase接続エラー:', error);
                     ErrorHandler.handle(new ApiError('DATABASE_001'));
-                    updateConnectionStatus('エラー', 'error');
+                    updateConnectionStatus('接続エラー', 'error');
+                    // エラー時はデモモードにフォールバック
+                    populateAgencySelect();
+                    populateProductSelect();
+                    displayDemoSalesData();
                 }
             } else {
                 updateConnectionStatus('デモモード', 'connected');
@@ -885,23 +883,17 @@
             
             try {
                 if (supabaseDb) {
-                    // Supabaseに保存
-                    const savedSale = await supabaseDb.addSale(salesData);
-                } else {
-                    // デモモード：ローカルに保存
-                }
-                
-                // 階層ボーナスを計算
-                await calculateHierarchyBonuses(salesData);
-                
-                // 成功メッセージ
-                showSuccess('売上を登録し、階層ボーナスを計算しました');
-                
-                // データをリロード
-                if (supabaseDb) {
+                    // Supabaseに保存（階層ボーナスも自動計算される）
+                    const savedSale = await supabaseDb.createSale(salesData);
+                    showSuccess('売上を登録し、階層ボーナスを計算しました');
+                    
+                    // データをリロード
                     await loadSalesData();
+                    closeModal();
                 } else {
-                    // デモモードではリロード不要
+                    // デモモード：階層ボーナスを手動計算
+                    await calculateHierarchyBonuses(salesData);
+                    showSuccess('売上を登録しました（デモモード）');
                     closeModal();
                 }
             } catch (error) {
