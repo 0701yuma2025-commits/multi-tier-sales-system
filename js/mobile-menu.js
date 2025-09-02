@@ -43,6 +43,8 @@ function initMobileMenu() {
 // ナビゲーショントグル
 function toggleNav() {
     const navList = document.querySelector('.nav-list');
+    if (!navList) return; // nav-listが存在しない場合は何もしない
+    
     const overlay = getOrCreateOverlay();
     
     if (navList.classList.contains('active')) {
@@ -59,7 +61,7 @@ function closeNav() {
     const navList = document.querySelector('.nav-list');
     const overlay = document.querySelector('.mobile-overlay');
     
-    navList.classList.remove('active');
+    if (navList) navList.classList.remove('active');
     if (overlay) overlay.classList.remove('active');
     document.body.style.overflow = '';
 }
@@ -67,6 +69,8 @@ function closeNav() {
 // サイドバートグル
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return; // sidebarが存在しない場合は何もしない
+    
     const overlay = getOrCreateOverlay();
     
     if (sidebar.classList.contains('active')) {
