@@ -268,6 +268,14 @@
                     <span class="form-help-text">管理者として登録する場合は「ADMIN2024」を入力してください</span>
                 </div>
                 
+                <div class="form-group">
+                    <label for="userRole" class="form-label">アカウントタイプ</label>
+                    <select id="userRole" class="form-control">
+                        <option value="agency">代理店</option>
+                        <option value="admin">管理者（開発用）</option>
+                    </select>
+                </div>
+                
                 <button type="submit" class="btn btn-primary btn-block" id="signupBtn">
                     アカウント作成
                 </button>
@@ -508,6 +516,7 @@
             const email = document.getElementById('signupEmail').value;
             const password = document.getElementById('signupPassword').value;
             const inviteCode = document.getElementById('inviteCode').value;
+            const userRole = document.getElementById('userRole').value;
             
             try {
                 // バリデーション
@@ -538,7 +547,10 @@
                     body: JSON.stringify({ 
                         email, 
                         password,
-                        data: { invite_code: inviteCode }
+                        data: { 
+                            invite_code: inviteCode,
+                            role: userRole || 'agency'
+                        }
                     })
                 });
                 
