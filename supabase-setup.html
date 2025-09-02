@@ -270,7 +270,24 @@
 
                 <div id="config-status" style="margin-top: 16px;"></div>
 
-                <h2 style="margin-top: 40px;"><span class="step-number">3</span>データベーステーブル作成</h2>
+                <h2 style="margin-top: 40px;"><span class="step-number">3</span>認証メール設定（重要）</h2>
+                <p>確認メールのリダイレクトURLを設定する必要があります：</p>
+                <ol style="margin-left: 20px;">
+                    <li>Supabaseダッシュボードで「Authentication」→「URL Configuration」へ移動</li>
+                    <li>「Site URL」に以下を設定：
+                        <div class="code-block" style="margin: 10px 0;">
+                            <pre style="margin: 0;">https://your-domain.com/login.html</pre>
+                        </div>
+                        ※ローカル開発の場合：<code>http://localhost:3000/login.html</code>
+                    </li>
+                    <li>「Redirect URLs」に同じURLを追加</li>
+                    <li>設定を保存</li>
+                </ol>
+                <div class="status-box status-pending" style="margin-top: 16px;">
+                    ⚠️ この設定をしないと、確認メールのリンクをクリックしても正しいページに戻れません
+                </div>
+
+                <h2 style="margin-top: 40px;"><span class="step-number">4</span>データベーステーブル作成</h2>
                 <p>以下のSQLをSupabaseのSQL Editorで実行してください：</p>
                 
                 <div class="code-block">
@@ -327,7 +344,7 @@ CREATE TABLE commissions (
 );</pre>
                 </div>
 
-                <h2 style="margin-top: 40px;"><span class="step-number">4</span>初期データ投入</h2>
+                <h2 style="margin-top: 40px;"><span class="step-number">5</span>初期データ投入</h2>
                 <p>テスト用の初期データを投入します：</p>
                 
                 <div class="code-block">
@@ -345,7 +362,7 @@ INSERT INTO agencies (company_name, company_type, representative, tier_level, st
  1, 'active');</pre>
                 </div>
 
-                <h2 style="margin-top: 40px;"><span class="step-number">5</span>Row Level Security (RLS) 設定</h2>
+                <h2 style="margin-top: 40px;"><span class="step-number">6</span>Row Level Security (RLS) 設定</h2>
                 <p>セキュリティのためRLSを有効化します：</p>
                 
                 <div class="code-block">
@@ -367,6 +384,7 @@ CREATE POLICY "commissions_select_policy" ON commissions FOR SELECT USING (true)
                     <li>Supabaseアカウント作成</li>
                     <li>プロジェクト作成</li>
                     <li>API設定取得・保存</li>
+                    <li>認証メール設定</li>
                     <li>テーブル作成</li>
                     <li>初期データ投入</li>
                     <li>RLS設定</li>
