@@ -6,6 +6,32 @@
     <meta name="description" content="多段階営業代理店管理システム - 効率的な代理店ネットワークの構築と報酬管理を実現">
     <meta name="keywords" content="代理店管理,アフィリエイト,多段階報酬,営業支援">
     <title>多段階営業代理店管理システム</title>
+    <script>
+        // Supabaseリダイレクト処理（最初に実行）
+        (function() {
+            const hash = window.location.hash;
+            
+            // Supabaseのリダイレクトパラメータを処理
+            if (hash && hash.includes('access_token')) {
+                // パスワードリセットの場合
+                if (hash.includes('type=recovery')) {
+                    window.location.href = '/reset-password.html' + hash;
+                    return;
+                } 
+                // メール確認の場合
+                else if (hash.includes('type=signup') || hash.includes('type=email')) {
+                    // ログインページへリダイレクト（確認済みフラグ付き）
+                    window.location.href = '/login.html?verified=true';
+                    return;
+                }
+                // その他の認証
+                else {
+                    window.location.href = '/login.html';
+                    return;
+                }
+            }
+        })();
+    </script>
     <script src="js/mobile-menu.js"></script>
     <style>
         * {

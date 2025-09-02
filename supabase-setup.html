@@ -276,11 +276,18 @@
                     <li>Supabaseダッシュボードで「Authentication」→「URL Configuration」へ移動</li>
                     <li>「Site URL」に以下を設定：
                         <div class="code-block" style="margin: 10px 0;">
-                            <pre style="margin: 0;">https://your-domain.com/login.html</pre>
+                            <pre style="margin: 0;">https://your-domain.com/</pre>
                         </div>
-                        ※ローカル開発の場合：<code>http://localhost:3000/login.html</code>
+                        ※ローカル開発の場合：<code>http://localhost:3000/</code>
                     </li>
-                    <li>「Redirect URLs」に同じURLを追加</li>
+                    <li>「Redirect URLs」に以下のURLを追加（複数可）：
+                        <div class="code-block" style="margin: 10px 0;">
+                            <pre style="margin: 0;">http://localhost:3000/login.html
+http://localhost:3000/reset-password.html
+https://your-domain.com/login.html
+https://your-domain.com/reset-password.html</pre>
+                        </div>
+                    </li>
                     <li>設定を保存</li>
                 </ol>
                 <div class="status-box status-pending" style="margin-top: 16px;">
