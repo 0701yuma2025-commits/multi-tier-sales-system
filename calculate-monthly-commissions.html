@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>月次報酬計算</title>
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 共通スクリプト -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/commissions-supabase.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #1f2937;
+        }
+        .period-selector {
+            margin: 20px 0;
+        }
+        select, button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+        #result {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            min-height: 200px;
+        }
+        .info-box {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f3f4f6;
+            border-radius: 8px;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .success {
+            color: #10b981;
+        }
+        .sales-summary {
+            background-color: #e0f2fe;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>月次報酬計算ツール</h1>
+    
+    <div class="period-selector">
+        <label>対象期間：</label>
+        <select id="periodSelect">
+            <!-- 動的に生成 -->
+        </select>
+        <button onclick="calculateMonthlyCommissions()">売上データから報酬を計算</button>
+    </div>
+    
+    <div id="result">
+        <p>期間を選択して「売上データから報酬を計算」ボタンをクリックしてください。</p>
+    </div>
+    
+    <div class="info-box">
+        <h2>機能説明</h2>
+        <p>このツールは、売上管理で登録された売上データを基に、月次の報酬を自動計算します。</p>
+        <ol>
+            <li>対象期間を選択</li>
+            <li>その期間の売上データを集計</li>
+            <li>代理店ごとに報酬を計算</li>
+            <li>報酬データを作成（既存データは更新）</li>
+        </ol>
+        <p><strong>注意：</strong>売上ステータスが「確定」のデータのみを対象とします。</p>
+    </div>
+    
+    <script>
+        // 期間選択オプションを生成
+        function generatePeriodOptions() {
+            const select = document.getElementById('periodSelect');
+            select.innerHTML = '';
+            
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            // 過去12ヶ月分のオプションを生成
+            for (let i = 0; i < 12; i++) {
+                const date = new Date(currentYear, currentMonth - i, 1);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const value = `${year}-${month}`;
+                const text = `${year}年${parseInt(month)}月`;
+                
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = text;
+                
+                if (i === 0) {
+                    option.selected = true;
+                }
+                
+                select.appendChild(option);
+            }
+        }
+        
+        // 月次報酬計算
+        async function calculateMonthlyCommissions() {
+            const resultDiv = document.getElementById('result');
+            const period = document.getElementById('periodSelect').value;
+            
+            resultDiv.innerHTML = '<p>処理中...</p>';
+            
+            try {
+                // 必要なクラスの初期化
+                const commissionsDb = new CommissionsSupabaseDB();
+                const client = commissionsDb.client;
+                
+                // 対象期間の売上データを取得
+                const startDate = `${period}-01`;
+                const endDate = new Date(parseInt(period.split('-')[0]), parseInt(period.split('-')[1]), 0)
+                    .toISOString().split('T')[0];
+                
+                console.log(`期間: ${startDate} ~ ${endDate}`);
+                
+                const { data: sales, error: salesError } = await client
+                    .from('sales')
+                    .select(`
+                        *,
+                        agencies (
+                            id,
+                            company_name,
+                            tier_level,
+                            company_type,
+                            invoice_info
+                        )
+                    `)
+                    .gte('sale_date', startDate)
+                    .lte('sale_date', endDate)
+                    .eq('status', 'confirmed');
+                
+                if (salesError) throw salesError;
+                
+                console.log('売上データ:', sales);
+                
+                if (!sales || sales.length === 0) {
+                    resultDiv.innerHTML = `<p class="error">${period}の確定売上データがありません。</p>`;
+                    return;
+                }
+                
+                // 代理店ごとに売上を集計
+                const agencySales = {};
+                sales.forEach(sale => {
+                    const agencyId = sale.agency_id;
+                    if (!agencySales[agencyId]) {
+                        agencySales[agencyId] = {
+                            agency: sale.agencies,
+                            totalAmount: 0,
+                            salesCount: 0,
+                            sales: []
+                        };
+                    }
+                    agencySales[agencyId].totalAmount += sale.amount;
+                    agencySales[agencyId].salesCount++;
+                    agencySales[agencyId].sales.push(sale);
+                });
+                
+                resultDiv.innerHTML = '<h3>売上集計結果</h3>';
+                
+                // 各代理店の報酬を計算
+                let totalCommissions = 0;
+                let createdCount = 0;
+                
+                for (const [agencyId, data] of Object.entries(agencySales)) {
+                    const agency = data.agency;
+                    
+                    // 売上サマリーを表示
+                    resultDiv.innerHTML += `
+                        <div class="sales-summary">
+                            <strong>${agency.company_name}</strong><br>
+                            売上件数: ${data.salesCount}件<br>
+                            売上合計: ¥${data.totalAmount.toLocaleString()}
+                        </div>
+                    `;
+                    
+                    // 報酬を計算
+                    const commission = commissionsDb.calculateAgencyCommission(
+                        agency,
+                        data.totalAmount,
+                        period
+                    );
+                    
+                    console.log('計算された報酬:', commission);
+                    
+                    // 報酬データを作成/更新
+                    const { data: savedCommission, error } = await commissionsDb.upsertCommission(commission);
+                    
+                    if (error) {
+                        console.error('報酬作成エラー:', error);
+                        resultDiv.innerHTML += `<p class="error">${agency.company_name}: エラー - ${error.message}</p>`;
+                    } else {
+                        console.log('報酬作成成功:', savedCommission);
+                        createdCount++;
+                        totalCommissions += commission.total_commission;
+                        resultDiv.innerHTML += `<p class="success">→ 報酬: ¥${commission.total_commission.toLocaleString()} (税引後: ¥${commission.net_payment.toLocaleString()})</p>`;
+                    }
+                }
+                
+                // 階層ボーナスも計算
+                await commissionsDb.calculateHierarchyBonuses(period);
+                
+                resultDiv.innerHTML += '<hr style="margin: 20px 0;">';
+                resultDiv.innerHTML += '<h3>計算完了</h3>';
+                resultDiv.innerHTML += `<p>処理代理店数: ${createdCount}件</p>`;
+                resultDiv.innerHTML += `<p>報酬総額: ¥${totalCommissions.toLocaleString()}</p>`;
+                resultDiv.innerHTML += '<p style="margin-top: 20px;"><a href="commissions-admin.html" style="background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block;">報酬管理画面で確認</a></p>';
+                
+            } catch (error) {
+                console.error('エラー:', error);
+                resultDiv.innerHTML = `<p class="error">エラー: ${error.message}</p>`;
+                resultDiv.innerHTML += '<details style="margin-top: 10px;"><summary>詳細エラー情報</summary><pre>' + error.stack + '</pre></details>';
+            }
+        }
+        
+        // 初期化
+        window.addEventListener('DOMContentLoaded', function() {
+            generatePeriodOptions();
+        });
+    </script>
+</body>
+</html>
