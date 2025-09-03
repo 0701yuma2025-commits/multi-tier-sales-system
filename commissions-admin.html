@@ -1023,6 +1023,19 @@
                     })) || [];
                     
                     console.log('マッピング後の報酬データ:', commissionsData);
+                    
+                    // データが空の場合のメッセージ表示
+                    if (commissionsData.length === 0 && !error) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="9" style="text-align: center; padding: 40px;">
+                                    <p style="color: #6b7280; margin-bottom: 16px;">${currentPeriod}の報酬データがありません</p>
+                                    <a href="create-commission-data.html" class="btn btn-primary" style="text-decoration: none;">報酬データを作成</a>
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
                 } else {
                     // デモモード
                     commissionsData = commissions;
@@ -1064,7 +1077,22 @@
                 });
             } catch (error) {
                 console.error('報酬データ読み込みエラー:', error);
-                // エラー時はデモデータを表示
+                
+                // Supabaseモードでエラーの場合はメッセージを表示
+                if (commissionsDb) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="9" style="text-align: center; padding: 40px;">
+                                <p style="color: #ef4444; margin-bottom: 16px;">報酬データの取得に失敗しました</p>
+                                <p style="margin-bottom: 16px;">データが存在しない可能性があります。</p>
+                                <a href="create-commission-data.html" class="btn btn-primary" style="text-decoration: none;">報酬データを作成</a>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                // デモモードの場合のみデモデータを表示
                 commissions.forEach(commission => {
                     const tr = document.createElement('tr');
                     const hasDeductions = commission.invoiceDeduction > 0 || commission.withholdingTax > 0;
@@ -1681,6 +1709,7 @@
         async function changePeriod() {
             const period = document.getElementById('periodSelect').value;
             currentPeriod = period;
+            console.log('期間変更:', currentPeriod);
             
             await loadStatistics();
             await renderSummaryTable();
