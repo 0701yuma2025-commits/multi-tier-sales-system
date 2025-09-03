@@ -442,7 +442,7 @@
                         ¥${payment.netAmount.toLocaleString()}
                         ${isBelowMinimum ? '<div class="amount-below-minimum">最低支払額未満</div>' : ''}
                     </td>
-                    <td style="font-size: 12px;">${payment.bankAccount}</td>
+                    <td style="font-size: 12px;">${payment.bankAccount || '未登録'}</td>
                     <td>${getStatusBadge(payment.status)}</td>
                     <td>
                         ${!isBelowMinimum && payment.status === 'pending' ? 
