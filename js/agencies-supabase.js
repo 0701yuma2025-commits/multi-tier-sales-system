@@ -256,14 +256,33 @@ class AgenciesSupabaseDB {
     }
     
     // 代理店承認
-    async approveAgency(id) {
+    async approveAgency(id, comment = '') {
         try {
+            const updateData = { 
+                status: 'active',
+                updated_at: new Date().toISOString()
+            };
+            
+            // コメントがある場合は保存（representativeフィールドに追加）
+            if (comment) {
+                const { data: currentData } = await this.client
+                    .from('agencies')
+                    .select('representative')
+                    .eq('id', id)
+                    .single();
+                
+                if (currentData && currentData.representative) {
+                    updateData.representative = {
+                        ...currentData.representative,
+                        approval_comment: comment,
+                        approved_at: new Date().toISOString()
+                    };
+                }
+            }
+            
             const { data, error } = await this.client
                 .from('agencies')
-                .update({ 
-                    status: 'active',
-                    updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq('id', id)
                 .select()
                 .single();
