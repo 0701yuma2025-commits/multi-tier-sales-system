@@ -56,7 +56,7 @@
 <body>
     <h1>Supabase報酬データ作成ツール</h1>
     
-    <button id="createBtn">2024年3月の報酬データを作成</button>
+    <button id="createBtn">現在の月の報酬データを作成</button>
     
     <div id="result">
         <p>ボタンをクリックして報酬データを作成してください。</p>
@@ -66,7 +66,7 @@
         <h2>使い方</h2>
         <ol>
             <li>まず、代理店が承認されていることを確認してください</li>
-            <li>「2024年3月の報酬データを作成」ボタンをクリック</li>
+            <li>「現在の月の報酬データを作成」ボタンをクリック</li>
             <li>各代理店の報酬データが自動的に作成されます</li>
             <li>報酬管理画面で確認・承認できます</li>
         </ol>
@@ -115,7 +115,10 @@
                 for (const agency of agencies.data) {
                     // ランダムな売上を生成（10万円〜60万円）
                     const salesAmount = Math.floor(Math.random() * 500000) + 100000;
-                    const commission = commissionsDb.calculateAgencyCommission(agency, salesAmount, '2024-03');
+                    // 現在の年月を取得
+                    const now = new Date();
+                    const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                    const commission = commissionsDb.calculateAgencyCommission(agency, salesAmount, currentPeriod);
                     
                     console.log('作成する報酬データ:', commission);
                     
@@ -132,7 +135,9 @@
                 }
                 
                 // 作成後の確認
-                const { data: allCommissions } = await commissionsDb.getCommissions('2024-03');
+                const now = new Date();
+                const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                const { data: allCommissions } = await commissionsDb.getCommissions(currentPeriod);
                 console.log('全報酬データ:', allCommissions);
                 
                 resultDiv.innerHTML += '<hr style="margin: 20px 0;">';
