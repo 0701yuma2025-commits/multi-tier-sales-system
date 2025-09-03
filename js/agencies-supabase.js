@@ -119,32 +119,49 @@ class AgenciesSupabaseDB {
     // 代理店登録
     async createAgency(agencyData) {
         try {
+            // company_typeを日本語に変換
+            const companyTypeMap = {
+                'corporation': '法人',
+                'individual': '個人'
+            };
+            
             const agency = {
-                id: crypto.randomUUID(),
                 company_name: agencyData.companyName,
-                company_type: agencyData.companyType,
+                company_type: companyTypeMap[agencyData.companyType] || agencyData.companyType || '法人',
                 representative: {
                     name: agencyData.representativeName,
                     email: agencyData.email,
-                    phone: agencyData.phone,
+                    phone: agencyData.phone || '',
                     birth_date: agencyData.birthDate || null
                 },
-                tier_level: parseInt(agencyData.tierLevel),
+                tier_level: parseInt(agencyData.tierLevel) || 1,
                 parent_agency_id: agencyData.parentAgencyId || null,
                 status: 'pending',
-                bank_account: agencyData.bankAccount ? {
-                    bank_name: agencyData.bankName,
-                    branch_name: agencyData.branchName,
-                    account_type: agencyData.accountType,
-                    account_number: agencyData.accountNumber,
-                    account_holder: agencyData.accountHolder
-                } : null,
-                invoice_info: agencyData.invoiceRegistered ? {
-                    registered: true,
-                    number: agencyData.invoiceNumber,
-                    company_name: agencyData.invoiceCompanyName
-                } : null
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             };
+            
+            // 銀行口座情報（オプション）
+            if (agencyData.bankName || agencyData.branchName) {
+                agency.bank_account = {
+                    bank_name: agencyData.bankName || '',
+                    branch_name: agencyData.branchName || '',
+                    account_type: agencyData.accountType || '',
+                    account_number: agencyData.accountNumber || '',
+                    account_holder: agencyData.accountHolder || ''
+                };
+            }
+            
+            // インボイス情報（オプション）
+            if (agencyData.invoiceRegistered) {
+                agency.invoice_info = {
+                    registered: true,
+                    number: agencyData.invoiceNumber || '',
+                    company_name: agencyData.invoiceCompanyName || agencyData.companyName
+                };
+            }
+            
+            console.log('Creating agency with data:', agency);
             
             const { data, error } = await this.client
                 .from('agencies')
@@ -152,8 +169,12 @@ class AgenciesSupabaseDB {
                 .select()
                 .single();
             
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase error:', error);
+                throw error;
+            }
             
+            console.log('Agency created successfully:', data);
             return data;
         } catch (error) {
             console.error('代理店登録エラー:', error);
