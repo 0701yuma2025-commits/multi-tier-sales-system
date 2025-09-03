@@ -1005,7 +1005,7 @@
                     commissionsData = data?.map(comm => ({
                         agencyId: comm.agency_id,
                         agencyName: comm.agencies?.company_name || '',
-                        tier: comm.tier,
+                        tier: comm.tier || comm.agencies?.tier_level,
                         sales: comm.sales_amount,
                         directCommission: comm.direct_commission,
                         hierarchyBonus: comm.hierarchy_bonus,
