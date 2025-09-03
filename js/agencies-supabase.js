@@ -258,37 +258,31 @@ class AgenciesSupabaseDB {
     // 代理店承認
     async approveAgency(id, comment = '') {
         try {
-            const updateData = { 
-                status: 'active',
-                updated_at: new Date().toISOString()
-            };
+            console.log('承認処理開始:', { id, comment });
             
-            // コメントがある場合は保存（representativeフィールドに追加）
-            if (comment) {
-                const { data: currentData } = await this.client
-                    .from('agencies')
-                    .select('representative')
-                    .eq('id', id)
-                    .single();
-                
-                if (currentData && currentData.representative) {
-                    updateData.representative = {
-                        ...currentData.representative,
-                        approval_comment: comment,
-                        approved_at: new Date().toISOString()
-                    };
-                }
-            }
-            
+            // シンプルにstatusのみ更新（406エラー回避）
             const { data, error } = await this.client
                 .from('agencies')
-                .update(updateData)
+                .update({ 
+                    status: 'active',
+                    updated_at: new Date().toISOString()
+                })
                 .eq('id', id)
                 .select()
                 .single();
             
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase更新エラー詳細:', {
+                    message: error.message,
+                    code: error.code,
+                    details: error.details,
+                    hint: error.hint,
+                    statusCode: error.statusCode
+                });
+                throw error;
+            }
             
+            console.log('承認成功:', data);
             return data;
         } catch (error) {
             console.error('代理店承認エラー:', error);
