@@ -17,7 +17,7 @@ class CommissionsSupabaseDB {
                     agencies (
                         id,
                         company_name,
-                        tier,
+                        tier_level,
                         company_type,
                         invoice_registered,
                         invoice_number
@@ -47,12 +47,17 @@ class CommissionsSupabaseDB {
     async upsertCommission(commissionData) {
         try {
             // まず既存のデータを確認
-            const { data: existing } = await this.client
+            const { data: existing, error: selectError } = await this.client
                 .from('commissions')
                 .select('id')
                 .eq('agency_id', commissionData.agency_id)
                 .eq('period', commissionData.period)
-                .single();
+                .maybeSingle();
+            
+            // エラーハンドリング
+            if (selectError && selectError.code !== 'PGRST116') {
+                throw selectError;
+            }
             
             let result;
             if (existing) {
@@ -403,7 +408,8 @@ class CommissionsSupabaseDB {
             4: 15
         };
         
-        const rate = commissionRates[agency.tier] || 15;
+        const tier = agency.tier || agency.tier_level || 1;
+        const rate = commissionRates[tier] || 15;
         const directCommission = Math.floor(salesAmount * rate / 100);
         const totalCommission = directCommission; // 階層ボーナスは別途計算
         
@@ -421,7 +427,7 @@ class CommissionsSupabaseDB {
             hierarchy_bonus: 0,
             total_commission: totalCommission,
             commission_rate: rate,
-            tier: agency.tier,
+            tier: agency.tier || agency.tier_level || 1,
             company_type: agency.company_type,
             invoice_registered: agency.invoice_registered,
             invoice_number: agency.invoice_number,
