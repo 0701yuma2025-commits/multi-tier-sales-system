@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="css/responsive-complete.css">
     <link rel="stylesheet" href="css/ui-components.css">
     <script src="js/mobile-menu.js"></script>
+    <script src="js/agencies-bulk-import-supabase.js"></script>
     <style>
         * {
             margin: 0;
@@ -676,7 +677,7 @@
                 <div id="csvImportContent">
                     <div class="form-group">
                         <label for="csvFile">CSVファイルを選択</label>
-                        <input type="file" id="csvFile" accept=".csv" onchange="handleCsvFile(event)" style="display: block; width: 100%; padding: 10px; border: 2px dashed #d1d5db; border-radius: 6px; background-color: #f9fafb;">
+                        <input type="file" id="csvFile" accept=".csv" onchange="handleCSVFile(this.files[0])" style="display: block; width: 100%; padding: 10px; border: 2px dashed #d1d5db; border-radius: 6px; background-color: #f9fafb;">
                         <small>形式：会社名,メールアドレス,階層(1-4),上位代理店ID(任意)</small>
                     </div>
                     
@@ -1685,9 +1686,14 @@
         
         // CSVファイル処理
         let csvData = [];
-        function handleCsvFile(event) {
-            const file = event.target.files[0];
+        function handleCSVFile(file) {
             if (!file) return;
+            
+            // Supabase対応版の関数が存在する場合はそちらを使用
+            if (typeof window.handleCSVFile === 'function' && window.handleCSVFile !== handleCSVFile) {
+                window.handleCSVFile(file);
+                return;
+            }
             
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -1872,8 +1878,15 @@
             });
         }
         
-        // 一括登録処理
+        // 一括登録処理（Supabase対応版を呼び出す）
         function processBulkImport() {
+            // Supabase対応版の関数を呼び出す
+            if (typeof processBulkImportSupabase === 'function') {
+                processBulkImportSupabase();
+                return;
+            }
+            
+            // 以下は既存のデモモード処理（フォールバック）
             const activeTab = document.getElementById('csvImportContent').style.display === 'block' ? 'csv' : 'manual';
             let dataToImport = [];
             
