@@ -43,6 +43,8 @@ class AgenciesSupabaseDB {
             
             if (error) throw error;
             
+            console.log('Supabaseから取得した生データ:', data);
+            
             // 各代理店の売上合計を計算
             for (let agency of data) {
                 const { data: sales } = await this.client
