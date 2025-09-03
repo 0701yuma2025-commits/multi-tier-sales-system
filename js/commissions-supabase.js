@@ -18,9 +18,7 @@ class CommissionsSupabaseDB {
                         id,
                         company_name,
                         tier_level,
-                        company_type,
-                        invoice_registered,
-                        invoice_number
+                        company_type
                     )
                 `)
                 .eq('period', period);
@@ -415,13 +413,14 @@ class CommissionsSupabaseDB {
         
         // 税金計算
         const taxCalc = this.calculateTaxDeductions(totalCommission, {
-            companyType: agency.company_type,
-            invoiceRegistered: agency.invoice_registered
+            companyType: agency.company_type || '法人',
+            invoiceRegistered: agency.invoice_info?.registered || false
         });
         
         return {
             agency_id: agency.id,
             period: period,
+            amount: totalCommission,  // amountカラムを追加
             sales_amount: salesAmount,
             direct_commission: directCommission,
             hierarchy_bonus: 0,
@@ -429,8 +428,8 @@ class CommissionsSupabaseDB {
             commission_rate: rate,
             tier: agency.tier || agency.tier_level || 1,
             company_type: agency.company_type,
-            invoice_registered: agency.invoice_registered,
-            invoice_number: agency.invoice_number,
+            invoice_registered: agency.invoice_info?.registered || false,
+            invoice_number: agency.invoice_info?.number || '',
             invoice_deduction: taxCalc.invoiceDeduction,
             withholding_tax: taxCalc.withholdingTax,
             net_payment: taxCalc.netPayment,
@@ -451,7 +450,7 @@ class CommissionsSupabaseDB {
         }
         
         // 個人事業主の場合は源泉徴収10.21%
-        if (agencyInfo.companyType === 'individual') {
+        if (agencyInfo.companyType === 'individual' || agencyInfo.companyType === '個人') {
             withholdingTax = Math.floor(netPayment * 0.1021);
             netPayment -= withholdingTax;
         }
