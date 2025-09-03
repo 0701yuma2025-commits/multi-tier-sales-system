@@ -43,7 +43,6 @@ class AgenciesSupabaseDB {
             
             if (error) throw error;
             
-            console.log('Supabaseから取得した生データ:', data);
             
             // 各代理店の売上合計を計算
             for (let agency of data) {
@@ -260,7 +259,6 @@ class AgenciesSupabaseDB {
     // 代理店承認
     async approveAgency(id, comment = '') {
         try {
-            console.log('承認処理開始:', { id, comment });
             
             // まず更新を実行
             const { data: updateData, error: updateError } = await this.client
@@ -294,7 +292,6 @@ class AgenciesSupabaseDB {
                 throw error;
             }
             
-            console.log('承認成功:', data);
             // 配列の場合は最初の要素を返す
             return Array.isArray(data) ? data[0] : data;
         } catch (error) {
