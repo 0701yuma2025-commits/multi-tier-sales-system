@@ -268,8 +268,7 @@ class AgenciesSupabaseDB {
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', id)
-                .select()
-                .single();
+                .select();
             
             if (error) {
                 console.error('Supabase更新エラー詳細:', {
@@ -283,7 +282,8 @@ class AgenciesSupabaseDB {
             }
             
             console.log('承認成功:', data);
-            return data;
+            // 配列の場合は最初の要素を返す
+            return Array.isArray(data) ? data[0] : data;
         } catch (error) {
             console.error('代理店承認エラー:', error);
             throw error;
