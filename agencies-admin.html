@@ -1552,21 +1552,10 @@
         
         // 代理店承認
         async function approveAgency(id) {
-            if (agenciesDb) {
-                try {
-                    await agenciesDb.approveAgency(id);
-                    await loadAgenciesData();
-                    showSuccess('代理店を承認しました');
-                } catch (error) {
-                    console.error('代理店承認エラー:', error);
-                    showError('承認に失敗しました');
-                }
-            } else {
-                // デモモード
-                const agency = agencies.find(a => a.id === id);
-                if (!agency) return;
-                showDocumentVerificationModal(agency);
-            }
+            // Supabaseモードでも書類確認モーダルを表示
+            const agency = agencies.find(a => a.id === id);
+            if (!agency) return;
+            showDocumentVerificationModal(agency);
         }
         
         // 書類確認モーダル表示
@@ -2084,7 +2073,7 @@
         }
         
         // 最終承認
-        function finalApproveAgency() {
+        async function finalApproveAgency() {
             const agencyId = document.getElementById('verifyAgencyId').value;
             const agency = agencies.find(a => a.id === agencyId);
             if (!agency) return;
@@ -2111,13 +2100,28 @@
             }
             
             const comment = document.getElementById('approvalComment').value;
-            agency.status = 'active';
-            agency.approvalComment = comment;
-            agency.approvedAt = new Date().toISOString();
             
-            filterAgencies();
-            closeModal('documentModal');
-            showSuccess(`${agency.name}を承認しました`);
+            if (agenciesDb) {
+                // Supabaseモード
+                try {
+                    await agenciesDb.approveAgency(agencyId, comment);
+                    await loadAgenciesData();
+                    closeModal('documentModal');
+                    showSuccess(`${agency.company_name || agency.name}を承認しました`);
+                } catch (error) {
+                    console.error('代理店承認エラー:', error);
+                    showError('承認に失敗しました: ' + error.message);
+                }
+            } else {
+                // デモモード
+                agency.status = 'active';
+                agency.approvalComment = comment;
+                agency.approvedAt = new Date().toISOString();
+                
+                filterAgencies();
+                closeModal('documentModal');
+                showSuccess(`${agency.name}を承認しました`);
+            }
         }
         
         // 最終却下
