@@ -17,7 +17,6 @@ class CommissionsSupabaseDB {
                     agencies (
                         id,
                         company_name,
-                        contact_name,
                         tier,
                         company_type,
                         invoice_registered,
@@ -47,16 +46,34 @@ class CommissionsSupabaseDB {
     // 報酬作成または更新
     async upsertCommission(commissionData) {
         try {
-            const { data, error } = await this.client
+            // まず既存のデータを確認
+            const { data: existing } = await this.client
                 .from('commissions')
-                .upsert(commissionData, {
-                    onConflict: 'agency_id,period'
-                })
-                .select()
+                .select('id')
+                .eq('agency_id', commissionData.agency_id)
+                .eq('period', commissionData.period)
                 .single();
             
-            if (error) throw error;
-            return { data, error: null };
+            let result;
+            if (existing) {
+                // 更新
+                result = await this.client
+                    .from('commissions')
+                    .update(commissionData)
+                    .eq('id', existing.id)
+                    .select()
+                    .single();
+            } else {
+                // 新規作成
+                result = await this.client
+                    .from('commissions')
+                    .insert(commissionData)
+                    .select()
+                    .single();
+            }
+            
+            if (result.error) throw result.error;
+            return { data: result.data, error: null };
         } catch (error) {
             console.error('報酬作成/更新エラー:', error);
             return { data: null, error };
