@@ -1043,6 +1043,13 @@
                     subAgencyCount: agency.sub_agency_count || 0
                 }));
                 
+                console.log('マッピング後のagencies配列:', agencies);
+                // 特定の代理店のステータスを確認
+                const testAgency = agencies.find(a => a.id === '8b2cac74-9f7d-473a-ad0c-307c4c0d84dc');
+                if (testAgency) {
+                    console.log('テスト株式会社のステータス:', testAgency.status);
+                }
+                
                 filteredAgencies = [...agencies];
                 renderAgencyTable();
                 updateStats();
