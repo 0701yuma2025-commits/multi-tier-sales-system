@@ -260,15 +260,26 @@ class AgenciesSupabaseDB {
         try {
             console.log('承認処理開始:', { id, comment });
             
-            // シンプルにstatusのみ更新（406エラー回避）
-            const { data, error } = await this.client
+            // まず更新を実行
+            const { data: updateData, error: updateError } = await this.client
                 .from('agencies')
                 .update({ 
                     status: 'active',
                     updated_at: new Date().toISOString()
                 })
+                .eq('id', id);
+            
+            if (updateError) {
+                console.error('更新エラー:', updateError);
+                throw updateError;
+            }
+            
+            // 更新後のデータを取得
+            const { data, error } = await this.client
+                .from('agencies')
+                .select()
                 .eq('id', id)
-                .select();
+                .single();
             
             if (error) {
                 console.error('Supabase更新エラー詳細:', {
