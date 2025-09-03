@@ -1019,7 +1019,6 @@
         async function loadAgenciesData() {
             try {
                 const data = await agenciesDb.getAgencies();
-                console.log('取得した代理店データ:', data);
                 agencies = data.map(agency => ({
                     id: agency.id,
                     name: agency.company_name,
@@ -1043,12 +1042,6 @@
                     subAgencyCount: agency.sub_agency_count || 0
                 }));
                 
-                console.log('マッピング後のagencies配列:', agencies);
-                // 特定の代理店のステータスを確認
-                const testAgency = agencies.find(a => a.id === '8b2cac74-9f7d-473a-ad0c-307c4c0d84dc');
-                if (testAgency) {
-                    console.log('テスト株式会社のステータス:', testAgency.status);
-                }
                 
                 filteredAgencies = [...agencies];
                 renderAgencyTable();
@@ -2113,13 +2106,7 @@
                 // Supabaseモード
                 try {
                     const result = await agenciesDb.approveAgency(agencyId, comment);
-                    console.log('承認結果:', result);
-                    
                     await loadAgenciesData();
-                    
-                    // 承認後の該当代理店を確認
-                    const updatedAgency = agencies.find(a => a.id === agencyId);
-                    console.log('更新後の代理店:', updatedAgency);
                     
                     filterAgencies(); // 画面を更新
                     await updateStats(); // 統計情報も更新
