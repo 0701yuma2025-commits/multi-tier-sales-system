@@ -563,10 +563,7 @@
             <div class="period-selector">
                 <label>対象期間：</label>
                 <select id="periodSelect" onchange="changePeriod()">
-                    <option value="2024-03">2024年3月</option>
-                    <option value="2024-02">2024年2月</option>
-                    <option value="2024-01">2024年1月</option>
-                    <option value="2023-12">2023年12月</option>
+                    <!-- 動的に生成されます -->
                 </select>
             </div>
             <div class="action-buttons">
@@ -1617,21 +1614,32 @@
         
         // 個別承認
         async function approveCommission(commissionId) {
+            console.log('承認処理開始:', { commissionId });
+            
             try {
                 if (commissionsDb) {
                     // Supabaseで承認
+                    console.log('Supabaseで承認を実行');
                     const { data, error } = await commissionsDb.approveCommission(commissionId);
-                    if (error) throw error;
                     
+                    if (error) {
+                        console.error('Supabase承認エラー:', error);
+                        throw error;
+                    }
+                    
+                    console.log('承認結果:', data);
                     alert('報酬を承認しました');
                     await renderSummaryTable();
                 } else {
                     // デモモード
+                    console.log('デモモードで承認を実行');
                     const commission = commissions.find(c => c.agencyId === commissionId);
                     if (commission) {
                         commission.status = 'completed';
                         alert('報酬を承認しました');
                         await renderSummaryTable();
+                    } else {
+                        console.error('対象の報酬が見つかりません:', commissionId);
                     }
                 }
             } catch (error) {
@@ -1718,14 +1726,42 @@
             }
         }
         
+        // 期間選択オプションを生成
+        function generatePeriodOptions() {
+            const select = document.getElementById('periodSelect');
+            select.innerHTML = '';
+            
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            // 過去12ヶ月分のオプションを生成
+            for (let i = 0; i < 12; i++) {
+                const date = new Date(currentYear, currentMonth - i, 1);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const value = `${year}-${month}`;
+                const text = `${year}年${parseInt(month)}月`;
+                
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = text;
+                
+                if (i === 0) {
+                    option.selected = true;
+                    currentPeriod = value;
+                }
+                
+                select.appendChild(option);
+            }
+        }
+        
         // ユーザー情報表示
         document.addEventListener('DOMContentLoaded', async function() {
             displayUserInfo('userDisplay');
             
-            // 現在の月を設定
-            const now = new Date();
-            currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            document.getElementById('periodSelect').value = currentPeriod;
+            // 期間選択を生成
+            generatePeriodOptions();
             
             // Supabase初期化
             try {
