@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Supabase初期化テスト</title>
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 共通スクリプト -->
+    <script src="js/supabase-config.js"></script>
+</head>
+<body>
+    <h1>Supabase初期化テスト</h1>
+    <button onclick="testInit()">初期化テスト</button>
+    <div id="result"></div>
+    
+    <script>
+        function testInit() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+            
+            // チェック1: Supabaseライブラリ
+            if (typeof window.supabase !== 'undefined') {
+                resultDiv.innerHTML += '<p style="color: green;">✓ Supabaseライブラリが読み込まれています</p>';
+            } else {
+                resultDiv.innerHTML += '<p style="color: red;">✗ Supabaseライブラリが読み込まれていません</p>';
+            }
+            
+            // チェック2: SUPABASE_CONFIG
+            if (typeof SUPABASE_CONFIG !== 'undefined') {
+                resultDiv.innerHTML += '<p style="color: green;">✓ SUPABASE_CONFIGが定義されています</p>';
+                resultDiv.innerHTML += '<p>URL: ' + SUPABASE_CONFIG.url + '</p>';
+                resultDiv.innerHTML += '<p>Key: ' + (SUPABASE_CONFIG.anonKey ? '設定済み' : '未設定') + '</p>';
+            } else {
+                resultDiv.innerHTML += '<p style="color: red;">✗ SUPABASE_CONFIGが定義されていません</p>';
+            }
+            
+            // チェック3: initializeSupabase関数
+            if (typeof initializeSupabase === 'function') {
+                resultDiv.innerHTML += '<p style="color: green;">✓ initializeSupabase関数が定義されています</p>';
+                
+                // 初期化テスト
+                try {
+                    const client = initializeSupabase();
+                    if (client) {
+                        resultDiv.innerHTML += '<p style="color: green;">✓ Supabaseクライアントの初期化に成功しました</p>';
+                    } else {
+                        resultDiv.innerHTML += '<p style="color: red;">✗ Supabaseクライアントの初期化に失敗しました</p>';
+                    }
+                } catch (error) {
+                    resultDiv.innerHTML += '<p style="color: red;">✗ エラー: ' + error.message + '</p>';
+                }
+            } else {
+                resultDiv.innerHTML += '<p style="color: red;">✗ initializeSupabase関数が定義されていません</p>';
+            }
+            
+            // チェック4: CommissionsSupabaseDB
+            if (typeof CommissionsSupabaseDB === 'function') {
+                resultDiv.innerHTML += '<p style="color: green;">✓ CommissionsSupabaseDBクラスが定義されています</p>';
+            } else {
+                resultDiv.innerHTML += '<p style="color: red;">✗ CommissionsSupabaseDBクラスが定義されていません</p>';
+            }
+        }
+        
+        // ページ読み込み時に自動実行
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded');
+            setTimeout(testInit, 1000); // 1秒待ってから実行
+        });
+    </script>
+</body>
+</html>

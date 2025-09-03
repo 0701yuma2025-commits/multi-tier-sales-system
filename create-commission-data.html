@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>報酬データ作成</title>
-    <script src="js/config.js"></script>
-    <script src="js/supabase-client.js"></script>
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 共通スクリプト -->
+    <script src="js/supabase-config.js"></script>
     <script src="js/commissions-supabase.js"></script>
 </head>
 <body>
@@ -13,10 +15,28 @@
     <div id="result"></div>
     
     <script>
+        // ページ読み込み後に初期化確認
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('Supabase:', typeof window.supabase);
+            console.log('SUPABASE_CONFIG:', typeof SUPABASE_CONFIG);
+            console.log('initializeSupabase:', typeof initializeSupabase);
+            console.log('CommissionsSupabaseDB:', typeof CommissionsSupabaseDB);
+        });
+        
         async function createCommissionData() {
-            const commissionsDb = new CommissionsSupabaseDB();
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = '<p>処理中...</p>';
+            
+            try {
+                // 必要な関数が存在するか確認
+                if (typeof initializeSupabase === 'undefined') {
+                    throw new Error('initializeSupabase関数が定義されていません');
+                }
+                if (typeof CommissionsSupabaseDB === 'undefined') {
+                    throw new Error('CommissionsSupabaseDBクラスが定義されていません');
+                }
+                
+                const commissionsDb = new CommissionsSupabaseDB();
             
             try {
                 // 売上データを作成（仮想的に）
