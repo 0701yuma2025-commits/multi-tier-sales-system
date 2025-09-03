@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>報酬データ作成</title>
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 共通スクリプト -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/commissions-supabase.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #1f2937;
+        }
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+        #result {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            min-height: 100px;
+        }
+        .info-box {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f3f4f6;
+            border-radius: 8px;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .success {
+            color: #10b981;
+        }
+    </style>
+</head>
+<body>
+    <h1>Supabase報酬データ作成ツール</h1>
+    
+    <button id="createBtn">2024年3月の報酬データを作成</button>
+    
+    <div id="result">
+        <p>ボタンをクリックして報酬データを作成してください。</p>
+    </div>
+    
+    <div class="info-box">
+        <h2>使い方</h2>
+        <ol>
+            <li>まず、代理店が承認されていることを確認してください</li>
+            <li>「2024年3月の報酬データを作成」ボタンをクリック</li>
+            <li>各代理店の報酬データが自動的に作成されます</li>
+            <li>報酬管理画面で確認・承認できます</li>
+        </ol>
+        <p style="color: #6b7280; font-size: 14px;">※エラーが出る場合は、Supabase設定が正しいか確認してください</p>
+    </div>
+    
+    <script>
+        console.log('Script loaded');
+        
+        // グローバル関数として定義
+        window.createCommissionData = async function() {
+            console.log('createCommissionData called');
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>処理中...</p>';
+            
+            try {
+                // 必要な関数が存在するか確認
+                if (typeof initializeSupabase === 'undefined') {
+                    throw new Error('initializeSupabase関数が定義されていません');
+                }
+                if (typeof CommissionsSupabaseDB === 'undefined') {
+                    throw new Error('CommissionsSupabaseDBクラスが定義されていません');
+                }
+                
+                const commissionsDb = new CommissionsSupabaseDB();
+                console.log('CommissionsSupabaseDB initialized');
+                
+                // アクティブな代理店を取得
+                const agencies = await commissionsDb.client
+                    .from('agencies')
+                    .select('*')
+                    .eq('status', 'active');
+                
+                console.log('アクティブな代理店:', agencies.data);
+                
+                if (!agencies.data || agencies.data.length === 0) {
+                    resultDiv.innerHTML = '<p class="error">アクティブな代理店が見つかりません。先に代理店を承認してください。</p>';
+                    resultDiv.innerHTML += '<p><a href="agencies-admin.html">代理店管理画面へ</a></p>';
+                    return;
+                }
+                
+                resultDiv.innerHTML = '<h3>報酬データ作成中...</h3>';
+                
+                // 各代理店の報酬を作成
+                let createdCount = 0;
+                for (const agency of agencies.data) {
+                    // ランダムな売上を生成（10万円〜60万円）
+                    const salesAmount = Math.floor(Math.random() * 500000) + 100000;
+                    const commission = commissionsDb.calculateAgencyCommission(agency, salesAmount, '2024-03');
+                    
+                    console.log('作成する報酬データ:', commission);
+                    
+                    const { data, error } = await commissionsDb.upsertCommission(commission);
+                    
+                    if (error) {
+                        console.error('報酬作成エラー:', error);
+                        resultDiv.innerHTML += `<p class="error">${agency.company_name}: エラー - ${error.message}</p>`;
+                    } else {
+                        console.log('報酬作成成功:', data);
+                        createdCount++;
+                        resultDiv.innerHTML += `<p class="success">✓ ${agency.company_name}: 売上 ¥${salesAmount.toLocaleString()} → 報酬 ¥${commission.total_commission.toLocaleString()}</p>`;
+                    }
+                }
+                
+                // 作成後の確認
+                const { data: allCommissions } = await commissionsDb.getCommissions('2024-03');
+                console.log('全報酬データ:', allCommissions);
+                
+                resultDiv.innerHTML += '<hr style="margin: 20px 0;">';
+                resultDiv.innerHTML += '<h3>作成完了</h3>';
+                resultDiv.innerHTML += `<p>作成された報酬件数: ${createdCount}件 / 全体: ${allCommissions?.length || 0}件</p>`;
+                resultDiv.innerHTML += '<p style="margin-top: 20px;"><a href="commissions-admin.html" style="background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block;">報酬管理画面で確認</a></p>';
+                
+            } catch (error) {
+                console.error('エラー:', error);
+                resultDiv.innerHTML = `<p class="error">エラー: ${error.message}</p>`;
+                resultDiv.innerHTML += '<p style="margin-top: 20px;">コンソールログを確認してください。</p>';
+                resultDiv.innerHTML += '<details style="margin-top: 10px;"><summary>詳細エラー情報</summary><pre>' + error.stack + '</pre></details>';
+            }
+        }
+        
+        // ページ読み込み後に初期化確認
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded');
+            console.log('Supabase:', typeof window.supabase);
+            console.log('SUPABASE_CONFIG:', typeof SUPABASE_CONFIG);
+            console.log('initializeSupabase:', typeof initializeSupabase);
+            console.log('CommissionsSupabaseDB:', typeof CommissionsSupabaseDB);
+            
+            // ボタンにイベントリスナーを設定
+            const btn = document.getElementById('createBtn');
+            if (btn) {
+                btn.addEventListener('click', createCommissionData);
+                console.log('Button event listener added');
+            }
+        });
+    </script>
+</body>
+</html>
