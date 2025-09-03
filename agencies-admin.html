@@ -2106,6 +2106,8 @@
                 try {
                     await agenciesDb.approveAgency(agencyId, comment);
                     await loadAgenciesData();
+                    filterAgencies(); // 画面を更新
+                    await updateStats(); // 統計情報も更新
                     closeModal('documentModal');
                     showSuccess(`${agency.company_name || agency.name}を承認しました`);
                 } catch (error) {
