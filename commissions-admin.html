@@ -800,6 +800,7 @@
         // デモデータ（税務情報を追加）
         let commissions = [
             {
+                id: 'demo-001',
                 agencyId: '001',
                 agencyName: '株式会社ABC商事',
                 tier: 1,
@@ -818,6 +819,7 @@
                 period: '2024-03'
             },
             {
+                id: 'demo-002',
                 agencyId: '002',
                 agencyName: 'XYZ営業株式会社',
                 tier: 2,
@@ -836,6 +838,7 @@
                 period: '2024-03'
             },
             {
+                id: 'demo-003',
                 agencyId: '003',
                 agencyName: '田中商店',
                 tier: 3,
@@ -997,6 +1000,8 @@
                     const { data, error } = await commissionsDb.getCommissions(currentPeriod);
                     if (error) throw error;
                     
+                    console.log('Supabaseから取得した報酬データ:', data);
+                    
                     commissionsData = data?.map(comm => ({
                         agencyId: comm.agency_id,
                         agencyName: comm.agencies?.company_name || '',
@@ -1016,6 +1021,8 @@
                         period: comm.period,
                         id: comm.id
                     })) || [];
+                    
+                    console.log('マッピング後の報酬データ:', commissionsData);
                 } else {
                     // デモモード
                     commissionsData = commissions;
@@ -1083,9 +1090,9 @@
                         <td>${getStatusBadge(commission.status)}</td>
                         <td>
                             <div class="action-btns">
-                                <button class="action-btn view" onclick="showCommissionDetail('${commission.agencyId}')">詳細</button>
+                                <button class="action-btn view" onclick="showCommissionDetail('${commission.id || commission.agencyId}')">詳細</button>
                                 ${commission.status === 'pending' ? 
-                                    `<button class="action-btn approve" onclick="approveCommission('${commission.agencyId}')">承認</button>` : ''
+                                    `<button class="action-btn approve" onclick="approveCommission('${commission.id || commission.agencyId}')">承認</button>` : ''
                                 }
                             </div>
                         </td>
@@ -1370,7 +1377,7 @@
                     }
                 } else {
                     // デモモード
-                    commission = commissions.find(c => c.agencyId === commissionId);
+                    commission = commissions.find(c => c.id === commissionId || c.agencyId === commissionId);
                 }
                 
                 if (!commission) return;
@@ -1619,7 +1626,7 @@
             try {
                 if (commissionsDb) {
                     // Supabaseで承認
-                    console.log('Supabaseで承認を実行');
+                    console.log('Supabaseで承認を実行:', { commissionId });
                     const { data, error } = await commissionsDb.approveCommission(commissionId);
                     
                     if (error) {
@@ -1633,7 +1640,7 @@
                 } else {
                     // デモモード
                     console.log('デモモードで承認を実行');
-                    const commission = commissions.find(c => c.agencyId === commissionId);
+                    const commission = commissions.find(c => c.id === commissionId || c.agencyId === commissionId);
                     if (commission) {
                         commission.status = 'completed';
                         alert('報酬を承認しました');
@@ -1770,6 +1777,8 @@
                 
                 if (hasValidConfig) {
                     commissionsDb = new CommissionsSupabaseDB();
+                    console.log('Supabaseモードで初期化完了');
+                    console.log('commissionsDb:', commissionsDb);
                 }
             } catch (error) {
                 console.error('Supabase初期化エラー:', error);
