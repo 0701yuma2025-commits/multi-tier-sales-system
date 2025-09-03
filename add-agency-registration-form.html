@@ -1,0 +1,291 @@
+<!-- 代理店管理画面に追加する新規登録フォーム -->
+<!-- agencies-admin.htmlの適切な場所に挿入してください -->
+
+<!-- 1. ヘッダー部分に新規登録ボタンを追加（.headerの中） -->
+<button onclick="showAddAgencyModal()" class="btn-primary">
+    <i class="fas fa-plus"></i> 新規代理店登録
+</button>
+
+<!-- 2. モーダルHTML（bodyタグの最後に追加） -->
+<div id="addAgencyModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>新規代理店登録</h2>
+            <button class="close-btn" onclick="closeModal('addAgencyModal')">&times;</button>
+        </div>
+        <form id="addAgencyForm" onsubmit="handleAddAgency(event)">
+            <div class="form-grid">
+                <!-- 基本情報 -->
+                <div class="form-section">
+                    <h3>基本情報</h3>
+                    <div class="form-group">
+                        <label for="addCompanyName">会社名 <span class="required">*</span></label>
+                        <input type="text" id="addCompanyName" name="companyName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="addCompanyType">法人/個人 <span class="required">*</span></label>
+                        <select id="addCompanyType" name="companyType" required onchange="toggleAddCompanyTypeFields()">
+                            <option value="corporation">法人</option>
+                            <option value="individual">個人</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="addRepresentativeName">代表者名 <span class="required">*</span></label>
+                        <input type="text" id="addRepresentativeName" name="representativeName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="addEmail">メールアドレス <span class="required">*</span></label>
+                        <input type="email" id="addEmail" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="addPhone">電話番号</label>
+                        <input type="tel" id="addPhone" name="phone">
+                    </div>
+                    
+                    <div class="form-group" id="addBirthDateGroup" style="display: none;">
+                        <label for="addBirthDate">生年月日</label>
+                        <input type="date" id="addBirthDate" name="birthDate">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="addTierLevel">階層レベル <span class="required">*</span></label>
+                        <select id="addTierLevel" name="tierLevel" required>
+                            <option value="1">Tier 1</option>
+                            <option value="2">Tier 2</option>
+                            <option value="3">Tier 3</option>
+                            <option value="4">Tier 4</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="addParentAgency">親代理店</label>
+                        <select id="addParentAgency" name="parentAgencyId">
+                            <option value="">なし</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- 銀行口座情報 -->
+                <div class="form-section">
+                    <h3>銀行口座情報</h3>
+                    <div class="form-group">
+                        <label for="addBankName">銀行名</label>
+                        <input type="text" id="addBankName" name="bankName">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="addBranchName">支店名</label>
+                        <input type="text" id="addBranchName" name="branchName">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="addAccountType">口座種別</label>
+                        <select id="addAccountType" name="accountType">
+                            <option value="">選択してください</option>
+                            <option value="普通">普通</option>
+                            <option value="当座">当座</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="addAccountNumber">口座番号</label>
+                        <input type="text" id="addAccountNumber" name="accountNumber">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="addAccountHolder">口座名義</label>
+                        <input type="text" id="addAccountHolder" name="accountHolder">
+                    </div>
+                </div>
+                
+                <!-- インボイス情報 -->
+                <div class="form-section">
+                    <h3>インボイス情報</h3>
+                    <div class="form-group">
+                        <label for="addInvoiceRegistered">インボイス登録</label>
+                        <select id="addInvoiceRegistered" name="invoiceRegistered" onchange="toggleAddInvoiceFields()">
+                            <option value="false">未登録</option>
+                            <option value="true">登録済み</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="addInvoiceNumberGroup" style="display: none;">
+                        <label for="addInvoiceNumber">インボイス番号</label>
+                        <input type="text" id="addInvoiceNumber" name="invoiceNumber" placeholder="T1234567890123">
+                    </div>
+                    
+                    <div class="form-group" id="addInvoiceCompanyNameGroup" style="display: none;">
+                        <label for="addInvoiceCompanyName">適格請求書発行事業者名</label>
+                        <input type="text" id="addInvoiceCompanyName" name="invoiceCompanyName">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal('addAgencyModal')">キャンセル</button>
+                <button type="submit" class="btn-primary">登録</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 3. JavaScript関数（scriptタグ内に追加） -->
+<script>
+// 新規登録モーダルを表示
+function showAddAgencyModal() {
+    // 親代理店リストを更新
+    updateParentAgencySelect();
+    showModal('addAgencyModal');
+}
+
+// 親代理店セレクトボックスを更新
+async function updateParentAgencySelect() {
+    const select = document.getElementById('addParentAgency');
+    select.innerHTML = '<option value="">なし</option>';
+    
+    try {
+        const agencies = await loadAgenciesData();
+        agencies.forEach(agency => {
+            const option = document.createElement('option');
+            option.value = agency.id;
+            option.textContent = `${agency.company_name} (Tier ${agency.tier_level})`;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('親代理店リスト取得エラー:', error);
+    }
+}
+
+// 法人/個人切り替え時の表示制御
+function toggleAddCompanyTypeFields() {
+    const companyType = document.getElementById('addCompanyType').value;
+    const birthDateGroup = document.getElementById('addBirthDateGroup');
+    
+    if (companyType === 'individual') {
+        birthDateGroup.style.display = 'block';
+    } else {
+        birthDateGroup.style.display = 'none';
+    }
+}
+
+// インボイス登録切り替え時の表示制御
+function toggleAddInvoiceFields() {
+    const registered = document.getElementById('addInvoiceRegistered').value === 'true';
+    const numberGroup = document.getElementById('addInvoiceNumberGroup');
+    const companyNameGroup = document.getElementById('addInvoiceCompanyNameGroup');
+    
+    if (registered) {
+        numberGroup.style.display = 'block';
+        companyNameGroup.style.display = 'block';
+    } else {
+        numberGroup.style.display = 'none';
+        companyNameGroup.style.display = 'none';
+    }
+}
+
+// 新規代理店登録処理
+async function handleAddAgency(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const agencyData = {
+        companyName: formData.get('companyName'),
+        companyType: formData.get('companyType'),
+        representativeName: formData.get('representativeName'),
+        email: formData.get('email'),
+        phone: formData.get('phone'),
+        birthDate: formData.get('birthDate'),
+        tierLevel: formData.get('tierLevel'),
+        parentAgencyId: formData.get('parentAgencyId'),
+        bankName: formData.get('bankName'),
+        branchName: formData.get('branchName'),
+        accountType: formData.get('accountType'),
+        accountNumber: formData.get('accountNumber'),
+        accountHolder: formData.get('accountHolder'),
+        invoiceRegistered: formData.get('invoiceRegistered') === 'true',
+        invoiceNumber: formData.get('invoiceNumber'),
+        invoiceCompanyName: formData.get('invoiceCompanyName')
+    };
+    
+    try {
+        if (agenciesDb) {
+            // Supabaseに保存
+            const result = await agenciesDb.createAgency(agencyData);
+            console.log('代理店登録成功:', result);
+            
+            // リストを更新
+            await loadAgenciesData();
+            
+            // 成功メッセージ
+            showSuccess('代理店を登録しました');
+            
+            // フォームをリセット
+            event.target.reset();
+            closeModal('addAgencyModal');
+        } else {
+            showError('Supabaseが初期化されていません');
+        }
+    } catch (error) {
+        console.error('代理店登録エラー:', error);
+        showError('登録に失敗しました: ' + error.message);
+    }
+}
+</script>
+
+<!-- 4. CSS（styleタグ内に追加） -->
+<style>
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+.form-section {
+    background: #f9fafb;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.form-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 16px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+</style>

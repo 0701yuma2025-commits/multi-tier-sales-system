@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代理店登録テスト</title>
+    
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- 必要なスクリプト -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/agencies-supabase.js"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #f3f4f6;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #1f2937;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        
+        button {
+            background: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        button:hover {
+            background: #2563eb;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #34d399;
+        }
+        
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #f87171;
+        }
+        
+        .info {
+            background: #dbeafe;
+            color: #1e3a8a;
+            border: 1px solid #60a5fa;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        
+        pre {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>代理店登録テストページ</h1>
+        
+        <div class="info">
+            <strong>このページで代理店登録をテストできます。</strong><br>
+            必須項目を入力して「登録テスト」ボタンをクリックしてください。
+        </div>
+        
+        <form id="testForm">
+            <div class="form-group">
+                <label>会社名 *</label>
+                <input type="text" id="companyName" value="テスト株式会社" required>
+            </div>
+            
+            <div class="form-group">
+                <label>法人/個人 *</label>
+                <select id="companyType" required>
+                    <option value="corporation">法人</option>
+                    <option value="individual">個人</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>代表者名 *</label>
+                <input type="text" id="representativeName" value="山田太郎" required>
+            </div>
+            
+            <div class="form-group">
+                <label>メールアドレス *</label>
+                <input type="email" id="email" value="test@example.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label>電話番号</label>
+                <input type="tel" id="phone" value="03-1234-5678">
+            </div>
+            
+            <div class="form-group">
+                <label>階層レベル *</label>
+                <select id="tierLevel" required>
+                    <option value="1">Tier 1</option>
+                    <option value="2">Tier 2</option>
+                    <option value="3">Tier 3</option>
+                    <option value="4">Tier 4</option>
+                </select>
+            </div>
+            
+            <h3 style="margin-top: 30px;">銀行口座情報（オプション）</h3>
+            
+            <div class="form-group">
+                <label>銀行名</label>
+                <input type="text" id="bankName" value="みずほ銀行">
+            </div>
+            
+            <div class="form-group">
+                <label>支店名</label>
+                <input type="text" id="branchName" value="東京支店">
+            </div>
+            
+            <div class="form-group">
+                <label>口座種別</label>
+                <select id="accountType">
+                    <option value="">選択してください</option>
+                    <option value="普通" selected>普通</option>
+                    <option value="当座">当座</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>口座番号</label>
+                <input type="text" id="accountNumber" value="1234567">
+            </div>
+            
+            <div class="form-group">
+                <label>口座名義</label>
+                <input type="text" id="accountHolder" value="テスト株式会社">
+            </div>
+            
+            <button type="submit">登録テスト</button>
+        </form>
+        
+        <div id="result" class="result"></div>
+    </div>
+    
+    <script>
+        // フォーム送信処理
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '登録処理中...';
+            
+            // フォームデータを取得
+            const agencyData = {
+                companyName: document.getElementById('companyName').value,
+                companyType: document.getElementById('companyType').value,
+                representativeName: document.getElementById('representativeName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                tierLevel: document.getElementById('tierLevel').value,
+                bankName: document.getElementById('bankName').value,
+                branchName: document.getElementById('branchName').value,
+                accountType: document.getElementById('accountType').value,
+                accountNumber: document.getElementById('accountNumber').value,
+                accountHolder: document.getElementById('accountHolder').value
+            };
+            
+            try {
+                // Supabase設定を確認
+                const config = loadSupabaseConfig();
+                if (config.url === 'YOUR_SUPABASE_PROJECT_URL') {
+                    throw new Error('Supabase設定が行われていません。設定画面でSupabase URLとAnon Keyを設定してください。');
+                }
+                
+                // AgenciesSupabaseDBインスタンスを作成
+                const db = new AgenciesSupabaseDB();
+                
+                // 登録を実行
+                console.log('送信データ:', agencyData);
+                const result = await db.createAgency(agencyData);
+                
+                // 成功
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <h3>✅ 登録成功！</h3>
+                    <p>代理店が正常に登録されました。</p>
+                    <h4>登録データ:</h4>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                    <p style="margin-top: 15px;">
+                        <a href="agencies-admin.html" style="color: #3b82f6;">代理店管理画面で確認</a>
+                    </p>
+                `;
+                
+            } catch (error) {
+                // エラー
+                console.error('登録エラー:', error);
+                resultDiv.className = 'result error';
+                
+                let errorMessage = error.message;
+                let solution = '';
+                
+                // エラーに応じた解決策を提示
+                if (error.message.includes('Supabase設定が行われていません')) {
+                    solution = `
+                        <h4>解決方法:</h4>
+                        <ol>
+                            <li><a href="settings.html" target="_blank">設定画面</a>を開く</li>
+                            <li>Supabase設定セクションで以下を入力:
+                                <ul>
+                                    <li>Supabase URL: <code>https://aroplwctmqwwkwmvgzzz.supabase.co</code></li>
+                                    <li>Supabase Anon Key: Supabaseダッシュボードから取得</li>
+                                </ul>
+                            </li>
+                            <li>保存してこのページをリロード</li>
+                        </ol>
+                    `;
+                } else if (error.message.includes('Supabaseクライアントの初期化に失敗')) {
+                    solution = `
+                        <h4>解決方法:</h4>
+                        <p>Supabase設定を確認してください。</p>
+                    `;
+                } else if (error.message.includes('column') && error.message.includes('does not exist')) {
+                    solution = `
+                        <h4>解決方法:</h4>
+                        <p>Supabaseでテーブル構造を更新する必要があります。</p>
+                        <ol>
+                            <li>Supabase SQL Editorで <code>fix-agencies-table-complete.sql</code> を実行</li>
+                            <li>実行後、このページをリロード</li>
+                        </ol>
+                    `;
+                }
+                
+                resultDiv.innerHTML = `
+                    <h3>❌ エラーが発生しました</h3>
+                    <p><strong>エラー内容:</strong> ${errorMessage}</p>
+                    ${solution}
+                    <h4>詳細情報:</h4>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+            }
+        });
+        
+        // ページ読み込み時にSupabase設定を確認
+        window.addEventListener('load', () => {
+            const config = loadSupabaseConfig();
+            if (config.url === 'YOUR_SUPABASE_PROJECT_URL') {
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>⚠️ Supabase設定が必要です</h3>
+                    <p>まず<a href="settings.html" target="_blank">設定画面</a>でSupabaseの認証情報を設定してください。</p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
