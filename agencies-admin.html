@@ -1669,13 +1669,13 @@
             try {
                 if (currentMode === 'supabase') {
                     const db = new AgenciesSupabaseDB();
-                    await db.updateAgencyStatus(id, 'rejected');
-                    showSuccessMessage('代理店を拒否しました');
+                    await db.updateAgencyStatus(id, 'suspended');
+                    showSuccessMessage('代理店を停止中にしました');
                 } else {
-                    const index = agencies.findIndex(a => a.id === id);
-                    if (index !== -1) {
-                        agencies.splice(index, 1);
-                        alert('代理店申請を拒否しました');
+                    const agency = agencies.find(a => a.id === id);
+                    if (agency) {
+                        agency.status = 'suspended';
+                        alert('代理店を停止中にしました');
                     }
                 }
                 await loadAgenciesData();
