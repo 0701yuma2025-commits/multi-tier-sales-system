@@ -300,6 +300,41 @@ class AgenciesSupabaseDB {
         }
     }
     
+    // 代理店ステータス更新
+    async updateAgencyStatus(id, status) {
+        try {
+            const { data: updateData, error: updateError } = await this.client
+                .from('agencies')
+                .update({ 
+                    status: status,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', id);
+            
+            if (updateError) {
+                console.error('ステータス更新エラー:', updateError);
+                throw updateError;
+            }
+            
+            // 更新後のデータを取得
+            const { data, error } = await this.client
+                .from('agencies')
+                .select()
+                .eq('id', id)
+                .single();
+            
+            if (error) {
+                console.error('データ取得エラー:', error);
+                throw error;
+            }
+            
+            return Array.isArray(data) ? data[0] : data;
+        } catch (error) {
+            console.error('代理店ステータス更新エラー:', error);
+            throw error;
+        }
+    }
+    
     // 統計情報取得
     async getAgencyStats() {
         try {
