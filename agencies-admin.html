@@ -849,6 +849,7 @@
     <script>
         // Supabaseデータベースインスタンス
         let agenciesDb = null;
+        let currentMode = 'demo'; // 現在のモード（'demo' または 'supabase'）
         
         // データ保持用
         let agencies = [
@@ -1000,9 +1001,11 @@
                 
                 if (hasValidConfig) {
                     agenciesDb = new AgenciesSupabaseDB();
+                    currentMode = 'supabase';
                     await loadAgenciesData();
                 } else {
                     // デモモードで起動
+                    currentMode = 'demo';
                     renderAgencyTable();
                     updateStats();
                 }
@@ -1114,22 +1117,22 @@
             if (agency.status === 'pending') {
                 return `
                     <div class="action-links">
-                        <a href="#" onclick="approveAgency('${agency.id}')">承認</a>
-                        <a href="#" onclick="rejectAgency('${agency.id}')">拒否</a>
+                        <a href="#" onclick="approveAgency('${agency.id}'); return false;">承認</a>
+                        <a href="#" onclick="rejectAgency('${agency.id}'); return false;">拒否</a>
                     </div>
                 `;
             } else if (agency.status === 'suspended') {
                 return `
                     <div class="action-links">
-                        <a href="#" onclick="showDetail('${agency.id}')">詳細</a>
+                        <a href="#" onclick="showDetail('${agency.id}'); return false;">詳細</a>
                         <a href="#" onclick="reactivateAgency('${agency.id}')">再開</a>
                     </div>
                 `;
             } else {
                 return `
                     <div class="action-links">
-                        <a href="#" onclick="showDetail('${agency.id}')">詳細</a>
-                        <a href="#" onclick="editAgency('${agency.id}')">編集</a>
+                        <a href="#" onclick="showDetail('${agency.id}'); return false;">詳細</a>
+                        <a href="#" onclick="editAgency('${agency.id}'); return false;">編集</a>
                     </div>
                 `;
             }
@@ -1439,25 +1442,67 @@
         // 代理店詳細表示
         function showDetail(id) {
             const agency = agencies.find(a => a.id === id);
-            if (agency) {
-                const taxInfo = `会社形態: ${agency.companyType === 'individual' ? '個人事業主' : '法人'}\n` +
-                              `${agency.corporateNumber ? `法人番号: ${agency.corporateNumber}\n` : ''}` +
-                              `${agency.birthDate ? `生年月日: ${agency.birthDate}\n` : ''}` +
-                              `インボイス登録: ${agency.invoiceRegistered ? '適格請求書発行事業者' : '非適格事業者'}\n` +
-                              `${agency.invoiceNumber ? `登録番号: ${agency.invoiceNumber}\n` : ''}` +
-                              `源泉徴収率: ${agency.withholdingTaxRate}%`;
-                              
-                let bankInfo = '未登録';
-                if (agency.bankInfo) {
-                    bankInfo = `銀行名: ${agency.bankInfo.bankName}\n` +
-                              `支店名: ${agency.bankInfo.branchName}\n` +
-                              `口座種別: ${agency.bankInfo.accountType}\n` +
-                              `口座番号: ${agency.bankInfo.accountNumber}\n` +
-                              `口座名義: ${agency.bankInfo.accountName}`;
-                }
-                              
-                alert(`代理店詳細（デモ）\n\nID: ${agency.id}\n名前: ${agency.name}\nメール: ${agency.email}\n階層: Tier ${agency.tier}\nステータス: ${agency.status}\n報酬率: ${agency.commissionRate}%\n\n【税務情報】\n${taxInfo}\n\n【銀行口座情報】\n${bankInfo}`);
+            if (!agency) {
+                showErrorMessage('代理店情報が見つかりません');
+                return;
             }
+            
+            // モーダル作成
+            const existingModal = document.getElementById('detailModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            const companyType = agency.companyType || agency.company_type;
+            const companyName = agency.name || agency.company_name;
+            const tierLevel = agency.tier || agency.tier_level;
+            const commissionRate = agency.commissionRate || agency.commission_rate;
+            
+            const modalHtml = `
+                <div class="modal" id="detailModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">代理店詳細</h3>
+                            <button class="modal-close" onclick="closeModal('detailModal')">×</button>
+                        </div>
+                        <div style="max-height: 60vh; overflow-y: auto;">
+                            <h4>基本情報</h4>
+                            <table style="width: 100%; margin-bottom: 20px;">
+                                <tr><td style="width: 30%; padding: 8px;"><strong>ID:</strong></td><td style="padding: 8px;">${agency.id}</td></tr>
+                                <tr><td style="padding: 8px;"><strong>会社名:</strong></td><td style="padding: 8px;">${companyName}</td></tr>
+                                <tr><td style="padding: 8px;"><strong>メール:</strong></td><td style="padding: 8px;">${agency.email}</td></tr>
+                                <tr><td style="padding: 8px;"><strong>階層:</strong></td><td style="padding: 8px;">Tier ${tierLevel}</td></tr>
+                                <tr><td style="padding: 8px;"><strong>ステータス:</strong></td><td style="padding: 8px;">${agency.status}</td></tr>
+                                <tr><td style="padding: 8px;"><strong>報酬率:</strong></td><td style="padding: 8px;">${commissionRate}%</td></tr>
+                            </table>
+                            
+                            <h4>税務情報</h4>
+                            <table style="width: 100%; margin-bottom: 20px;">
+                                <tr><td style="width: 30%; padding: 8px;"><strong>会社形態:</strong></td><td style="padding: 8px;">${companyType === 'individual' ? '個人事業主' : '法人'}</td></tr>
+                                ${agency.corporateNumber || agency.corporate_number ? `<tr><td style="padding: 8px;"><strong>法人番号:</strong></td><td style="padding: 8px;">${agency.corporateNumber || agency.corporate_number}</td></tr>` : ''}
+                                ${agency.birthDate || agency.birth_date ? `<tr><td style="padding: 8px;"><strong>生年月日:</strong></td><td style="padding: 8px;">${agency.birthDate || agency.birth_date}</td></tr>` : ''}
+                            </table>
+                            
+                            <h4>銀行口座情報</h4>
+                            ${agency.bankInfo || agency.bank_info ? `
+                                <table style="width: 100%; margin-bottom: 20px;">
+                                    <tr><td style="width: 30%; padding: 8px;"><strong>銀行名:</strong></td><td style="padding: 8px;">${(agency.bankInfo || agency.bank_info).bankName || (agency.bankInfo || agency.bank_info).bank_name || '-'}</td></tr>
+                                    <tr><td style="padding: 8px;"><strong>支店名:</strong></td><td style="padding: 8px;">${(agency.bankInfo || agency.bank_info).branchName || (agency.bankInfo || agency.bank_info).branch_name || '-'}</td></tr>
+                                    <tr><td style="padding: 8px;"><strong>口座種別:</strong></td><td style="padding: 8px;">${(agency.bankInfo || agency.bank_info).accountType || (agency.bankInfo || agency.bank_info).account_type || '-'}</td></tr>
+                                    <tr><td style="padding: 8px;"><strong>口座番号:</strong></td><td style="padding: 8px;">${(agency.bankInfo || agency.bank_info).accountNumber || (agency.bankInfo || agency.bank_info).account_number || '-'}</td></tr>
+                                    <tr><td style="padding: 8px;"><strong>口座名義:</strong></td><td style="padding: 8px;">${(agency.bankInfo || agency.bank_info).accountName || (agency.bankInfo || agency.bank_info).account_name || '-'}</td></tr>
+                                </table>
+                            ` : '<p>未登録</p>'}
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn btn-secondary" onclick="closeModal('detailModal')">閉じる</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            document.getElementById('detailModal').classList.add('active');
         }
         
         // 代理店編集
@@ -1617,26 +1662,52 @@
         }
         
         // 代理店拒否
-        function rejectAgency(id) {
-            if (confirm(`代理店 #${id} を拒否しますか？`)) {
-                const index = agencies.findIndex(a => a.id === id);
-                if (index !== -1) {
-                    agencies.splice(index, 1);
-                    filterAgencies();
-                    alert('代理店申請を拒否しました');
+        async function rejectAgency(id) {
+            if (!confirm(`代理店 #${id} を拒否しますか？`)) return;
+            
+            try {
+                if (currentMode === 'supabase') {
+                    const db = new AgenciesSupabaseDB();
+                    await db.updateAgencyStatus(id, 'rejected');
+                    showSuccessMessage('代理店を拒否しました');
+                } else {
+                    const index = agencies.findIndex(a => a.id === id);
+                    if (index !== -1) {
+                        agencies.splice(index, 1);
+                        alert('代理店申請を拒否しました');
+                    }
                 }
+                await loadAgenciesData();
+                filterAgencies();
+                await updateStats();
+            } catch (error) {
+                console.error('拒否エラー:', error);
+                showErrorMessage('拒否処理に失敗しました: ' + error.message);
             }
         }
         
         // 代理店再開
-        function reactivateAgency(id) {
-            if (confirm(`代理店 #${id} を再開しますか？`)) {
-                const agency = agencies.find(a => a.id === id);
-                if (agency) {
-                    agency.status = 'active';
-                    filterAgencies();
-                    alert('代理店を再開しました');
+        async function reactivateAgency(id) {
+            if (!confirm(`代理店 #${id} を再開しますか？`)) return;
+            
+            try {
+                if (currentMode === 'supabase') {
+                    const db = new AgenciesSupabaseDB();
+                    await db.updateAgencyStatus(id, 'active');
+                    showSuccessMessage('代理店を再開しました');
+                } else {
+                    const agency = agencies.find(a => a.id === id);
+                    if (agency) {
+                        agency.status = 'active';
+                        alert('代理店を再開しました');
+                    }
                 }
+                await loadAgenciesData();
+                filterAgencies();
+                await updateStats();
+            } catch (error) {
+                console.error('再開エラー:', error);
+                showErrorMessage('再開処理に失敗しました: ' + error.message);
             }
         }
         
@@ -2167,6 +2238,15 @@
             setTimeout(() => {
                 successElement.style.display = 'none';
             }, 3000);
+        }
+        
+        // エイリアス関数
+        function showErrorMessage(message) {
+            showError(message);
+        }
+        
+        function showSuccessMessage(message) {
+            showSuccess(message);
         }
         
         // ユーザー情報表示
