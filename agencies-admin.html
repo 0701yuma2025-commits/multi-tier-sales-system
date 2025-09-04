@@ -932,6 +932,8 @@
                     agenciesDb = new AgenciesSupabaseDB();
                     currentMode = 'supabase';
                     await loadAgenciesData();
+                    filterAgencies();
+                    await updateStats();
                 } else {
                     // デモモードで起動
                     currentMode = 'demo';
@@ -951,6 +953,7 @@
         async function loadAgenciesData() {
             try {
                 const data = await agenciesDb.getAgencies();
+                console.log('Supabaseから取得したデータ:', data);
                 agencies = data.map(agency => ({
                     id: agency.id,
                     name: agency.company_name,
