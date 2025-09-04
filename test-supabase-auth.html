@@ -28,17 +28,11 @@
                 
                 if (session) {
                     result.textContent = 'ログイン済み:\n' + JSON.stringify(session.user, null, 2);
+                    result.textContent += '\n\nトークン: ' + session.access_token.substring(0, 20) + '...';
                 } else {
-                    result.textContent = '未ログイン';
-                    
-                    // anon keyでの認証をテスト
-                    const { data, error } = await client.auth.signInAnonymously();
-                    
-                    if (error) {
-                        result.textContent += '\n\nanonymous認証エラー: ' + error.message;
-                    } else {
-                        result.textContent += '\n\nanonymous認証成功';
-                    }
+                    result.textContent = '未ログイン\n\n';
+                    result.textContent += '注意: 認証されていない状態では更新できません。\n';
+                    result.textContent += 'login-supabase.htmlからログインしてください。';
                 }
             } catch (error) {
                 result.textContent = 'エラー: ' + error.message;
