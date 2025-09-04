@@ -267,14 +267,22 @@ class AgenciesSupabaseDB {
                     status: 'active',
                     updated_at: new Date().toISOString()
                 })
-                .eq('id', id);
+                .eq('id', id)
+                .select();
             
             if (updateError) {
                 console.error('更新エラー:', updateError);
                 throw updateError;
             }
             
-            // 更新後のデータを取得
+            console.log('更新データ:', updateData);
+            
+            // 更新が成功した場合、updateDataから最初の要素を返す
+            if (updateData && updateData.length > 0) {
+                return updateData[0];
+            }
+            
+            // もし更新データが空の場合は、別途取得
             const { data, error } = await this.client
                 .from('agencies')
                 .select()
@@ -292,8 +300,7 @@ class AgenciesSupabaseDB {
                 throw error;
             }
             
-            // 配列の場合は最初の要素を返す
-            return Array.isArray(data) ? data[0] : data;
+            return data;
         } catch (error) {
             console.error('代理店承認エラー:', error);
             throw error;
