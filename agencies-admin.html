@@ -1321,7 +1321,14 @@
                 document.getElementById('editEmail').value = agency.email;
                 document.getElementById('editStatus').value = agency.status;
                 // 報酬率フィールドは削除済み
-                document.getElementById('editCompanyType').value = agency.companyType || 'corporation';
+                // company_typeを英語に変換（表示用）
+                const companyTypeReverseMap = {
+                    '法人': 'corporation',
+                    '個人': 'individual',
+                    'corporation': 'corporation',
+                    'individual': 'individual'
+                };
+                document.getElementById('editCompanyType').value = companyTypeReverseMap[agency.companyType] || 'corporation';
                 document.getElementById('editCorporateNumber').value = agency.corporateNumber || '';
                 document.getElementById('editBirthDate').value = agency.birthDate || '';
                 document.getElementById('editInvoiceRegistered').value = agency.invoiceRegistered !== false ? 'true' : 'false';
@@ -1364,11 +1371,17 @@
                         return;
                     }
                     
+                    // company_typeを日本語に変換
+                    const companyTypeMap = {
+                        'corporation': '法人',
+                        'individual': '個人'
+                    };
+                    
                     // Supabaseを更新
                     const updates = {
                         company_name: editName.value,
                         status: editStatus.value,
-                        company_type: editCompanyType.value,
+                        company_type: companyTypeMap[editCompanyType.value] || editCompanyType.value,
                         representative: {
                             name: editName.value.split(' ')[0] || '',
                             email: editEmail.value,
