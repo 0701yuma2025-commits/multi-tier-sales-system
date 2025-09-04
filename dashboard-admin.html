@@ -870,7 +870,7 @@
                     updateKPIs();
                     
                     // グラフを更新
-                    updateChartsWithRealData();
+                    await updateChartsWithRealData();
                     
                     // リストを更新
                     updateDataLists();
@@ -921,7 +921,7 @@
         }
         
         // グラフを実データで更新
-        function updateChartsWithRealData() {
+        async function updateChartsWithRealData() {
             // 売上推移グラフを更新
             updateSalesChartWithData();
             
