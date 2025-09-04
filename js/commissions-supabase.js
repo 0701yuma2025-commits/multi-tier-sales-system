@@ -107,6 +107,29 @@ class CommissionsSupabaseDB {
         }
     }
 
+    // 支払い完了処理
+    async markAsPaid(id) {
+        try {
+            const { data: userData } = await this.client.auth.getUser();
+            
+            const { data, error } = await this.client
+                .from('commissions')
+                .update({
+                    status: 'paid',
+                    paid_at: new Date().toISOString()
+                })
+                .eq('id', id)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return { data, error: null };
+        } catch (error) {
+            console.error('支払い完了エラー:', error);
+            return { data: null, error };
+        }
+    }
+
     // 一括承認
     async approveAllPending(period) {
         try {
