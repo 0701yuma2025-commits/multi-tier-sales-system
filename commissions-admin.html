@@ -318,6 +318,11 @@
         }
         
         .status-completed {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-paid {
             background-color: #d1fae5;
             color: #065f46;
         }
@@ -1071,7 +1076,9 @@
                             <div class="action-btns">
                                 <button class="action-btn view" onclick="showCommissionDetail('${commission.id || commission.agencyId}')">詳細</button>
                                 ${commission.status === 'pending' ? 
-                                    `<button class="action-btn approve" onclick="approveCommission('${commission.id || commission.agencyId}')">承認</button>` : ''
+                                    `<button class="action-btn approve" onclick="approveCommission('${commission.id || commission.agencyId}')">承認</button>` : 
+                                    commission.status === 'completed' ?
+                                    `<button class="action-btn approve" onclick="markAsPaid('${commission.id || commission.agencyId}')">支払完了</button>` : ''
                                 }
                             </div>
                         </td>
@@ -1123,7 +1130,9 @@
                             <div class="action-btns">
                                 <button class="action-btn view" onclick="showCommissionDetail('${commission.id || commission.agencyId}')">詳細</button>
                                 ${commission.status === 'pending' ? 
-                                    `<button class="action-btn approve" onclick="approveCommission('${commission.id || commission.agencyId}')">承認</button>` : ''
+                                    `<button class="action-btn approve" onclick="approveCommission('${commission.id || commission.agencyId}')">承認</button>` : 
+                                    commission.status === 'completed' ?
+                                    `<button class="action-btn approve" onclick="markAsPaid('${commission.id || commission.agencyId}')">支払完了</button>` : ''
                                 }
                             </div>
                         </td>
@@ -1211,18 +1220,18 @@
                 let historyData = [];
                 
                 if (commissionsDb) {
-                    // Supabaseから支払い履歴を取得
-                    const { data, error } = await commissionsDb.getPaymentHistory();
+                    // Supabaseから支払い済み報酬を取得
+                    const { data, error } = await commissionsDb.getCommissions(currentPeriod, { status: 'paid' });
                     if (error) throw error;
                     
-                    historyData = data?.map(payment => ({
-                        date: new Date(payment.payment_date).toLocaleDateString('ja-JP'),
-                        agencyName: payment.agency_name,
-                        amount: payment.amount,
-                        method: payment.payment_method,
-                        account: payment.bank_account,
-                        processor: payment.processor,
-                        note: payment.notes
+                    historyData = data?.map(commission => ({
+                        date: commission.paid_at ? new Date(commission.paid_at).toLocaleDateString('ja-JP') : '-',
+                        agencyName: commission.agencies?.company_name || '-',
+                        amount: commission.net_payment || commission.total_commission || 0,
+                        method: '銀行振込',
+                        account: '****1234',
+                        processor: '管理者',
+                        note: `${commission.period} 報酬`
                     })) || [];
                 } else {
                     // デモモード
@@ -1375,9 +1384,10 @@
             const statusText = {
                 pending: '承認待ち',
                 processing: '処理中',
-                completed: '支払済'
+                completed: '支払待ち',
+                paid: '支払済'
             };
-            return `<span class="status-badge status-${status}">${statusText[status]}</span>`;
+            return `<span class="status-badge status-${status}">${statusText[status] || status}</span>`;
         }
         
         // 報酬詳細表示
@@ -1647,6 +1657,41 @@
                     console.error('一括承認エラー:', error);
                     alert('一括承認に失敗しました: ' + error.message);
                 }
+            }
+        }
+        
+        // 支払い完了処理
+        async function markAsPaid(commissionId) {
+            console.log('支払い完了処理開始:', { commissionId });
+            
+            if (!confirm('この報酬を支払い済みにしますか？')) {
+                return;
+            }
+            
+            try {
+                if (commissionsDb) {
+                    // Supabaseで支払い済みに更新
+                    const { data, error } = await commissionsDb.markAsPaid(commissionId);
+                    
+                    if (error) {
+                        console.error('支払い完了エラー:', error);
+                        throw error;
+                    }
+                    
+                    alert('支払い完了として記録しました');
+                    await renderSummaryTable();
+                } else {
+                    // デモモード
+                    const commission = commissions.find(c => c.id === commissionId || c.agencyId === commissionId);
+                    if (commission) {
+                        commission.status = 'paid';
+                        alert('支払い完了として記録しました');
+                        await renderSummaryTable();
+                    }
+                }
+            } catch (error) {
+                console.error('支払い完了処理エラー:', error);
+                alert('支払い完了処理に失敗しました: ' + error.message);
             }
         }
         
