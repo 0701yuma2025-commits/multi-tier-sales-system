@@ -690,27 +690,27 @@
             <form onsubmit="handleEdit(event)">
                 <input type="hidden" id="editId">
                 <div class="form-group">
-                    <label for="editName">代理店名</label>
+                    <label for="editName">代理店名 <span style="color: #ef4444;">*</span></label>
                     <input type="text" id="editName" required>
                 </div>
                 <div class="form-group">
-                    <label for="editEmail">メールアドレス</label>
+                    <label for="editEmail">メールアドレス <span style="color: #ef4444;">*</span></label>
                     <input type="email" id="editEmail" required>
                 </div>
                 <div class="form-group">
-                    <label for="editStatus">ステータス</label>
+                    <label for="editStatus">ステータス <span style="color: #ef4444;">*</span></label>
                     <select id="editStatus" required>
                         <option value="active">アクティブ</option>
                         <option value="suspended">停止中</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="editCommissionRate">報酬率（%）</label>
+                    <label for="editCommissionRate">報酬率（%） <span style="color: #ef4444;">*</span></label>
                     <input type="number" id="editCommissionRate" min="0" max="100" step="0.1" required>
                     <small>デフォルトは階層による自動計算です</small>
                 </div>
                 <div class="form-group">
-                    <label for="editCompanyType">会社形態</label>
+                    <label for="editCompanyType">会社形態 <span style="color: #ef4444;">*</span></label>
                     <select id="editCompanyType" required onchange="toggleEditCompanyTypeFields()">
                         <option value="corporation">法人</option>
                         <option value="individual">個人事業主</option>
@@ -726,7 +726,7 @@
                     <small>年齢確認のため必要です（個人事業主の場合）</small>
                 </div>
                 <div class="form-group">
-                    <label for="editInvoiceRegistered">インボイス登録</label>
+                    <label for="editInvoiceRegistered">インボイス登録 <span style="color: #ef4444;">*</span></label>
                     <select id="editInvoiceRegistered" required onchange="toggleInvoiceNumber()">
                         <option value="true">適格請求書発行事業者</option>
                         <option value="false">非適格事業者</option>
@@ -1358,15 +1358,28 @@
                 if (agenciesDb) {
                     // Supabaseを更新
                     const updates = {
-                        companyName: document.getElementById('editName').value,
+                        company_name: document.getElementById('editName').value,
                         status: document.getElementById('editStatus').value,
-                        companyType: document.getElementById('editCompanyType').value,
+                        company_type: document.getElementById('editCompanyType').value,
                         representative: {
                             name: document.getElementById('editName').value.split(' ')[0] || '',
                             email: document.getElementById('editEmail').value,
                             phone: '',
-                            birthDate: document.getElementById('editBirthDate').value || null
-                        }
+                            birth_date: document.getElementById('editBirthDate').value || null
+                        },
+                        bank_account: {
+                            bank_name: document.getElementById('editBankName').value || '',
+                            branch_name: document.getElementById('editBranchName').value || '',
+                            account_type: document.getElementById('editAccountType').value || '',
+                            account_number: document.getElementById('editAccountNumber').value || '',
+                            account_holder: document.getElementById('editAccountName').value || ''
+                        },
+                        invoice_info: {
+                            registered: document.getElementById('editInvoiceRegistered').value === 'true',
+                            number: document.getElementById('editInvoiceNumber').value || ''
+                        },
+                        commission_rate: parseFloat(document.getElementById('editCommissionRate').value) || 0,
+                        corporate_number: document.getElementById('editCorporateNumber').value || ''
                     };
                     
                     await agenciesDb.updateAgency(id, updates);
