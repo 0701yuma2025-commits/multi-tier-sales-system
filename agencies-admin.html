@@ -304,6 +304,16 @@
             color: #991b1b;
         }
         
+        .status-rejected {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-unknown {
+            background-color: #e5e7eb;
+            color: #6b7280;
+        }
+        
         .tier-badge {
             display: inline-block;
             padding: 4px 10px;
@@ -1108,9 +1118,14 @@
             const statusText = {
                 active: 'アクティブ',
                 pending: '承認待ち',
-                suspended: '停止中'
+                suspended: '停止中',
+                rejected: '停止中'  // rejectedも停止中として扱う
             };
-            return `<span class="status-badge status-${status}">${statusText[status]}</span>`;
+            // statusがundefinedまたは未定義の場合のデフォルト処理
+            const displayText = statusText[status] || '不明';
+            const displayStatus = status || 'unknown';
+            
+            return `<span class="status-badge status-${displayStatus}">${displayText}</span>`;
         }
         
         // アクションリンク生成
@@ -1122,11 +1137,11 @@
                         <a href="#" onclick="rejectAgency('${agency.id}'); return false;">拒否</a>
                     </div>
                 `;
-            } else if (agency.status === 'suspended') {
+            } else if (agency.status === 'suspended' || agency.status === 'rejected') {
                 return `
                     <div class="action-links">
                         <a href="#" onclick="showDetail('${agency.id}'); return false;">詳細</a>
-                        <a href="#" onclick="reactivateAgency('${agency.id}')">再開</a>
+                        <a href="#" onclick="reactivateAgency('${agency.id}'); return false;">再開</a>
                     </div>
                 `;
             } else {
