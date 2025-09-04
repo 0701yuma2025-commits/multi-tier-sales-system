@@ -840,6 +840,7 @@
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">キャンセル</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteAgency()" style="background-color: #ef4444; color: white; margin-right: auto;">削除</button>
                     <button type="submit" class="btn btn-primary">保存</button>
                 </div>
             </form>
@@ -2220,6 +2221,70 @@
                 }
                 rejectAgency(agencyId);
                 closeModal('documentModal');
+            }
+        }
+        
+        // 代理店削除
+        async function deleteAgency() {
+            const agencyId = document.getElementById('editId').value;
+            const agency = agencies.find(a => a.id === agencyId);
+            
+            if (!agency) {
+                showError('代理店情報が見つかりません');
+                return;
+            }
+            
+            // 確認ダイアログ
+            if (!confirm(`${agency.company_name || agency.name} を削除しますか？\n\nこの操作は取り消せません。`)) {
+                return;
+            }
+            
+            try {
+                if (currentMode === 'supabase' && agenciesDb) {
+                    // Supabaseモード
+                    showSuccess('削除確認中...');
+                    
+                    // 制約チェックも含めて削除を実行
+                    await agenciesDb.deleteAgency(agencyId);
+                    
+                    showSuccess('代理店を削除しました');
+                    closeModal('editModal');
+                    
+                    // データをリロード
+                    await loadAgenciesData();
+                    filterAgencies();
+                    await updateStats();
+                    
+                } else {
+                    // デモモード
+                    const hasSubAgencies = agencies.some(a => a.parentId === agencyId);
+                    
+                    if (hasSubAgencies) {
+                        showError('下位代理店が存在するため削除できません');
+                        return;
+                    }
+                    
+                    // デモデータから削除
+                    const index = agencies.findIndex(a => a.id === agencyId);
+                    if (index !== -1) {
+                        agencies.splice(index, 1);
+                        showSuccess('代理店を削除しました（デモ）');
+                        closeModal('editModal');
+                        filterAgencies();
+                        updateStats();
+                    }
+                }
+            } catch (error) {
+                console.error('削除エラー:', error);
+                
+                // エラーメッセージを分かりやすく表示
+                if (error.message.includes('下位代理店')) {
+                    showError('下位代理店が存在するため削除できません');
+                } else if (error.message.includes('売上データ')) {
+                    showError('売上データが存在するため削除できません');
+                } else {
+                    showError('削除に失敗しました: ' + error.message);
+                }
             }
         }
         
