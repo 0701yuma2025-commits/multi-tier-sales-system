@@ -229,11 +229,22 @@ class AgenciesSupabaseDB {
             console.log('更新データ:', JSON.stringify(updateData, null, 2));
             console.log('対象ID:', id);
             
-            const { data, error } = await this.client
+            // まず更新を実行（selectなし）
+            const { data: updateResult, error: updateError } = await this.client
                 .from('agencies')
                 .update(updateData)
-                .eq('id', id)
+                .eq('id', id);
+                
+            if (updateError) {
+                console.error('更新エラー詳細:', updateError);
+                throw updateError;
+            }
+            
+            // 更新成功したら、データを取得
+            const { data, error } = await this.client
+                .from('agencies')
                 .select()
+                .eq('id', id)
                 .single();
             
             if (error) throw error;
