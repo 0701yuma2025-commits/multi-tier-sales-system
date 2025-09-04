@@ -196,8 +196,6 @@ class AgenciesSupabaseDB {
             if (updates.status !== undefined) updateData.status = updates.status;
             if (updates.tier_level !== undefined) updateData.tier_level = parseInt(updates.tier_level);
             if (updates.tierLevel !== undefined) updateData.tier_level = parseInt(updates.tierLevel);
-            if (updates.commission_rate !== undefined) updateData.commission_rate = parseFloat(updates.commission_rate);
-            if (updates.corporate_number !== undefined) updateData.corporate_number = updates.corporate_number;
             
             // JSONBフィールドの更新
             if (updates.representative) {
@@ -228,6 +226,9 @@ class AgenciesSupabaseDB {
             
             updateData.updated_at = new Date().toISOString();
             
+            console.log('更新データ:', JSON.stringify(updateData, null, 2));
+            console.log('対象ID:', id);
+            
             const { data, error } = await this.client
                 .from('agencies')
                 .update(updateData)
@@ -240,6 +241,12 @@ class AgenciesSupabaseDB {
             return data;
         } catch (error) {
             console.error('代理店更新エラー:', error);
+            console.error('エラー詳細:', {
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                code: error.code
+            });
             throw error;
         }
     }
