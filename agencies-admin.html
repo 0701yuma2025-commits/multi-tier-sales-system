@@ -494,9 +494,6 @@
                 <button class="btn btn-secondary" onclick="showBulkImportModal()">
                     <span>📤</span> 一括登録
                 </button>
-                <button class="btn btn-primary" onclick="showInviteModal()">
-                    <span>➕</span> 代理店を招待
-                </button>
             </div>
         </div>
         
@@ -590,85 +587,6 @@
             </div>
         </div>
     </main>
-    
-    <!-- 代理店招待モーダル -->
-    <div class="modal" id="inviteModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">代理店を招待</h3>
-                <button class="modal-close" onclick="closeModal('inviteModal')">×</button>
-            </div>
-            <form onsubmit="handleInvite(event)">
-                <div class="form-group">
-                    <label class="form-label form-label-required" for="inviteEmail">メールアドレス</label>
-                    <input class="form-control" type="email" id="inviteEmail" required>
-                    <small>招待メールが送信されます</small>
-                </div>
-                <div class="form-group">
-                    <label class="form-label form-label-required" for="inviteCompanyType">会社形態</label>
-                    <select class="form-control" id="inviteCompanyType" required onchange="toggleInviteCompanyTypeFields()">
-                        <option value="">選択してください</option>
-                        <option value="corporation">法人</option>
-                        <option value="individual">個人事業主</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label form-label-required" for="inviteName">代理店名（会社名/屋号）</label>
-                    <input class="form-control" type="text" id="inviteName" required>
-                </div>
-                <div class="form-group" id="inviteCorporateNumberGroup" style="display: none;">
-                    <label for="inviteCorporateNumber">法人番号</label>
-                    <input type="text" id="inviteCorporateNumber" placeholder="13桁の法人番号">
-                </div>
-                <div class="form-group">
-                    <label class="form-label form-label-required" for="inviteRepName">代表者名</label>
-                    <input class="form-control" type="text" id="inviteRepName" required>
-                </div>
-                <div class="form-group" id="inviteBirthDateGroup" style="display: none;">
-                    <label for="inviteBirthDate">生年月日 *</label>
-                    <input type="date" id="inviteBirthDate">
-                    <small>年齢確認のため必要です（個人事業主の場合）</small>
-                </div>
-                <div class="form-group">
-                    <label class="form-label form-label-required" for="inviteTier">階層</label>
-                    <select class="form-control" id="inviteTier" required>
-                        <option value="">選択してください</option>
-                        <option value="1">Tier 1 - トップレベル</option>
-                        <option value="2">Tier 2</option>
-                        <option value="3">Tier 3</option>
-                        <option value="4">Tier 4</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="inviteParent">上位代理店（Tier 2以下の場合）</label>
-                    <select id="inviteParent">
-                        <option value="">なし（Tier 1）</option>
-                    </select>
-                </div>
-                
-                <hr style="margin: 20px 0;">
-                <h4 style="margin-bottom: 16px;">税務情報</h4>
-                
-                <div class="form-group">
-                    <label for="inviteInvoiceRegistered">インボイス登録 *</label>
-                    <select id="inviteInvoiceRegistered" required onchange="toggleInviteInvoiceNumber()">
-                        <option value="">選択してください</option>
-                        <option value="true">適格請求書発行事業者</option>
-                        <option value="false">非適格事業者</option>
-                    </select>
-                </div>
-                <div class="form-group" id="inviteInvoiceNumberGroup" style="display: none;">
-                    <label for="inviteInvoiceNumber">インボイス登録番号</label>
-                    <input type="text" id="inviteInvoiceNumber" placeholder="T1234567890123" pattern="T\d{13}">
-                    <small>T + 13桁の数字</small>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('inviteModal')">キャンセル</button>
-                    <button type="submit" class="btn btn-primary">招待を送信</button>
-                </div>
-            </form>
-        </div>
-    </div>
     
     <!-- 一括登録モーダル -->
     <div class="modal" id="bulkImportModal">
@@ -1255,21 +1173,6 @@
             ModalController.close(modalId);
         }
         
-        // 代理店招待モーダル表示
-        function showInviteModal() {
-            // 上位代理店の選択肢を更新
-            const parentSelect = document.getElementById('inviteParent');
-            parentSelect.innerHTML = '<option value="">なし（Tier 1）</option>';
-            
-            agencies.filter(a => a.tier < 4 && a.status === 'active').forEach(agency => {
-                const option = document.createElement('option');
-                option.value = agency.id;
-                option.textContent = `${agency.name} (Tier ${agency.tier})`;
-                parentSelect.appendChild(option);
-            });
-            
-            showModal('inviteModal');
-        }
         
         // 会社形態変更時のフィールド表示制御
         function toggleCompanyTypeFields() {
@@ -1322,31 +1225,7 @@
         }
         
         // 招待モーダルの会社形態変更時
-        function toggleInviteCompanyTypeFields() {
-            const companyType = document.getElementById('inviteCompanyType').value;
-            const corporateNumberGroup = document.getElementById('inviteCorporateNumberGroup');
-            const birthDateGroup = document.getElementById('inviteBirthDateGroup');
-            
-            if (companyType === 'corporation') {
-                corporateNumberGroup.style.display = 'block';
-                birthDateGroup.style.display = 'none';
-                document.getElementById('inviteBirthDate').required = false;
-            } else if (companyType === 'individual') {
-                corporateNumberGroup.style.display = 'none';
-                birthDateGroup.style.display = 'block';
-                document.getElementById('inviteBirthDate').required = true;
-            }
-        }
         
-        function toggleInviteInvoiceNumber() {
-            const isRegistered = document.getElementById('inviteInvoiceRegistered').value === 'true';
-            const invoiceNumberGroup = document.getElementById('inviteInvoiceNumberGroup');
-            const invoiceNumberInput = document.getElementById('inviteInvoiceNumber');
-            
-            if (isRegistered) {
-                invoiceNumberGroup.style.display = 'block';
-                invoiceNumberInput.required = true;
-            } else {
                 invoiceNumberGroup.style.display = 'none';
                 invoiceNumberInput.required = false;
                 invoiceNumberInput.value = '';
@@ -1358,87 +1237,6 @@
             const companyType = document.getElementById('editCompanyType').value;
             const withholdingRate = companyType === 'individual' ? 10.21 : 0;
             // 実際のデータ更新は保存時に行う
-        }
-        
-        // 代理店招待処理
-        async function handleInvite(event) {
-            event.preventDefault();
-            
-            const email = document.getElementById('inviteEmail').value;
-            const name = document.getElementById('inviteName').value;
-            const repName = document.getElementById('inviteRepName').value;
-            const tier = parseInt(document.getElementById('inviteTier').value);
-            const parentId = document.getElementById('inviteParent').value;
-            const companyType = document.getElementById('inviteCompanyType').value;
-            const corporateNumber = document.getElementById('inviteCorporateNumber').value;
-            const birthDate = document.getElementById('inviteBirthDate').value;
-            const invoiceRegistered = document.getElementById('inviteInvoiceRegistered').value === 'true';
-            const invoiceNumber = document.getElementById('inviteInvoiceNumber').value;
-            
-            // 年齢確認（個人事業主の場合）
-            if (companyType === 'individual' && birthDate) {
-                const age = calculateAge(birthDate);
-                if (age < 20) {
-                    alert('代理店登録は20歳以上である必要があります');
-                    return;
-                }
-            }
-            
-            try {
-                if (agenciesDb) {
-                    // Supabaseに登録
-                    const agencyData = {
-                        companyName: name,
-                        companyType: companyType,
-                        representativeName: repName,
-                        email: email,
-                        phone: '', // TODO: 電話番号フィールドを追加
-                        birthDate: birthDate || null,
-                        tierLevel: tier,
-                        parentAgencyId: parentId || null,
-                        invoiceRegistered: invoiceRegistered,
-                        invoiceNumber: invoiceNumber,
-                        invoiceCompanyName: name,
-                        corporateNumber: corporateNumber || null
-                    };
-                    
-                    await agenciesDb.createAgency(agencyData);
-                    await loadAgenciesData();
-                    showSuccess(`${name} への招待メールを送信しました`);
-                } else {
-                    // デモモード
-                    const newAgency = {
-                        id: String(agencies.length + 1).padStart(3, '0'),
-                        name: name,
-                        repName: repName,
-                        email: email,
-                        tier: tier,
-                        parentId: parentId || null,
-                        parentName: parentId ? agencies.find(a => a.id === parentId).name : '-',
-                        sales: 0,
-                        commission: 0,
-                        status: 'pending',
-                        registeredDate: new Date().toISOString().split('T')[0],
-                        commissionRate: [0, 30, 25, 20, 15][tier],
-                        companyType: companyType,
-                        corporateNumber: corporateNumber || null,
-                        birthDate: birthDate || null,
-                        invoiceRegistered: invoiceRegistered,
-                        invoiceNumber: invoiceNumber,
-                        withholdingTaxRate: companyType === 'individual' ? 10.21 : 0,
-                        bankInfo: null
-                    };
-                    
-                    agencies.push(newAgency);
-                    filterAgencies();
-                    showSuccess(`${name} への招待メールを送信しました（デモ）`);
-                }
-            } catch (error) {
-                console.error('代理店招待エラー:', error);
-                showError('招待の送信に失敗しました');
-            }
-            
-            closeModal('inviteModal');
         }
         
         // 年齢計算
