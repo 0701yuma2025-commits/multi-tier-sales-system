@@ -188,17 +188,41 @@ class AgenciesSupabaseDB {
         try {
             const updateData = {};
             
+            // 直接のフィールドマッピング
+            if (updates.company_name !== undefined) updateData.company_name = updates.company_name;
             if (updates.companyName !== undefined) updateData.company_name = updates.companyName;
+            if (updates.company_type !== undefined) updateData.company_type = updates.company_type;
             if (updates.companyType !== undefined) updateData.company_type = updates.companyType;
             if (updates.status !== undefined) updateData.status = updates.status;
+            if (updates.tier_level !== undefined) updateData.tier_level = parseInt(updates.tier_level);
             if (updates.tierLevel !== undefined) updateData.tier_level = parseInt(updates.tierLevel);
+            if (updates.commission_rate !== undefined) updateData.commission_rate = parseFloat(updates.commission_rate);
+            if (updates.corporate_number !== undefined) updateData.corporate_number = updates.corporate_number;
             
+            // JSONBフィールドの更新
             if (updates.representative) {
                 updateData.representative = {
-                    name: updates.representative.name,
-                    email: updates.representative.email,
-                    phone: updates.representative.phone,
-                    birth_date: updates.representative.birthDate
+                    name: updates.representative.name || '',
+                    email: updates.representative.email || '',
+                    phone: updates.representative.phone || '',
+                    birth_date: updates.representative.birth_date || null
+                };
+            }
+            
+            if (updates.bank_account) {
+                updateData.bank_account = {
+                    bank_name: updates.bank_account.bank_name || '',
+                    branch_name: updates.bank_account.branch_name || '',
+                    account_type: updates.bank_account.account_type || '',
+                    account_number: updates.bank_account.account_number || '',
+                    account_holder: updates.bank_account.account_holder || ''
+                };
+            }
+            
+            if (updates.invoice_info) {
+                updateData.invoice_info = {
+                    registered: updates.invoice_info.registered || false,
+                    number: updates.invoice_info.number || ''
                 };
             }
             
