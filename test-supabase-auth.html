@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase認証テスト</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/agencies-supabase.js"></script>
+</head>
+<body>
+    <h1>Supabase認証とアップデートテスト</h1>
+    
+    <button onclick="testAuth()">認証状態をチェック</button>
+    <button onclick="testUpdate()">代理店承認テスト</button>
+    
+    <pre id="result"></pre>
+    
+    <script>
+        const result = document.getElementById('result');
+        
+        async function testAuth() {
+            try {
+                const client = initializeSupabase();
+                
+                // 現在のセッションをチェック
+                const { data: { session } } = await client.auth.getSession();
+                
+                if (session) {
+                    result.textContent = 'ログイン済み:\n' + JSON.stringify(session.user, null, 2);
+                } else {
+                    result.textContent = '未ログイン';
+                    
+                    // anon keyでの認証をテスト
+                    const { data, error } = await client.auth.signInAnonymously();
+                    
+                    if (error) {
+                        result.textContent += '\n\nanonymous認証エラー: ' + error.message;
+                    } else {
+                        result.textContent += '\n\nanonymous認証成功';
+                    }
+                }
+            } catch (error) {
+                result.textContent = 'エラー: ' + error.message;
+            }
+        }
+        
+        async function testUpdate() {
+            try {
+                const client = initializeSupabase();
+                
+                // テスト用に別のIDを使用（既に更新されていないもの）
+                const testId = 'bc65a582-40db-4b0e-9423-495795005348';
+                
+                result.textContent = '更新テスト開始...\n';
+                
+                // 更新前の状態を確認
+                const { data: before, error: beforeError } = await client
+                    .from('agencies')
+                    .select('id, company_name, status')
+                    .eq('id', testId)
+                    .single();
+                
+                result.textContent += '\n更新前: ' + JSON.stringify(before, null, 2);
+                
+                // 更新を実行
+                const { data: updateData, error: updateError } = await client
+                    .from('agencies')
+                    .update({ 
+                        status: 'pending',  // 一旦pendingに戻す
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', testId)
+                    .select();
+                
+                if (updateError) {
+                    result.textContent += '\n\n更新エラー: ' + JSON.stringify(updateError, null, 2);
+                } else {
+                    result.textContent += '\n\n更新成功: ' + JSON.stringify(updateData, null, 2);
+                    
+                    // 再度activeに更新
+                    const { data: updateData2, error: updateError2 } = await client
+                        .from('agencies')
+                        .update({ 
+                            status: 'active',
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', testId)
+                        .select();
+                    
+                    if (updateError2) {
+                        result.textContent += '\n\n2回目更新エラー: ' + JSON.stringify(updateError2, null, 2);
+                    } else {
+                        result.textContent += '\n\n2回目更新成功: ' + JSON.stringify(updateData2, null, 2);
+                    }
+                }
+            } catch (error) {
+                result.textContent = 'エラー: ' + error.message + '\n' + error.stack;
+            }
+        }
+    </script>
+</body>
+</html>
