@@ -1611,7 +1611,7 @@
                 createDocumentModal();
             }
             
-            document.getElementById('verifyAgencyName').textContent = agency.name;
+            document.getElementById('verifyAgencyName').textContent = agency.company_name || agency.name;
             document.getElementById('verifyAgencyId').value = agency.id;
             
             // 書類ステータス表示
@@ -2176,7 +2176,10 @@
             if (agenciesDb) {
                 // Supabaseモード
                 try {
+                    console.log('承認処理開始:', { agencyId, comment, agency });
                     const result = await agenciesDb.approveAgency(agencyId, comment);
+                    console.log('承認結果:', result);
+                    
                     await loadAgenciesData();
                     
                     filterAgencies(); // 画面を更新
