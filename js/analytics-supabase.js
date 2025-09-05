@@ -19,8 +19,7 @@ class AnalyticsSupabaseDB {
     // 期間内の代理店パフォーマンスデータ取得
     async getAgencyPerformance(startDate, endDate, filters = {}) {
         if (!this.client) {
-            console.warn('Supabaseクライアントが利用できません');
-            return { data: this.getDemoAgencyPerformance(), error: null };
+            return { data: null, error: new Error('Supabaseが設定されていません') };
         }
         
         try {
@@ -65,8 +64,7 @@ class AnalyticsSupabaseDB {
     // 売上統計データ取得
     async getSalesStatistics(startDate, endDate) {
         if (!this.client) {
-            console.warn('Supabaseクライアントが利用できません');
-            return { data: this.getDemoSalesStatistics(), error: null };
+            return { data: null, error: new Error('Supabaseが設定されていません') };
         }
         
         try {
@@ -176,8 +174,7 @@ class AnalyticsSupabaseDB {
     // コホートデータ取得
     async getCohortData(months = 6) {
         if (!this.client) {
-            console.warn('Supabaseクライアントが利用できません');
-            return { data: this.getDemoCohortData(months), error: null };
+            return { data: null, error: new Error('Supabaseが設定されていません') };
         }
         
         try {
@@ -256,8 +253,7 @@ class AnalyticsSupabaseDB {
     // ファネルデータ取得
     async getFunnelData(startDate, endDate) {
         if (!this.client) {
-            console.warn('Supabaseクライアントが利用できません');
-            return { data: this.getDemoFunnelData(), error: null };
+            return { data: null, error: new Error('Supabaseが設定されていません') };
         }
         
         try {
@@ -354,8 +350,7 @@ class AnalyticsSupabaseDB {
     // メトリクス計算
     async calculateMetrics(startDate, endDate) {
         if (!this.client) {
-            console.warn('Supabaseクライアントが利用できません');
-            return { data: this.getDemoMetrics(), error: null };
+            return { data: null, error: new Error('Supabaseが設定されていません') };
         }
         
         try {
@@ -420,7 +415,7 @@ class AnalyticsSupabaseDB {
         return 14.8; // デモ値
     }
     
-    // デモデータ生成メソッド
+    // 削除予定のデモデータメソッド（使用しない）
     getDemoAgencyPerformance() {
         return [
             {
