@@ -297,7 +297,7 @@ class SupabaseDatabase {
 function initializeSupabase() {
     try {
         const db = new SupabaseDatabase();
-        return db.client;
+        return db;
     } catch (error) {
         console.error('Supabase初期化エラー:', error);
         return null;

@@ -2,8 +2,8 @@
 class AnalyticsSupabaseDB {
     constructor() {
         // グローバルのSupabaseインスタンスを使用
-        if (window.supabaseDb && window.supabaseDb.client) {
-            this.client = window.supabaseDb.client;
+        if (window.supabaseDb) {
+            this.client = window.supabaseDb;
         } else {
             // フォールバック：新規作成を試みる
             this.client = initializeSupabase();
