@@ -964,9 +964,168 @@
         
         // ビュー切り替え関数
         function switchCohortView(view) {
-            document.querySelectorAll('.chart-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.chart-options .chart-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-            // 実際の実装では、ビューに応じてチャートデータを更新
+            
+            // ビューに応じてチャートデータを更新
+            updateCohortChartByView(view);
+        }
+        
+        // コホートチャートをビューに応じて更新
+        async function updateCohortChartByView(view) {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (view === 'revenue') {
+                // 売上データの表示
+                await updateCohortChartRevenue(startDate, endDate);
+            } else if (view === 'retention') {
+                // 継続率データの表示（既存の処理）
+                await updateCohortChart(startDate, endDate);
+            } else if (view === 'growth') {
+                // 成長率データの表示
+                await updateCohortChartGrowth(startDate, endDate);
+            }
+        }
+        
+        // コホート売上チャート
+        async function updateCohortChartRevenue(startDate, endDate) {
+            const { data: cohortData, error } = await analyticsDb.getCohortData(6);
+            
+            if (error) {
+                console.error('コホートデータ取得エラー:', error);
+                return;
+            }
+            
+            const labels = ['月0', '月1', '月2', '月3', '月4', '月5'];
+            const datasets = [];
+            
+            // データがない場合の処理
+            if (!cohortData || Object.keys(cohortData).length === 0) {
+                showDataNotAvailable('コホート売上');
+                return;
+            }
+            
+            Object.entries(cohortData).forEach(([month, data]) => {
+                // 実際の売上データを月ごとに集計
+                const revenueData = [];
+                for (let i = 0; i < 6; i++) {
+                    let monthRevenue = 0;
+                    data.agencies.forEach(agency => {
+                        // 該当月の売上を集計
+                        const monthlySales = agency.sales.filter(sale => {
+                            const saleMonth = new Date(sale.sale_date);
+                            const cohortMonth = new Date(month);
+                            const monthDiff = (saleMonth.getFullYear() - cohortMonth.getFullYear()) * 12 + 
+                                            (saleMonth.getMonth() - cohortMonth.getMonth());
+                            return monthDiff === i;
+                        });
+                        monthRevenue += monthlySales.reduce((sum, sale) => sum + sale.amount, 0);
+                    });
+                    revenueData.push(monthRevenue / 10000); // 万円単位に変換
+                }
+                
+                datasets.push({
+                    label: month + '登録',
+                    data: revenueData,
+                    borderColor: `hsl(${datasets.length * 60}, 70%, 50%)`,
+                    backgroundColor: `hsla(${datasets.length * 60}, 70%, 50%, 0.1)`,
+                    borderWidth: 2,
+                    tension: 0.3
+                });
+            });
+            
+            if (window.cohortChart) {
+                // Y軸の設定を売上用に変更
+                window.cohortChart.options.scales.y.max = undefined;
+                window.cohortChart.options.scales.y.ticks.callback = function(value) {
+                    return '¥' + value.toLocaleString();
+                };
+                window.cohortChart.options.plugins.tooltip.callbacks.label = function(context) {
+                    return context.dataset.label + ': ¥' + context.parsed.y.toLocaleString();
+                };
+                
+                window.cohortChart.data.labels = labels;
+                window.cohortChart.data.datasets = datasets;
+                window.cohortChart.update();
+            }
+        }
+        
+        // コホート成長率チャート
+        async function updateCohortChartGrowth(startDate, endDate) {
+            const { data: cohortData, error } = await analyticsDb.getCohortData(6);
+            
+            if (error) {
+                console.error('コホートデータ取得エラー:', error);
+                return;
+            }
+            
+            const labels = ['月0', '月1', '月2', '月3', '月4', '月5'];
+            const datasets = [];
+            
+            // データがない場合の処理
+            if (!cohortData || Object.keys(cohortData).length === 0) {
+                showDataNotAvailable('コホート成長率');
+                return;
+            }
+            
+            Object.entries(cohortData).forEach(([month, data]) => {
+                // 実際の売上データから成長率を計算
+                const growthData = [0]; // 月0は常に0%（基準）
+                let previousMonthRevenue = 0;
+                
+                for (let i = 0; i < 6; i++) {
+                    let monthRevenue = 0;
+                    data.agencies.forEach(agency => {
+                        // 該当月の売上を集計
+                        const monthlySales = agency.sales.filter(sale => {
+                            const saleMonth = new Date(sale.sale_date);
+                            const cohortMonth = new Date(month);
+                            const monthDiff = (saleMonth.getFullYear() - cohortMonth.getFullYear()) * 12 + 
+                                            (saleMonth.getMonth() - cohortMonth.getMonth());
+                            return monthDiff === i;
+                        });
+                        monthRevenue += monthlySales.reduce((sum, sale) => sum + sale.amount, 0);
+                    });
+                    
+                    if (i === 0) {
+                        previousMonthRevenue = monthRevenue || 1; // ゼロ除算を防ぐ
+                    } else if (i > 0) {
+                        // 前月比成長率を計算
+                        const growth = previousMonthRevenue > 0 
+                            ? ((monthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100 
+                            : 0;
+                        growthData.push(growth);
+                        previousMonthRevenue = monthRevenue || previousMonthRevenue;
+                    }
+                }
+                
+                datasets.push({
+                    label: month + '登録',
+                    data: growthData,
+                    borderColor: `hsl(${datasets.length * 60}, 70%, 50%)`,
+                    backgroundColor: `hsla(${datasets.length * 60}, 70%, 50%, 0.1)`,
+                    borderWidth: 2,
+                    tension: 0.3
+                });
+            });
+            
+            if (window.cohortChart) {
+                // Y軸の設定を成長率用に変更
+                window.cohortChart.options.scales.y.max = 50;
+                window.cohortChart.options.scales.y.min = -50;
+                window.cohortChart.options.scales.y.ticks.callback = function(value) {
+                    return value + '%';
+                };
+                window.cohortChart.options.plugins.tooltip.callbacks.label = function(context) {
+                    const value = context.parsed.y > 0 ? '+' + context.parsed.y.toFixed(1) : context.parsed.y.toFixed(1);
+                    return context.dataset.label + ': ' + value + '%';
+                };
+                
+                window.cohortChart.data.labels = labels;
+                window.cohortChart.data.datasets = datasets;
+                window.cohortChart.update();
+            }
         }
         
         function switchFunnelPeriod(period) {
