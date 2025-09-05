@@ -658,18 +658,13 @@
         // コホート分析チャート
         async function initCohortChart() {
             const ctx = document.getElementById('cohortChart').getContext('2d');
+            
+            // 初期データ（空）
             window.cohortChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: ['月0', '月1', '月2', '月3', '月4', '月5'],
-                    datasets: months.map((month, index) => ({
-                        label: month + '登録',
-                        data: cohortData[index],
-                        borderColor: `hsl(${index * 60}, 70%, 50%)`,
-                        backgroundColor: `hsla(${index * 60}, 70%, 50%, 0.1)`,
-                        borderWidth: 2,
-                        tension: 0.3
-                    }))
+                    datasets: []
                 },
                 options: {
                     responsive: true,
@@ -1029,17 +1024,19 @@
         
         // 初期化
         document.addEventListener('DOMContentLoaded', async function() {
-            await initializeAnalytics();
-            
-            initCohortChart();
-            initFunnelChart();
-            initHeatmapChart();
-            
             // 日付の初期値を今日に設定
             const today = new Date();
             const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
             document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
             document.getElementById('endDate').value = today.toISOString().split('T')[0];
+            
+            // チャートを先に初期化
+            initCohortChart();
+            initFunnelChart();
+            initHeatmapChart();
+            
+            // その後データを読み込み
+            await initializeAnalytics();
             
             // 日付変更時の処理
             document.getElementById('startDate').addEventListener('change', loadAnalyticsData);
