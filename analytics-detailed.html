@@ -664,8 +664,8 @@
             // メトリクス更新
             await updateMetrics(startDate, endDate);
             
-            // チャートデータ更新
-            await updateCohortChart(startDate, endDate);
+            // チャートデータ更新（デフォルトは売上表示）
+            await updateCohortChartRevenue(startDate, endDate);
             await updateFunnelChart(startDate, endDate);
             await updateHeatmapChart(startDate, endDate);
             
