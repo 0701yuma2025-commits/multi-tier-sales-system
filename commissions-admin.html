@@ -578,7 +578,7 @@
                 <button class="btn btn-secondary" onclick="exportCommissionReport()">
                     <span>📊</span> レポート出力
                 </button>
-                <button class="btn btn-primary" onclick="window.location.href='calculate-monthly-commissions.html'">
+                <button class="btn btn-primary" onclick="calculateFromSalesData()">
                     <span>📊</span> 売上データから計算
                 </button>
                 <button class="btn btn-primary" onclick="calculateAllCommissions()">
@@ -1693,6 +1693,151 @@
                 console.error('支払い完了処理エラー:', error);
                 alert('支払い完了処理に失敗しました: ' + error.message);
             }
+        }
+        
+        // 売上データから報酬を計算
+        async function calculateFromSalesData() {
+            console.log('売上データから報酬計算を開始');
+            
+            if (!confirm(`${currentPeriod}の売上データから報酬を計算しますか？\n\n既存の報酬データは上書きされます。`)) {
+                return;
+            }
+            
+            try {
+                if (commissionsDb) {
+                    showSuccess('売上データを取得中...');
+                    
+                    // 1. 売上データを取得
+                    const { data: salesData, error: salesError } = await commissionsDb.client
+                        .from('sales')
+                        .select(`
+                            *,
+                            agencies!inner (
+                                id,
+                                company_name,
+                                tier_level,
+                                company_type,
+                                invoice_info
+                            )
+                        `)
+                        .eq('status', 'confirmed')
+                        .gte('sale_date', currentPeriod + '-01')
+                        .lte('sale_date', currentPeriod + '-31');
+                    
+                    if (salesError) throw salesError;
+                    
+                    if (!salesData || salesData.length === 0) {
+                        showError('該当期間の売上データが見つかりません');
+                        return;
+                    }
+                    
+                    showSuccess(`${salesData.length}件の売上データを処理中...`);
+                    
+                    // 2. 代理店ごとに売上を集計
+                    const agencySalesMap = {};
+                    salesData.forEach(sale => {
+                        const agencyId = sale.agency_id;
+                        if (!agencySalesMap[agencyId]) {
+                            agencySalesMap[agencyId] = {
+                                agency: sale.agencies,
+                                totalSales: 0,
+                                salesCount: 0
+                            };
+                        }
+                        agencySalesMap[agencyId].totalSales += sale.amount;
+                        agencySalesMap[agencyId].salesCount++;
+                    });
+                    
+                    // 3. 各代理店の報酬を計算
+                    let successCount = 0;
+                    for (const [agencyId, data] of Object.entries(agencySalesMap)) {
+                        const commissionRate = getCommissionRateByTier(data.agency.tier_level);
+                        const baseAmount = Math.floor(data.totalSales * commissionRate / 100);
+                        
+                        // 税金計算
+                        const taxCalc = calculateTaxDeductionsReal(baseAmount, {
+                            companyType: data.agency.company_type,
+                            invoiceRegistered: data.agency.invoice_info?.registered || false
+                        });
+                        
+                        const commissionData = {
+                            agency_id: agencyId,
+                            period: currentPeriod,
+                            sales_amount: data.totalSales,
+                            sales_count: data.salesCount,
+                            commission_rate: commissionRate,
+                            base_amount: baseAmount,
+                            tier_bonus: 0, // 階層ボーナスは別途計算
+                            campaign_bonus: 0, // キャンペーンボーナスは別途計算
+                            total_commission: baseAmount,
+                            invoice_deduction: taxCalc.invoiceDeduction,
+                            withholding_tax: taxCalc.withholdingTax,
+                            net_payment: taxCalc.netPayment,
+                            status: 'pending',
+                            created_at: new Date().toISOString()
+                        };
+                        
+                        // 報酬データを保存（upsert）
+                        const { error } = await commissionsDb.upsertCommission(commissionData);
+                        if (!error) successCount++;
+                    }
+                    
+                    showSuccess(`${successCount}件の報酬データを作成しました`);
+                    
+                    // 4. 階層ボーナスの計算
+                    showSuccess('階層ボーナスを計算中...');
+                    await commissionsDb.calculateHierarchyBonuses(currentPeriod);
+                    
+                    // 5. 画面を更新
+                    await renderSummaryTable();
+                    await updateStats();
+                    
+                    showSuccess('報酬計算が完了しました');
+                    
+                } else {
+                    // デモモード
+                    alert('デモモードでは売上データからの計算はできません');
+                }
+            } catch (error) {
+                console.error('報酬計算エラー:', error);
+                showError('報酬計算に失敗しました: ' + error.message);
+            }
+        }
+        
+        // ティアに基づく報酬率を取得
+        function getCommissionRateByTier(tier) {
+            const rates = {
+                1: 30,
+                2: 25,
+                3: 20,
+                4: 15
+            };
+            return rates[tier] || 15;
+        }
+        
+        // 税金計算（実データ用）
+        function calculateTaxDeductionsReal(totalAmount, agencyInfo) {
+            let netPayment = totalAmount;
+            let invoiceDeduction = 0;
+            let withholdingTax = 0;
+            
+            // インボイス未登録の場合は2%控除
+            if (!agencyInfo.invoiceRegistered) {
+                invoiceDeduction = Math.floor(totalAmount * 0.02);
+                netPayment -= invoiceDeduction;
+            }
+            
+            // 個人事業主の場合は源泉徴収10.21%
+            if (agencyInfo.companyType === '個人') {
+                withholdingTax = Math.floor(netPayment * 0.1021);
+                netPayment -= withholdingTax;
+            }
+            
+            return {
+                invoiceDeduction,
+                withholdingTax,
+                netPayment
+            };
         }
         
         // 個別承認
