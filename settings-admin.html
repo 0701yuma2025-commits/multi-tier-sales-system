@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="css/responsive-complete.css">
     <link rel="stylesheet" href="css/ui-components.css">
     <script src="js/mobile-menu.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/settings-supabase.js"></script>
     <style>
         * {
             margin: 0;
@@ -933,7 +935,8 @@
                 </table>
                 
                 <div class="button-group">
-                    <button class="btn btn-primary" onclick="regenerateApiKeys()">APIキーを再生成</button>
+                    <button class="btn btn-primary" onclick="saveApiSettings()">保存</button>
+                    <button class="btn btn-secondary" onclick="regenerateApiKeys()">APIキーを再生成</button>
                     <button class="btn btn-secondary" onclick="testApiConnection()">接続テスト</button>
                 </div>
             </div>
@@ -1042,7 +1045,8 @@
                 </table>
                 
                 <div class="button-group">
-                    <button class="btn btn-primary" onclick="createBackup()">今すぐバックアップ</button>
+                    <button class="btn btn-primary" onclick="saveBackupSettings()">保存</button>
+                    <button class="btn btn-secondary" onclick="createBackup()">今すぐバックアップ</button>
                     <button class="btn btn-danger" onclick="clearOldBackups()">古いバックアップを削除</button>
                 </div>
             </div>
@@ -1066,7 +1070,7 @@
         }
         
         // 一般設定の保存
-        function saveGeneralSettings() {
+        async function saveGeneralSettings() {
             const settings = {
                 systemName: document.getElementById('systemName').value,
                 companyName: document.getElementById('companyName').value,
@@ -1075,51 +1079,81 @@
                 language: document.getElementById('language').value
             };
             
+            const { error } = await settingsDb.saveSettings('general', settings);
+            
+            if (error) {
+                showError('一般設定の保存に失敗しました');
+                return;
+            }
+            
             showSuccess('一般設定を保存しました');
         }
         
         // 一般設定のリセット
-        function resetGeneralSettings() {
+        async function resetGeneralSettings() {
             if (confirm('一般設定をデフォルトに戻しますか？')) {
+                const { data, error } = await settingsDb.resetSettings('general');
+                
+                if (error) {
+                    showError('一般設定のリセットに失敗しました');
+                    return;
+                }
+                
+                // フォームに反映
                 document.getElementById('systemName').value = '多段階営業代理店管理システム';
                 document.getElementById('companyName').value = '株式会社サンプル';
                 document.getElementById('adminEmail').value = 'admin@example.com';
                 document.getElementById('timezone').value = 'Asia/Tokyo';
                 document.getElementById('language').value = 'ja';
-                alert('一般設定をリセットしました');
+                showSuccess('一般設定をリセットしました');
             }
         }
         
         // 報酬設定の保存
-        function saveCommissionSettings() {
+        async function saveCommissionSettings() {
             const settings = {
                 tier1: {
-                    rate: document.getElementById('tier1Rate').value,
-                    bonus: document.getElementById('tier1Bonus').value
+                    rate: parseInt(document.getElementById('tier1Rate').value),
+                    bonus: parseInt(document.getElementById('tier1Bonus').value)
                 },
                 tier2: {
-                    rate: document.getElementById('tier2Rate').value,
-                    bonus: document.getElementById('tier2Bonus').value
+                    rate: parseInt(document.getElementById('tier2Rate').value),
+                    bonus: parseInt(document.getElementById('tier2Bonus').value)
                 },
                 tier3: {
-                    rate: document.getElementById('tier3Rate').value,
-                    bonus: document.getElementById('tier3Bonus').value
+                    rate: parseInt(document.getElementById('tier3Rate').value),
+                    bonus: parseInt(document.getElementById('tier3Bonus').value)
                 },
                 tier4: {
-                    rate: document.getElementById('tier4Rate').value,
-                    bonus: document.getElementById('tier4Bonus').value
+                    rate: parseInt(document.getElementById('tier4Rate').value),
+                    bonus: parseInt(document.getElementById('tier4Bonus').value)
                 },
                 autoApprove: document.getElementById('autoApprove').checked,
                 hierarchyBonus: document.getElementById('hierarchyBonus').checked,
                 campaignBonus: document.getElementById('campaignBonus').checked
             };
             
+            const { data, error } = await settingsDb.saveSettings('commission', settings);
+            
+            if (error) {
+                showError('報酬設定の保存に失敗しました');
+                return;
+            }
+            
             showSuccess('報酬設定を保存しました');
         }
         
         // 報酬設定のリセット
-        function resetCommissionSettings() {
+        async function resetCommissionSettings() {
             if (confirm('報酬設定をデフォルトに戻しますか？')) {
+                const { data, error } = await settingsDb.resetSettings('commission');
+                
+                if (error) {
+                    showError('報酬設定のリセットに失敗しました');
+                    return;
+                }
+                
+                // フォームに反映
                 document.getElementById('tier1Rate').value = 30;
                 document.getElementById('tier1Bonus').value = 10;
                 document.getElementById('tier2Rate').value = 25;
@@ -1131,12 +1165,12 @@
                 document.getElementById('autoApprove').checked = false;
                 document.getElementById('hierarchyBonus').checked = true;
                 document.getElementById('campaignBonus').checked = false;
-                alert('報酬設定をリセットしました');
+                showSuccess('報酬設定をリセットしました');
             }
         }
         
         // 通知設定の保存
-        function saveNotificationSettings() {
+        async function saveNotificationSettings() {
             const settings = {
                 newAgency: document.getElementById('notifyNewAgency').checked,
                 newSale: document.getElementById('notifyNewSale').checked,
@@ -1145,6 +1179,13 @@
                 method: document.getElementById('notificationMethod').value,
                 frequency: document.getElementById('notificationFrequency').value
             };
+            
+            const { data, error } = await settingsDb.saveSettings('notification', settings);
+            
+            if (error) {
+                showError('通知設定の保存に失敗しました');
+                return;
+            }
             
             showSuccess('通知設定を保存しました');
         }
@@ -1155,24 +1196,39 @@
         }
         
         // セキュリティ設定の保存
-        function saveSecuritySettings() {
+        async function saveSecuritySettings() {
             const settings = {
-                minPasswordLength: document.getElementById('minPasswordLength').value,
+                minPasswordLength: parseInt(document.getElementById('minPasswordLength').value),
                 requireUppercase: document.getElementById('requireUppercase').checked,
                 requireNumbers: document.getElementById('requireNumbers').checked,
                 requireSpecial: document.getElementById('requireSpecial').checked,
-                maxLoginAttempts: document.getElementById('maxLoginAttempts').value,
-                lockDuration: document.getElementById('lockDuration').value,
+                maxLoginAttempts: parseInt(document.getElementById('maxLoginAttempts').value),
+                lockDuration: parseInt(document.getElementById('lockDuration').value),
                 require2FA: document.getElementById('require2FA').checked,
                 ipRestriction: document.getElementById('ipRestriction').checked
             };
+            
+            const { data, error } = await settingsDb.saveSettings('security', settings);
+            
+            if (error) {
+                showError('セキュリティ設定の保存に失敗しました');
+                return;
+            }
             
             showSuccess('セキュリティ設定を保存しました');
         }
         
         // セキュリティ設定のリセット
-        function resetSecuritySettings() {
+        async function resetSecuritySettings() {
             if (confirm('セキュリティ設定をデフォルトに戻しますか？')) {
+                const { data, error } = await settingsDb.resetSettings('security');
+                
+                if (error) {
+                    showError('セキュリティ設定のリセットに失敗しました');
+                    return;
+                }
+                
+                // フォームに反映
                 document.getElementById('minPasswordLength').value = 8;
                 document.getElementById('requireUppercase').checked = true;
                 document.getElementById('requireNumbers').checked = true;
@@ -1181,7 +1237,7 @@
                 document.getElementById('lockDuration').value = 30;
                 document.getElementById('require2FA').checked = false;
                 document.getElementById('ipRestriction').checked = false;
-                alert('セキュリティ設定をリセットしました');
+                showSuccess('セキュリティ設定をリセットしました');
             }
         }
         
@@ -1199,17 +1255,49 @@
             }
         }
         
+        // API設定の保存
+        async function saveApiSettings() {
+            const settings = {
+                publicKey: document.getElementById('publicKey').value,
+                secretKey: document.getElementById('secretKey').value,
+                webhookUrl: document.getElementById('webhookUrl').value
+            };
+            
+            const { data, error } = await settingsDb.saveSettings('api', settings);
+            
+            if (error) {
+                showError('API設定の保存に失敗しました');
+                return;
+            }
+            
+            showSuccess('API設定を保存しました');
+        }
+        
         // APIキーの再生成
-        function regenerateApiKeys() {
+        async function regenerateApiKeys() {
             if (confirm('APIキーを再生成しますか？\n既存の連携は動作しなくなります。')) {
-                // 新しいキーを生成（デモ用）
+                // 新しいキーを生成
                 const newPublicKey = 'pk_test_' + Math.random().toString(36).substring(2, 15);
                 const newSecretKey = 'sk_test_' + Math.random().toString(36).substring(2, 15);
                 
+                const settings = {
+                    publicKey: newPublicKey,
+                    secretKey: newSecretKey,
+                    webhookUrl: document.getElementById('webhookUrl').value
+                };
+                
+                const { data, error } = await settingsDb.saveSettings('api', settings);
+                
+                if (error) {
+                    showError('APIキーの再生成に失敗しました');
+                    return;
+                }
+                
+                // フォームに反映
                 document.getElementById('publicKey').value = newPublicKey;
                 document.getElementById('secretKey').value = newSecretKey;
                 
-                alert('APIキーを再生成しました');
+                showSuccess('APIキーを再生成しました');
             }
         }
         
@@ -1232,6 +1320,24 @@
             if (confirm('今すぐバックアップを作成しますか？')) {
                 alert('バックアップを開始しました。完了後に通知されます。');
             }
+        }
+        
+        // バックアップ設定の保存
+        async function saveBackupSettings() {
+            const settings = {
+                autoBackup: document.getElementById('autoBackup').checked,
+                backupRetention: parseInt(document.getElementById('backupRetention').value),
+                backupTime: '03:00' // デフォルト値
+            };
+            
+            const { data, error } = await settingsDb.saveSettings('backup', settings);
+            
+            if (error) {
+                showError('バックアップ設定の保存に失敗しました');
+                return;
+            }
+            
+            showSuccess('バックアップ設定を保存しました');
         }
         
         // 古いバックアップの削除
@@ -1262,11 +1368,147 @@
             }, 3000);
         }
         
+        // Supabaseデータベースインスタンス
+        let settingsDb;
+        
         // ページ読み込み時の処理
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             // ユーザー情報表示
             displayUserInfo('userDisplay');
+            
+            // Supabaseデータベース初期化
+            settingsDb = new SettingsSupabaseDB();
+            
+            // 設定を読み込み
+            await loadAllSettings();
         });
+        
+        // すべての設定を読み込み
+        async function loadAllSettings() {
+            const { data: settings, error } = await settingsDb.getAllSettings();
+            
+            if (error) {
+                console.error('設定読み込みエラー:', error);
+                return;
+            }
+            
+            // 一般設定
+            if (settings.general) {
+                document.getElementById('systemName').value = settings.general.systemName || '多段階営業代理店管理システム';
+                document.getElementById('companyName').value = settings.general.companyName || '株式会社サンプル';
+                document.getElementById('adminEmail').value = settings.general.adminEmail || 'admin@example.com';
+                document.getElementById('timezone').value = settings.general.timezone || 'Asia/Tokyo';
+                document.getElementById('language').value = settings.general.language || 'ja';
+            }
+            
+            // 報酬設定
+            if (settings.commission) {
+                document.getElementById('tier1Rate').value = settings.commission.tier1?.rate || 30;
+                document.getElementById('tier1Bonus').value = settings.commission.tier1?.bonus || 10;
+                document.getElementById('tier2Rate').value = settings.commission.tier2?.rate || 25;
+                document.getElementById('tier2Bonus').value = settings.commission.tier2?.bonus || 8;
+                document.getElementById('tier3Rate').value = settings.commission.tier3?.rate || 20;
+                document.getElementById('tier3Bonus').value = settings.commission.tier3?.bonus || 6;
+                document.getElementById('tier4Rate').value = settings.commission.tier4?.rate || 15;
+                document.getElementById('tier4Bonus').value = settings.commission.tier4?.bonus || 4;
+                document.getElementById('autoApprove').checked = settings.commission.autoApprove || false;
+                document.getElementById('hierarchyBonus').checked = settings.commission.hierarchyBonus !== false;
+                document.getElementById('campaignBonus').checked = settings.commission.campaignBonus || false;
+            }
+            
+            // 通知設定
+            if (settings.notification) {
+                document.getElementById('notifyNewAgency').checked = settings.notification.newAgency !== false;
+                document.getElementById('notifyNewSale').checked = settings.notification.newSale !== false;
+                document.getElementById('notifyPayment').checked = settings.notification.payment !== false;
+                document.getElementById('monthlyReport').checked = settings.notification.monthlyReport || false;
+                document.getElementById('notificationMethod').value = settings.notification.method || 'email';
+                document.getElementById('notificationFrequency').value = settings.notification.frequency || 'realtime';
+            }
+            
+            // セキュリティ設定
+            if (settings.security) {
+                document.getElementById('minPasswordLength').value = settings.security.minPasswordLength || 8;
+                document.getElementById('requireUppercase').checked = settings.security.requireUppercase !== false;
+                document.getElementById('requireNumbers').checked = settings.security.requireNumbers !== false;
+                document.getElementById('requireSpecial').checked = settings.security.requireSpecial || false;
+                document.getElementById('maxLoginAttempts').value = settings.security.maxLoginAttempts || 5;
+                document.getElementById('lockDuration').value = settings.security.lockDuration || 30;
+                document.getElementById('require2FA').checked = settings.security.require2FA || false;
+                document.getElementById('ipRestriction').checked = settings.security.ipRestriction || false;
+            }
+            
+            // API設定
+            if (settings.api) {
+                document.getElementById('publicKey').value = settings.api.publicKey || 'pk_test_default123456789';
+                document.getElementById('secretKey').value = settings.api.secretKey || 'sk_test_default123456789';
+                document.getElementById('webhookUrl').value = settings.api.webhookUrl || 'https://api.example.com/webhook';
+                
+                // API使用状況を更新
+                await updateApiUsageTable();
+            }
+            
+            // バックアップ設定
+            if (settings.backup) {
+                document.getElementById('autoBackup').checked = settings.backup.autoBackup !== false;
+                document.getElementById('backupRetention').value = settings.backup.backupRetention || 30;
+                
+                // バックアップ履歴を更新
+                await updateBackupTable();
+            }
+        }
+        
+        // API使用状況テーブル更新
+        async function updateApiUsageTable() {
+            const { data: usage, error } = await settingsDb.getApiUsageStats(3);
+            
+            if (error || !usage || usage.length === 0) {
+                return;
+            }
+            
+            const tbody = document.querySelector('#api-section tbody');
+            tbody.innerHTML = '';
+            
+            usage.forEach(stat => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${stat.date}</td>
+                    <td>${stat.requests.toLocaleString()}</td>
+                    <td>${stat.success_rate}%</td>
+                    <td>${stat.avg_response_time}ms</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // バックアップ履歴テーブル更新
+        async function updateBackupTable() {
+            const { data: backups, error } = await settingsDb.getBackupHistory();
+            
+            if (error || !backups || backups.length === 0) {
+                return;
+            }
+            
+            const tbody = document.querySelector('#export-section tbody');
+            tbody.innerHTML = '';
+            
+            backups.slice(0, 3).forEach(backup => {
+                const row = document.createElement('tr');
+                const date = new Date(backup.created_at).toLocaleString('ja-JP');
+                const status = backup.status === 'completed' ? '成功' : '失敗';
+                const statusColor = backup.status === 'completed' ? '#10b981' : '#ef4444';
+                
+                row.innerHTML = `
+                    <td>${date}</td>
+                    <td>${backup.size}</td>
+                    <td style="color: ${statusColor};">${status}</td>
+                    <td>
+                        <a href="#" style="color: #3b82f6; text-decoration: none;">ダウンロード</a>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
     </script>
 </body>
 </html>
