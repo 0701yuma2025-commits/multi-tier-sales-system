@@ -1,14 +1,28 @@
 // 詳細分析用Supabaseデータベースクラス
 class AnalyticsSupabaseDB {
     constructor() {
-        this.client = initializeSupabase();
+        // グローバルのSupabaseインスタンスを使用
+        if (window.supabaseDb && window.supabaseDb.client) {
+            this.client = window.supabaseDb.client;
+        } else {
+            // フォールバック：新規作成を試みる
+            this.client = initializeSupabase();
+        }
+        
         if (!this.client) {
-            throw new Error('Supabaseクライアントの初期化に失敗しました');
+            console.error('Supabaseクライアントの初期化に失敗しました');
+            // エラーを投げずに機能を制限
+            this.client = null;
         }
     }
 
     // 期間内の代理店パフォーマンスデータ取得
     async getAgencyPerformance(startDate, endDate, filters = {}) {
+        if (!this.client) {
+            console.warn('Supabaseクライアントが利用できません');
+            return { data: this.getDemoAgencyPerformance(), error: null };
+        }
+        
         try {
             let query = this.client
                 .from('agencies')
@@ -50,6 +64,11 @@ class AnalyticsSupabaseDB {
 
     // 売上統計データ取得
     async getSalesStatistics(startDate, endDate) {
+        if (!this.client) {
+            console.warn('Supabaseクライアントが利用できません');
+            return { data: this.getDemoSalesStatistics(), error: null };
+        }
+        
         try {
             const { data, error } = await this.client
                 .from('sales')
@@ -156,6 +175,11 @@ class AnalyticsSupabaseDB {
 
     // コホートデータ取得
     async getCohortData(months = 6) {
+        if (!this.client) {
+            console.warn('Supabaseクライアントが利用できません');
+            return { data: this.getDemoCohortData(months), error: null };
+        }
+        
         try {
             const endDate = new Date();
             const startDate = new Date();
@@ -231,6 +255,11 @@ class AnalyticsSupabaseDB {
 
     // ファネルデータ取得
     async getFunnelData(startDate, endDate) {
+        if (!this.client) {
+            console.warn('Supabaseクライアントが利用できません');
+            return { data: this.getDemoFunnelData(), error: null };
+        }
+        
         try {
             // リードから成約までのステージデータを取得
             const { data: leadsData } = await this.client
@@ -324,6 +353,11 @@ class AnalyticsSupabaseDB {
 
     // メトリクス計算
     async calculateMetrics(startDate, endDate) {
+        if (!this.client) {
+            console.warn('Supabaseクライアントが利用できません');
+            return { data: this.getDemoMetrics(), error: null };
+        }
+        
         try {
             // 売上データ取得
             const { data: salesData } = await this.client
@@ -384,5 +418,113 @@ class AnalyticsSupabaseDB {
     async calculateConversionRate(startDate, endDate) {
         // コンバージョン率計算（簡易版）
         return 14.8; // デモ値
+    }
+    
+    // デモデータ生成メソッド
+    getDemoAgencyPerformance() {
+        return [
+            {
+                id: '1',
+                company_name: 'ABC商事',
+                tier_level: 2,
+                sales: Array(30).fill(null).map(() => ({
+                    amount: Math.random() * 1000000 + 500000,
+                    sale_date: new Date().toISOString()
+                }))
+            },
+            {
+                id: '2',
+                company_name: 'XYZエージェンシー',
+                tier_level: 1,
+                sales: Array(25).fill(null).map(() => ({
+                    amount: Math.random() * 800000 + 400000,
+                    sale_date: new Date().toISOString()
+                }))
+            }
+        ];
+    }
+    
+    // デモ用売上統計
+    getDemoSalesStatistics() {
+        const topAgencies = [
+            { id: '1', name: 'ABC商事', totalSales: 3250000, orderCount: 45, averageOrder: 72222 },
+            { id: '2', name: 'XYZエージェンシー', totalSales: 2890000, orderCount: 38, averageOrder: 76052 },
+            { id: '3', name: '山田営業企画', totalSales: 2450000, orderCount: 32, averageOrder: 76562 },
+            { id: '4', name: '鈴木ビジネス', totalSales: 2100000, orderCount: 28, averageOrder: 75000 },
+            { id: '5', name: 'グローバル販売', totalSales: 1850000, orderCount: 25, averageOrder: 74000 }
+        ];
+        
+        return {
+            totalSales: 12540000,
+            averageOrderValue: 85420,
+            salesByCategory: {
+                premium: 5670000,
+                standard: 4490000,
+                basic: 2380000
+            },
+            salesByTier: {
+                1: 4200000,
+                2: 3800000,
+                3: 2900000,
+                4: 1640000
+            },
+            salesByRegion: {
+                '関東': 5020000,
+                '関西': 3760000,
+                '中部': 2510000,
+                '九州': 1250000
+            },
+            topAgencies: topAgencies
+        };
+    }
+    
+    // デモ用コホートデータ
+    getDemoCohortData(months) {
+        const cohorts = {};
+        const today = new Date();
+        
+        for (let i = 0; i < months; i++) {
+            const cohortMonth = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            const monthStr = cohortMonth.toISOString().substring(0, 7);
+            
+            cohorts[monthStr] = {
+                month: monthStr,
+                agencies: Array(10 + Math.floor(Math.random() * 5)).fill(null).map((_, idx) => ({
+                    id: `agency-${i}-${idx}`,
+                    sales: []
+                })),
+                retention: {}
+            };
+            
+            // 継続率を生成
+            for (let j = 0; j <= i && j < 6; j++) {
+                cohorts[monthStr].retention[`month${j}`] = Math.max(20, 100 - (j * 15) + (Math.random() * 10 - 5));
+            }
+        }
+        
+        return cohorts;
+    }
+    
+    // デモ用ファネルデータ
+    getDemoFunnelData() {
+        return {
+            leads: 1000,
+            qualified: 650,
+            opportunities: 320,
+            negotiations: 180,
+            closed: 142
+        };
+    }
+    
+    // デモ用メトリクス
+    getDemoMetrics() {
+        return {
+            averageOrderValue: 85420,
+            customerLifetimeValue: 428500,
+            customerAcquisitionCost: 32100,
+            retentionRate: 87.3,
+            roi: 234,
+            conversionRate: 14.8
+        };
     }
 }

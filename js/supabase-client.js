@@ -293,5 +293,21 @@ class SupabaseDatabase {
     }
 }
 
+// Supabaseクライアントの初期化関数
+function initializeSupabase() {
+    try {
+        const db = new SupabaseDatabase();
+        return db.client;
+    } catch (error) {
+        console.error('Supabase初期化エラー:', error);
+        return null;
+    }
+}
+
 // グローバルにSupabaseクライアントを作成
-window.supabaseDb = new SupabaseDatabase();
+try {
+    window.supabaseDb = new SupabaseDatabase();
+} catch (error) {
+    console.error('Supabaseデータベース初期化エラー:', error);
+    window.supabaseDb = null;
+}
