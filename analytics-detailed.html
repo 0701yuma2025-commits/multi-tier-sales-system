@@ -689,7 +689,8 @@
             // デモデータかどうかチェック（固定値の場合）
             const isDemoData = metrics.customerLifetimeValue === 428500 && metrics.customerAcquisitionCost === 32100;
             
-            if (isDemoData) {
+            // 実際のデータがある場合はデモデータ警告を表示しない
+            if (isDemoData && (!metrics.averageOrderValue || metrics.averageOrderValue === 0)) {
                 showDemoDataWarning();
             }
             
