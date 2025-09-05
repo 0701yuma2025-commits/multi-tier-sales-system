@@ -25,38 +25,37 @@ class AnalyticsSupabaseDB {
         }
         
         try {
-            let query = this.client
-                .from('agencies')
-                .select(`
-                    *,
-                    sales (
-                        amount,
-                        sale_date,
-                        status,
-                        product_category
-                    ),
-                    commissions (
-                        total_commission,
-                        period,
-                        status
-                    )
-                `)
-                .gte('sales.sale_date', startDate)
-                .lte('sales.sale_date', endDate)
-                .eq('sales.status', 'confirmed');
-
+            // 代理店データを取得
+            const agencies = await this.client.getAgencies();
+            
+            // 売上データを取得
+            const sales = await this.client.getSales({
+                dateFrom: startDate,
+                dateTo: endDate,
+                status: 'confirmed'
+            });
+            
+            // データを結合
+            const performanceData = agencies.map(agency => {
+                const agencySales = sales.filter(sale => sale.agency_id === agency.id);
+                return {
+                    ...agency,
+                    sales: agencySales,
+                    totalSales: agencySales.reduce((sum, sale) => sum + parseFloat(sale.amount), 0),
+                    salesCount: agencySales.length
+                };
+            });
+            
             // フィルタリング
+            let filteredData = performanceData;
             if (filters.tierLevel) {
-                query = query.eq('tier_level', filters.tierLevel);
+                filteredData = filteredData.filter(d => d.tier_level === filters.tierLevel);
             }
             if (filters.region) {
-                query = query.eq('address->prefecture', filters.region);
+                filteredData = filteredData.filter(d => d.address?.prefecture === filters.region);
             }
-
-            const { data, error } = await query;
             
-            if (error) throw error;
-            return { data, error: null };
+            return { data: filteredData, error: null };
         } catch (error) {
             console.error('代理店パフォーマンスデータ取得エラー:', error);
             return { data: null, error };
@@ -70,27 +69,27 @@ class AnalyticsSupabaseDB {
         }
         
         try {
-            const { data, error } = await this.client
-                .from('sales')
-                .select(`
-                    amount,
-                    sale_date,
-                    product_category,
-                    agency_id,
-                    agencies (
-                        company_name,
-                        tier_level,
-                        address
-                    )
-                `)
-                .gte('sale_date', startDate)
-                .lte('sale_date', endDate)
-                .eq('status', 'confirmed');
-
-            if (error) throw error;
+            // 売上データを取得
+            const sales = await this.client.getSales({
+                dateFrom: startDate,
+                dateTo: endDate,
+                status: 'confirmed'
+            });
+            
+            // 代理店データを取得
+            const agencies = await this.client.getAgencies();
+            
+            // データを結合
+            const salesWithAgency = sales.map(sale => {
+                const agency = agencies.find(a => a.id === sale.agency_id);
+                return {
+                    ...sale,
+                    agencies: agency || null
+                };
+            });
 
             // 統計計算
-            const stats = this.calculateSalesStats(data);
+            const stats = this.calculateSalesStats(salesWithAgency);
             return { data: stats, error: null };
         } catch (error) {
             console.error('売上統計データ取得エラー:', error);
@@ -184,23 +183,28 @@ class AnalyticsSupabaseDB {
             const startDate = new Date();
             startDate.setMonth(startDate.getMonth() - months);
 
-            const { data, error } = await this.client
-                .from('agencies')
-                .select(`
-                    created_at,
-                    id,
-                    sales (
-                        amount,
-                        sale_date
-                    )
-                `)
-                .gte('created_at', startDate.toISOString())
-                .order('created_at', { ascending: true });
-
-            if (error) throw error;
+            // 代理店データを取得
+            const agencies = await this.client.getAgencies();
+            
+            // 指定期間内に作成された代理店をフィルタ
+            const filteredAgencies = agencies.filter(agency => 
+                new Date(agency.created_at) >= startDate
+            );
+            
+            // 売上データを取得
+            const sales = await this.client.getSales();
+            
+            // データを結合
+            const agenciesWithSales = filteredAgencies.map(agency => {
+                const agencySales = sales.filter(sale => sale.agency_id === agency.id);
+                return {
+                    ...agency,
+                    sales: agencySales
+                };
+            });
 
             // コホートデータ構造化
-            const cohortData = this.structureCohortData(data);
+            const cohortData = this.structureCohortData(agenciesWithSales);
             return { data: cohortData, error: null };
         } catch (error) {
             console.error('コホートデータ取得エラー:', error);
@@ -259,34 +263,39 @@ class AnalyticsSupabaseDB {
         }
         
         try {
-            // リードから成約までのステージデータを取得
-            const { data: leadsData } = await this.client
-                .from('leads')
-                .select('count')
-                .gte('created_at', startDate)
-                .lte('created_at', endDate);
-
-            const { data: opportunitiesData } = await this.client
-                .from('opportunities')
-                .select('count')
-                .gte('created_at', startDate)
-                .lte('created_at', endDate);
-
-            const { data: salesData } = await this.client
-                .from('sales')
-                .select('count')
-                .gte('sale_date', startDate)
-                .lte('sale_date', endDate)
-                .eq('status', 'confirmed');
-
-            // デモデータ（実際のテーブルがない場合）
+            // 現在のテーブル構造では、leadsやopportunitiesテーブルが存在しないため
+            // 売上データから推定するか、デモデータを使用
+            
+            const sales = await this.client.getSales({
+                dateFrom: startDate,
+                dateTo: endDate,
+                status: 'confirmed'
+            });
+            
+            // 売上データを基にファネルを推定（仮の計算）
+            const closedCount = sales.length;
             const funnelData = {
-                leads: 1000,
-                qualified: 650,
-                opportunities: 320,
-                negotiations: 180,
-                closed: 142
+                leads: Math.round(closedCount * 7.0),      // 成約率約14%と仮定
+                qualified: Math.round(closedCount * 4.6),  // リードからの適格率65%
+                opportunities: Math.round(closedCount * 2.3), // 適格からの機会化率49%
+                negotiations: Math.round(closedCount * 1.3), // 機会からの商談率56%
+                closed: closedCount
             };
+            
+            // 最小値を保証
+            if (funnelData.closed === 0) {
+                // デモデータを返す
+                return {
+                    data: {
+                        leads: 1000,
+                        qualified: 650,
+                        opportunities: 320,
+                        negotiations: 180,
+                        closed: 142
+                    },
+                    error: null
+                };
+            }
 
             return { data: funnelData, error: null };
         } catch (error) {
@@ -357,17 +366,14 @@ class AnalyticsSupabaseDB {
         
         try {
             // 売上データ取得
-            const { data: salesData } = await this.client
-                .from('sales')
-                .select('amount, sale_date, customer_id')
-                .gte('sale_date', startDate)
-                .lte('sale_date', endDate)
-                .eq('status', 'confirmed');
+            const salesData = await this.client.getSales({
+                dateFrom: startDate,
+                dateTo: endDate,
+                status: 'confirmed'
+            });
 
-            // 顧客データ取得
-            const { data: customerData } = await this.client
-                .from('customers')
-                .select('id, created_at, acquisition_cost');
+            // customersテーブルが存在しない場合のダミーデータ
+            const customerData = [];
 
             // メトリクス計算
             const metrics = {
