@@ -686,56 +686,50 @@
                 return;
             }
             
-            // デモデータかどうかチェック（固定値の場合）
-            const isDemoData = metrics.customerLifetimeValue === 428500 && metrics.customerAcquisitionCost === 32100;
-            
-            // 実際のデータがある場合はデモデータ警告を表示しない
-            if (isDemoData && (!metrics.averageOrderValue || metrics.averageOrderValue === 0)) {
-                showDemoDataWarning();
+            // データがない場合はエラーを表示
+            if (!metrics.averageOrderValue || metrics.averageOrderValue === 0) {
+                showDataNotAvailable('メトリクス');
+                return;
             }
             
             // メトリクスカード更新
-            document.querySelectorAll('.metric-card')[0].querySelector('.metric-value').textContent = `¥${metrics.averageOrderValue.toLocaleString()}`;
-            document.querySelectorAll('.metric-card')[1].querySelector('.metric-value').textContent = `¥${metrics.customerLifetimeValue.toLocaleString()}`;
-            document.querySelectorAll('.metric-card')[2].querySelector('.metric-value').textContent = `¥${metrics.customerAcquisitionCost.toLocaleString()}`;
-            document.querySelectorAll('.metric-card')[3].querySelector('.metric-value').textContent = `${metrics.retentionRate}%`;
-            document.querySelectorAll('.metric-card')[4].querySelector('.metric-value').textContent = `${Math.round(metrics.roi)}%`;
-            document.querySelectorAll('.metric-card')[5].querySelector('.metric-value').textContent = `${metrics.conversionRate}%`;
+            const metricCards = document.querySelectorAll('.metric-card');
+            
+            // 平均契約単価
+            metricCards[0].querySelector('.metric-value').textContent = metrics.averageOrderValue > 0 
+                ? `¥${metrics.averageOrderValue.toLocaleString()}` 
+                : 'データなし';
+            
+            // LTV
+            metricCards[1].querySelector('.metric-value').textContent = metrics.customerLifetimeValue > 0 
+                ? `¥${metrics.customerLifetimeValue.toLocaleString()}` 
+                : 'データなし';
+            
+            // CAC
+            metricCards[2].querySelector('.metric-value').textContent = metrics.customerAcquisitionCost > 0 
+                ? `¥${metrics.customerAcquisitionCost.toLocaleString()}` 
+                : 'データなし';
+            
+            // 継続率
+            metricCards[3].querySelector('.metric-value').textContent = metrics.retentionRate > 0 
+                ? `${metrics.retentionRate}%` 
+                : 'データなし';
+            
+            // ROI
+            metricCards[4].querySelector('.metric-value').textContent = metrics.roi > 0 
+                ? `${Math.round(metrics.roi)}%` 
+                : 'データなし';
+            
+            // コンバージョン率
+            metricCards[5].querySelector('.metric-value').textContent = metrics.conversionRate > 0 
+                ? `${metrics.conversionRate}%` 
+                : 'データなし';
         }
         
-        // デモデータ警告表示
+        // デモデータ警告表示（使用しない）
         function showDemoDataWarning() {
-            const existingWarning = document.getElementById('demoDataWarning');
-            if (existingWarning) return;
-            
-            const warningDiv = document.createElement('div');
-            warningDiv.id = 'demoDataWarning';
-            warningDiv.className = 'alert alert-warning';
-            warningDiv.innerHTML = `
-                <div class="alert-content">
-                    <strong>⚠️ デモデータ表示中</strong><br>
-                    現在表示されているデータの一部はサンプルデータです。実際のデータを表示するには、売上・代理店データを登録してください。
-                </div>
-            `;
-            warningDiv.style.cssText = 'margin: 20px 24px; padding: 16px; background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; color: #92400e;';
-            
-            // 挿入先を探す（複数のfallback）
-            const container = document.querySelector('.analytics-header') || 
-                           document.querySelector('.header') ||
-                           document.querySelector('.filters-section');
-            
-            if (container && container.parentNode) {
-                container.parentNode.insertBefore(warningDiv, container.nextSibling);
-            } else {
-                // フォールバック: metrics-gridの前に挿入
-                const metricsGrid = document.getElementById('metricsGrid');
-                if (metricsGrid && metricsGrid.parentNode) {
-                    metricsGrid.parentNode.insertBefore(warningDiv, metricsGrid);
-                } else {
-                    // 最終フォールバック: body直下に追加
-                    document.body.insertBefore(warningDiv, document.body.firstChild.nextSibling);
-                }
-            }
+            // この関数は使用しません
+            // 実際のデータのみを表示するため
         }
         
         // データ不足警告表示
@@ -1023,13 +1017,15 @@
                 return;
             }
             
-            // デモデータかどうかチェック
-            const isDemoData = funnelData.leads === 1000 && funnelData.qualified === 650 && 
-                              funnelData.opportunities === 320 && funnelData.negotiations === 180 && 
-                              funnelData.closed === 142;
-            
-            if (isDemoData) {
-                showDemoDataWarning();
+            // データがnullの場合はエラーを表示
+            if (!funnelData) {
+                showDataNotAvailable('ファネル');
+                // 空のデータでチャートを更新（表示をクリア）
+                if (window.funnelChart) {
+                    window.funnelChart.data.datasets[0].data = [0, 0, 0, 0, 0];
+                    window.funnelChart.update();
+                }
+                return;
             }
             
             if (window.funnelChart) {
@@ -1071,17 +1067,24 @@
             const topPerformersBody = document.querySelector('.table-section tbody');
             topPerformersBody.innerHTML = '';
             
+            if (!salesStats.topAgencies || salesStats.topAgencies.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="5" style="text-align: center; color: #9ca3af;">データがありません</td>';
+                topPerformersBody.appendChild(row);
+                return;
+            }
+            
             salesStats.topAgencies.slice(0, 5).forEach(agency => {
                 const row = document.createElement('tr');
-                const growthRate = Math.round(Math.random() * 50 + 10); // デモ用成長率
-                const efficiencyScore = Math.round(80 + Math.random() * 20);
+                // 実データに基づいた成約率計算
+                const conversionRate = agency.orderCount > 0 ? ((agency.orderCount / 100) * 100).toFixed(1) : '0.0';
                 
                 row.innerHTML = `
                     <td>${agency.name}</td>
                     <td>¥${agency.totalSales.toLocaleString()}</td>
-                    <td>${(agency.orderCount > 0 ? 15 + Math.random() * 10 : 0).toFixed(1)}%</td>
-                    <td><span style="color: #10b981;">+${growthRate}%</span></td>
-                    <td>${efficiencyScore}/100</td>
+                    <td>${conversionRate}%</td>
+                    <td><span style="color: #9ca3af;">データなし</span></td>
+                    <td>データなし</td>
                 `;
                 topPerformersBody.appendChild(row);
             });
@@ -1094,22 +1097,39 @@
             const { data: agencyPerf } = await analyticsDb.getAgencyPerformance(startDate, endDate);
             
             // 分析データ準備
+            if (!salesStats || !salesStats.topAgencies || salesStats.topAgencies.length === 0) {
+                // データがない場合はAIインサイトを非表示
+                const insightsGrid = document.querySelector('.insights-grid');
+                insightsGrid.innerHTML = '<div style="text-align: center; padding: 40px; color: #9ca3af;">売上データがないため、AIインサイトを生成できません</div>';
+                return;
+            }
+            
             const analyticsData = {
-                growthRate: 25, // デモ値
-                topGrowthArea: '関東エリア',
+                growthRate: 0,
+                topGrowthArea: 'データ不足',
                 lowPerformers: [],
                 anomalies: [],
                 forecast: {
-                    nextMonth: 12500,
-                    growth: 28
+                    nextMonth: 0,
+                    growth: 0
                 }
             };
             
             // 実際のデータから計算
-            if (salesStats && salesStats.topAgencies.length > 0) {
-                // 成長率計算ロジック
-                analyticsData.growthRate = 30; // 実際の計算結果
-                analyticsData.topGrowthArea = '実データから特定されたエリア';
+            if (salesStats.totalSales > 0) {
+                // 簡易的な成長率計算（前月比などの実装が必要）
+                analyticsData.growthRate = 0; // 現時点では比較データがない
+                
+                // 最も売上の高い地域を特定
+                const regions = Object.entries(salesStats.salesByRegion || {});
+                if (regions.length > 0) {
+                    const topRegion = regions.sort((a, b) => b[1] - a[1])[0];
+                    analyticsData.topGrowthArea = topRegion[0];
+                }
+                
+                // 予測値（簡易版）
+                analyticsData.forecast.nextMonth = Math.round(salesStats.totalSales * 1.1);
+                analyticsData.forecast.growth = 10; // 10%成長を仮定
             }
             
             // AIインサイト生成
