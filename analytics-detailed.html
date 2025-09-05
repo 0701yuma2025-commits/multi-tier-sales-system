@@ -388,42 +388,49 @@
     </div>
     
     <!-- メトリクスカード -->
-    <div class="metrics-grid">
+    <div class="metrics-grid" id="metricsGrid">
         <div class="metric-card">
             <div class="metric-label">平均契約単価</div>
-            <div class="metric-value">¥85,420</div>
-            <div class="metric-comparison positive">↑ +12.3% 前期比</div>
+            <div class="metric-value">-</div>
+            <div class="metric-comparison">-</div>
         </div>
         
         <div class="metric-card">
             <div class="metric-label">LTV（顧客生涯価値）</div>
-            <div class="metric-value">¥428,500</div>
-            <div class="metric-comparison positive">↑ +8.7% 前期比</div>
+            <div class="metric-value">-</div>
+            <div class="metric-comparison">-</div>
         </div>
         
         <div class="metric-card">
             <div class="metric-label">顧客獲得コスト（CAC）</div>
-            <div class="metric-value">¥32,100</div>
-            <div class="metric-comparison negative">↑ +3.2% 前期比</div>
+            <div class="metric-value">-</div>
+            <div class="metric-comparison">-</div>
         </div>
         
         <div class="metric-card">
             <div class="metric-label">継続率</div>
-            <div class="metric-value">87.3%</div>
-            <div class="metric-comparison positive">↑ +2.1% 前期比</div>
+            <div class="metric-value">-</div>
+            <div class="metric-comparison">-</div>
         </div>
         
         <div class="metric-card">
             <div class="metric-label">ROI</div>
-            <div class="metric-value">234%</div>
-            <div class="metric-comparison positive">↑ +18% 前期比</div>
+            <div class="metric-value">-</div>
+            <div class="metric-comparison">-</div>
         </div>
         
         <div class="metric-card">
             <div class="metric-label">リード→成約率</div>
-            <div class="metric-value">14.8%</div>
-            <div class="metric-comparison positive">↑ +1.2% 前期比</div>
+            <div class="metric-value">-</div>
+            <div class="metric-comparison">-</div>
         </div>
+    </div>
+    
+    <!-- エラーメッセージ -->
+    <div id="supabaseError" style="display: none; background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 16px; margin: 24px; color: #991B1B;">
+        <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600;">⚠️ Supabaseが設定されていません</h3>
+        <p style="margin: 0; font-size: 14px;">詳細分析機能を使用するには、Supabase環境変数の設定が必要です。</p>
+        <p style="margin: 8px 0 0 0; font-size: 12px; color: #7F1D1D;">設定方法：プロジェクトルートに.envファイルを作成し、VITE_SUPABASE_URLとVITE_SUPABASE_ANON_KEYを設定してください。</p>
     </div>
     
     <!-- チャートセクション -->
@@ -613,8 +620,36 @@
         
         // 初期化関数
         async function initializeAnalytics() {
-            analyticsDb = new AnalyticsSupabaseDB();
-            await loadAnalyticsData();
+            try {
+                analyticsDb = new AnalyticsSupabaseDB();
+                
+                // Supabaseクライアントが利用可能かチェック
+                if (!analyticsDb.client) {
+                    showSupabaseError();
+                    return;
+                }
+                
+                await loadAnalyticsData();
+            } catch (error) {
+                console.error('初期化エラー:', error);
+                showSupabaseError();
+            }
+        }
+        
+        // Supabaseエラー表示
+        function showSupabaseError() {
+            document.getElementById('supabaseError').style.display = 'block';
+            
+            // チャートセクションを非表示
+            document.querySelector('.charts-container').style.display = 'none';
+            document.querySelector('.comparison-tables').style.display = 'none';
+            document.querySelector('.insights-section').style.display = 'none';
+            
+            // フィルターを無効化
+            document.querySelector('.apply-filters-btn').disabled = true;
+            document.querySelectorAll('.filter-select').forEach(select => {
+                select.disabled = true;
+            });
         }
         
         // 分析データ読み込み
