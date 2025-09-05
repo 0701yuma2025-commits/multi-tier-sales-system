@@ -716,15 +716,60 @@
                     現在表示されているデータの一部はサンプルデータです。実際のデータを表示するには、売上・代理店データを登録してください。
                 </div>
             `;
-            warningDiv.style.cssText = 'margin: 20px 0; padding: 16px; background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; color: #92400e;';
+            warningDiv.style.cssText = 'margin: 20px 24px; padding: 16px; background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; color: #92400e;';
             
-            const container = document.querySelector('.analytics-header');
-            container.parentNode.insertBefore(warningDiv, container.nextSibling);
+            // 挿入先を探す（複数のfallback）
+            const container = document.querySelector('.analytics-header') || 
+                           document.querySelector('.header') ||
+                           document.querySelector('.filters-section');
+            
+            if (container && container.parentNode) {
+                container.parentNode.insertBefore(warningDiv, container.nextSibling);
+            } else {
+                // フォールバック: metrics-gridの前に挿入
+                const metricsGrid = document.getElementById('metricsGrid');
+                if (metricsGrid && metricsGrid.parentNode) {
+                    metricsGrid.parentNode.insertBefore(warningDiv, metricsGrid);
+                } else {
+                    // 最終フォールバック: body直下に追加
+                    document.body.insertBefore(warningDiv, document.body.firstChild.nextSibling);
+                }
+            }
         }
         
         // データ不足警告表示
         function showDataNotAvailable(dataType) {
             console.warn(`${dataType}の実データが利用できません`);
+            
+            // 既存のエラー表示があれば削除
+            const existingError = document.getElementById('dataNotAvailableError');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.id = 'dataNotAvailableError';
+            errorDiv.className = 'alert alert-error';
+            errorDiv.innerHTML = `
+                <div class="alert-content">
+                    <strong>❌ ${dataType}が利用できません</strong><br>
+                    実際のデータを取得できませんでした。Supabaseの設定とデータが存在することを確認してください。
+                </div>
+            `;
+            errorDiv.style.cssText = 'margin: 20px 24px; padding: 16px; background-color: #fee2e2; border: 1px solid #ef4444; border-radius: 8px; color: #991b1b;';
+            
+            // デモデータ警告と同じ場所に挿入
+            const container = document.querySelector('.header') ||
+                           document.querySelector('.filters-section');
+            
+            if (container && container.parentNode) {
+                container.parentNode.insertBefore(errorDiv, container.nextSibling);
+            } else {
+                const metricsGrid = document.getElementById('metricsGrid');
+                if (metricsGrid && metricsGrid.parentNode) {
+                    metricsGrid.parentNode.insertBefore(errorDiv, metricsGrid);
+                }
+            }
         }
         
         // コホート分析チャート
