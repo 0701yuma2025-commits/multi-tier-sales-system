@@ -659,6 +659,22 @@
             }
         }
         
+        // パスワード表示/非表示切替
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(inputId + '-icon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = '🙈';
+                icon.parentElement.title = 'パスワードを非表示';
+            } else {
+                input.type = 'password';
+                icon.textContent = '👁';
+                icon.parentElement.title = 'パスワードを表示';
+            }
+        }
+        
         // ページロード時の処理
         document.addEventListener('DOMContentLoaded', function() {
             // ログアウトパラメータがある場合はリダイレクトしない
