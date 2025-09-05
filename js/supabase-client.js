@@ -304,10 +304,23 @@ function initializeSupabase() {
     }
 }
 
-// グローバルにSupabaseクライアントを作成
-try {
-    window.supabaseDb = new SupabaseDatabase();
-} catch (error) {
-    console.error('Supabaseデータベース初期化エラー:', error);
-    window.supabaseDb = null;
+// グローバルにSupabaseクライアントを作成（遅延初期化）
+window.initializeSupabaseDb = function() {
+    if (!window.supabaseDb) {
+        try {
+            window.supabaseDb = new SupabaseDatabase();
+        } catch (error) {
+            console.error('Supabaseデータベース初期化エラー:', error);
+            window.supabaseDb = null;
+        }
+    }
+    return window.supabaseDb;
+};
+
+// DOMContentLoadedで初期化を試みる
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.initializeSupabaseDb);
+} else {
+    // 既に読み込み済みの場合
+    window.initializeSupabaseDb();
 }

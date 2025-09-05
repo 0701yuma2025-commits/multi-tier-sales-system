@@ -1,8 +1,10 @@
 // 設定管理用Supabaseデータベースクラス
 class SettingsSupabaseDB {
     constructor() {
-        // グローバルのSupabaseインスタンスを使用
-        if (window.supabaseDb) {
+        // グローバルのSupabaseインスタンスを使用（遅延初期化）
+        if (window.initializeSupabaseDb) {
+            this.client = window.initializeSupabaseDb();
+        } else if (window.supabaseDb) {
             this.client = window.supabaseDb;
         } else {
             // フォールバック：新規作成を試みる
