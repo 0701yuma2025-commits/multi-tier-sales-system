@@ -682,7 +682,15 @@
             
             if (error) {
                 console.error('メトリクス取得エラー:', error);
+                showDataNotAvailable('メトリクスデータ');
                 return;
+            }
+            
+            // デモデータかどうかチェック（固定値の場合）
+            const isDemoData = metrics.customerLifetimeValue === 428500 && metrics.customerAcquisitionCost === 32100;
+            
+            if (isDemoData) {
+                showDemoDataWarning();
             }
             
             // メトリクスカード更新
@@ -692,6 +700,31 @@
             document.querySelectorAll('.metric-card')[3].querySelector('.metric-value').textContent = `${metrics.retentionRate}%`;
             document.querySelectorAll('.metric-card')[4].querySelector('.metric-value').textContent = `${Math.round(metrics.roi)}%`;
             document.querySelectorAll('.metric-card')[5].querySelector('.metric-value').textContent = `${metrics.conversionRate}%`;
+        }
+        
+        // デモデータ警告表示
+        function showDemoDataWarning() {
+            const existingWarning = document.getElementById('demoDataWarning');
+            if (existingWarning) return;
+            
+            const warningDiv = document.createElement('div');
+            warningDiv.id = 'demoDataWarning';
+            warningDiv.className = 'alert alert-warning';
+            warningDiv.innerHTML = `
+                <div class="alert-content">
+                    <strong>⚠️ デモデータ表示中</strong><br>
+                    現在表示されているデータの一部はサンプルデータです。実際のデータを表示するには、売上・代理店データを登録してください。
+                </div>
+            `;
+            warningDiv.style.cssText = 'margin: 20px 0; padding: 16px; background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; color: #92400e;';
+            
+            const container = document.querySelector('.analytics-header');
+            container.parentNode.insertBefore(warningDiv, container.nextSibling);
+        }
+        
+        // データ不足警告表示
+        function showDataNotAvailable(dataType) {
+            console.warn(`${dataType}の実データが利用できません`);
         }
         
         // コホート分析チャート
@@ -940,7 +973,17 @@
             
             if (error) {
                 console.error('ファネルデータ取得エラー:', error);
+                showDataNotAvailable('ファネルデータ');
                 return;
+            }
+            
+            // デモデータかどうかチェック
+            const isDemoData = funnelData.leads === 1000 && funnelData.qualified === 650 && 
+                              funnelData.opportunities === 320 && funnelData.negotiations === 180 && 
+                              funnelData.closed === 142;
+            
+            if (isDemoData) {
+                showDemoDataWarning();
             }
             
             if (window.funnelChart) {
