@@ -1038,11 +1038,13 @@
             if (window.cohortChart) {
                 // Y軸の設定を売上用に変更
                 window.cohortChart.options.scales.y.max = undefined;
+                window.cohortChart.options.scales.y.min = 0;
+                window.cohortChart.options.scales.y.beginAtZero = true;
                 window.cohortChart.options.scales.y.ticks.callback = function(value) {
-                    return '¥' + value.toLocaleString();
+                    return '¥' + value.toLocaleString() + '万';
                 };
                 window.cohortChart.options.plugins.tooltip.callbacks.label = function(context) {
-                    return context.dataset.label + ': ¥' + context.parsed.y.toLocaleString();
+                    return context.dataset.label + ': ¥' + context.parsed.y.toLocaleString() + '万';
                 };
                 
                 window.cohortChart.data.labels = labels;
@@ -1160,6 +1162,17 @@
             });
             
             if (window.cohortChart) {
+                // Y軸の設定を継続率用に戻す
+                window.cohortChart.options.scales.y.max = 100;
+                window.cohortChart.options.scales.y.min = 0;
+                window.cohortChart.options.scales.y.beginAtZero = true;
+                window.cohortChart.options.scales.y.ticks.callback = function(value) {
+                    return value + '%';
+                };
+                window.cohortChart.options.plugins.tooltip.callbacks.label = function(context) {
+                    return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                };
+                
                 window.cohortChart.data.labels = labels;
                 window.cohortChart.data.datasets = datasets;
                 window.cohortChart.update();
