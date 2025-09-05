@@ -282,19 +282,9 @@ class AnalyticsSupabaseDB {
                 closed: closedCount
             };
             
-            // 最小値を保証
+            // データがない場合はnullを返す
             if (funnelData.closed === 0) {
-                // デモデータを返す
-                return {
-                    data: {
-                        leads: 1000,
-                        qualified: 650,
-                        opportunities: 320,
-                        negotiations: 180,
-                        closed: 142
-                    },
-                    error: null
-                };
+                return { data: null, error: new Error('売上データが存在しません') };
             }
 
             return { data: funnelData, error: null };
@@ -406,7 +396,7 @@ class AnalyticsSupabaseDB {
     calculateLTV(salesData, customerData) {
         // 簡易的なLTV計算
         if (!salesData || salesData.length === 0) {
-            return 428500; // デモ値（データがない場合）
+            return 0; // データがない場合は0
         }
         
         // 顧客あたりの平均購入額と頻度から計算（簡易版）
@@ -421,11 +411,11 @@ class AnalyticsSupabaseDB {
         // 簡易的なCAC計算
         // 実際のマーケティングコストデータがないため推定値を使用
         if (!customerData || customerData.length === 0) {
-            return 32100; // デモ値
+            return 0; // データがない場合は0
         }
         
-        // マーケティングコストを売上の10%と仮定
-        return 32100; // 現時点では固定値
+        // マーケティングコストを売上の10%と仮定（データが存在する場合の仮定値）
+        return 15000; // 仮定値
     }
 
     async calculateRetentionRate(startDate, endDate) {
@@ -433,7 +423,7 @@ class AnalyticsSupabaseDB {
         try {
             const agencies = await this.client.getAgencies();
             if (!agencies || agencies.length === 0) {
-                return 87.3; // デモ値
+                return 0; // データがない場合は0
             }
             
             // アクティブな代理店の割合を計算
@@ -442,7 +432,7 @@ class AnalyticsSupabaseDB {
             
             return Math.round(retentionRate * 10) / 10;
         } catch (error) {
-            return 87.3; // エラー時はデモ値
+            return 0; // エラー時は0
         }
     }
 
@@ -455,7 +445,7 @@ class AnalyticsSupabaseDB {
             });
             
             if (!sales || sales.length === 0) {
-                return 14.8; // デモ値
+                return 0; // データがない場合は0
             }
             
             // 確定売上の割合を計算
@@ -464,7 +454,7 @@ class AnalyticsSupabaseDB {
             
             return Math.round(conversionRate * 10) / 10;
         } catch (error) {
-            return 14.8; // エラー時はデモ値
+            return 0; // エラー時は0
         }
     }
     
