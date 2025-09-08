@@ -347,7 +347,6 @@
     <header class="header">
         <h1>
             多段階営業代理店管理システム【管理者】
-            <span id="connectionStatus" class="status-indicator status-connected">接続中</span>
         </h1>
         <div class="user-info">
             <span class="user-name" id="userDisplay">読み込み中...</span>
@@ -650,21 +649,18 @@
                     // Supabaseクライアントを初期化
                     supabaseDb = new SalesSupabaseDB();
                     currentMode = 'supabase';
-                    updateConnectionStatus('Supabase接続中', 'connected');
                     
                     // 初期データを読み込み
                     await loadInitialData();
                 } catch (error) {
                     console.error('Supabase接続エラー:', error);
                     ErrorHandler.handle(new ApiError('DATABASE_001'));
-                    updateConnectionStatus('接続エラー', 'error');
                     // エラー時はデモモードにフォールバック
                     populateAgencySelect();
                     populateProductSelect();
                     displayDemoSalesData();
                 }
             } else {
-                updateConnectionStatus('デモモード', 'connected');
                 // デモモードでも初期データを設定
                 populateAgencySelect();
                 populateProductSelect();
@@ -1292,13 +1288,6 @@
                 console.error('更新エラー:', error);
                 showError('売上の更新に失敗しました');
             }
-        }
-        
-        
-        function updateConnectionStatus(text, status) {
-            const statusElement = document.getElementById('connectionStatus');
-            statusElement.textContent = text;
-            statusElement.className = `status-indicator status-${status}`;
         }
         
         function showError(message) {
