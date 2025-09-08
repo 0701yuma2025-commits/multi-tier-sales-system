@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="css/ui-components.css">
     <script src="js/api-error-codes.js"></script>
     <script src="js/mobile-menu.js"></script>
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/settings-supabase.js"></script>
     <style>
         * {
             margin: 0;
@@ -301,7 +305,7 @@
                             <span id="signupPassword-icon">👁</span>
                         </button>
                     </div>
-                    <span class="form-help-text">英数字を含む半角6文字以上で入力してください</span>
+                    <span class="form-help-text" id="passwordRequirement">英数字を含む半角6文字以上で入力してください</span>
                 </div>
                 
                 <div class="form-group">
@@ -559,8 +563,9 @@
                 if (!email.includes('@') || !email.includes('.')) {
                     throw new ApiError('VALIDATION_002');
                 }
-                if (password.length < 6) {
-                    throw new ApiError('VALIDATION_001', { field: 'パスワード', requirement: '6文字以上' });
+                const minLength = window.passwordMinLength || 8;
+                if (password.length < minLength) {
+                    throw new ApiError('VALIDATION_001', { field: 'パスワード', requirement: `${minLength}文字以上` });
                 }
                 
                 // Supabase設定がない場合はエラー
@@ -717,8 +722,55 @@
             }
         }
         
+        // パスワード設定を取得
+        async function loadPasswordSettings() {
+            try {
+                // Supabaseクライアントを初期化
+                const supabaseClient = initializeSupabase();
+                if (!supabaseClient) {
+                    console.log('デモモード: デフォルトのパスワード設定を使用');
+                    return;
+                }
+                
+                // 設定データベースからセキュリティ設定を取得
+                const settingsDb = new SettingsSupabaseDB();
+                const { data: securitySettings, error } = await settingsDb.getSettings('security');
+                
+                if (!error && securitySettings) {
+                    const minLength = securitySettings.passwordMinLength || 8;
+                    window.passwordMinLength = minLength;
+                    
+                    // フォームの属性を更新
+                    const passwordInput = document.getElementById('signupPassword');
+                    if (passwordInput) {
+                        passwordInput.minLength = minLength;
+                        passwordInput.placeholder = `${minLength}文字以上`;
+                    }
+                    
+                    // ヘルプテキストを更新
+                    const helpText = document.getElementById('passwordRequirement');
+                    if (helpText) {
+                        let requirementText = `半角${minLength}文字以上`;
+                        if (securitySettings.requireNumber) {
+                            requirementText = '数字を含む' + requirementText;
+                        }
+                        if (securitySettings.requireSpecialChar) {
+                            requirementText = '特殊文字を含む' + requirementText;
+                        }
+                        helpText.textContent = requirementText + 'で入力してください';
+                    }
+                }
+            } catch (error) {
+                console.log('パスワード設定の読み込みエラー:', error);
+                // エラー時はデフォルト値を使用
+                window.passwordMinLength = 8;
+            }
+        }
+        
         // ページロード時の処理
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            // パスワード設定を読み込み
+            await loadPasswordSettings();
             // ログアウトパラメータがある場合はリダイレクトしない
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('logout') === 'true') {
