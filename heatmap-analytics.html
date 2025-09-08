@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ヒートマップ分析 - 多段階営業代理店管理システム</title>
+    
+    <!-- Supabase設定 -->
+    <script src="js/config.js"></script>
+    
+    <!-- Chart.js と関連ライブラリ -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
+    
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- 共通スクリプト -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/sales-supabase.js"></script>
+    <script src="js/common-functions.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f3f4f6;
+            min-height: 100vh;
+        }
+        
+        /* ヘッダー */
+        .header {
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            border: none;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        
+        /* ナビゲーションタブ */
+        .nav-tabs {
+            background-color: white;
+            padding: 0 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            gap: 32px;
+        }
+        
+        .nav-tab {
+            padding: 16px 0;
+            color: #6b7280;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        
+        .nav-tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+        
+        .nav-tab:hover {
+            color: #3b82f6;
+        }
+        
+        /* メインコンテンツ */
+        .main-content {
+            padding: 24px;
+        }
+        
+        /* フィルターセクション */
+        .filter-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 16px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .filter-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        .filter-select, .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background-color: white;
+            font-size: 14px;
+            color: #1f2937;
+        }
+        
+        /* ヒートマップコンテナ */
+        .heatmap-container {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+        }
+        
+        .heatmap-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .heatmap-canvas {
+            width: 100%;
+            height: 400px;
+            position: relative;
+        }
+        
+        /* 統計サマリー */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .stat-change {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        
+        .stat-change.positive {
+            color: #10b981;
+        }
+        
+        .stat-change.negative {
+            color: #ef4444;
+        }
+        
+        /* 凡例 */
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 10px;
+            border-radius: 2px;
+        }
+        
+        /* ローディング */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* レスポンシブ */
+        @media (max-width: 768px) {
+            .filter-row {
+                flex-direction: column;
+            }
+            
+            .filter-group {
+                width: 100%;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <h1>
+            <span>🔥</span>
+            ヒートマップ分析
+        </h1>
+        <div class="header-controls">
+            <button class="btn btn-secondary" onclick="exportHeatmap()">
+                📥 エクスポート
+            </button>
+            <a href="dashboard-admin.html" class="btn btn-primary">
+                ダッシュボードへ戻る
+            </a>
+        </div>
+    </header>
+    
+    <!-- ナビゲーションタブ -->
+    <nav class="nav-tabs">
+        <div class="nav-tab active" onclick="switchTab('sales')">売上ヒートマップ</div>
+        <div class="nav-tab" onclick="switchTab('agencies')">代理店パフォーマンス</div>
+        <div class="nav-tab" onclick="switchTab('products')">商品別分析</div>
+        <div class="nav-tab" onclick="switchTab('time')">時系列分析</div>
+    </nav>
+    
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <!-- フィルター -->
+        <div class="filter-section">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label class="filter-label">期間</label>
+                    <select class="filter-select" id="periodFilter" onchange="updateHeatmap()">
+                        <option value="7">過去7日間</option>
+                        <option value="30" selected>過去30日間</option>
+                        <option value="90">過去90日間</option>
+                        <option value="365">過去1年間</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">表示タイプ</label>
+                    <select class="filter-select" id="viewType" onchange="updateHeatmap()">
+                        <option value="daily">日別</option>
+                        <option value="weekly" selected>週別</option>
+                        <option value="monthly">月別</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">メトリクス</label>
+                    <select class="filter-select" id="metricType" onchange="updateHeatmap()">
+                        <option value="sales">売上金額</option>
+                        <option value="count">取引件数</option>
+                        <option value="average">平均単価</option>
+                        <option value="commission">報酬総額</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">代理店フィルター</label>
+                    <select class="filter-select" id="agencyFilter" onchange="updateHeatmap()">
+                        <option value="all">全代理店</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary" onclick="updateHeatmap()">
+                    更新
+                </button>
+            </div>
+        </div>
+        
+        <!-- 統計サマリー -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">最高売上日</div>
+                <div class="stat-value" id="peakDay">-</div>
+                <div class="stat-change positive" id="peakDayChange">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">平均日次売上</div>
+                <div class="stat-value" id="avgDaily">-</div>
+                <div class="stat-change" id="avgDailyChange">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">最も活発な曜日</div>
+                <div class="stat-value" id="bestDay">-</div>
+                <div class="stat-change" id="bestDayDetail">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">最も活発な時間帯</div>
+                <div class="stat-value" id="bestHour">-</div>
+                <div class="stat-change" id="bestHourDetail">-</div>
+            </div>
+        </div>
+        
+        <!-- ヒートマップ -->
+        <div class="heatmap-container" id="salesHeatmap">
+            <h3 class="heatmap-title">
+                <span>📊</span>
+                売上ヒートマップ（週別）
+            </h3>
+            <div class="heatmap-canvas">
+                <canvas id="heatmapChart"></canvas>
+            </div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f3f4f6;"></div>
+                    <span>低</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #fef3c7;"></div>
+                    <span>中低</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #fbbf24;"></div>
+                    <span>中</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f59e0b;"></div>
+                    <span>中高</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #dc2626;"></div>
+                    <span>高</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 代理店パフォーマンスヒートマップ -->
+        <div class="heatmap-container" id="agencyHeatmap" style="display: none;">
+            <h3 class="heatmap-title">
+                <span>🏢</span>
+                代理店パフォーマンス
+            </h3>
+            <div class="heatmap-canvas">
+                <canvas id="agencyChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- 商品別ヒートマップ -->
+        <div class="heatmap-container" id="productHeatmap" style="display: none;">
+            <h3 class="heatmap-title">
+                <span>📦</span>
+                商品別売上分析
+            </h3>
+            <div class="heatmap-canvas">
+                <canvas id="productChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- 時系列ヒートマップ -->
+        <div class="heatmap-container" id="timeHeatmap" style="display: none;">
+            <h3 class="heatmap-title">
+                <span>⏰</span>
+                時間帯別分析
+            </h3>
+            <div class="heatmap-canvas">
+                <canvas id="timeChart"></canvas>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        let salesData = [];
+        let agencyData = [];
+        let productData = [];
+        let currentTab = 'sales';
+        let heatmapChart = null;
+        let agencyChart = null;
+        let productChart = null;
+        let timeChart = null;
+        
+        // ページ読み込み時の処理
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadData();
+            initHeatmaps();
+            updateHeatmap();
+        });
+        
+        // データ読み込み
+        async function loadData() {
+            try {
+                // Supabase設定の確認
+                const hasValidConfig = SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_PROJECT_URL' && 
+                                     SUPABASE_CONFIG.anonKey !== 'YOUR_SUPABASE_ANON_KEY';
+                
+                if (hasValidConfig) {
+                    const supabaseDb = new SalesSupabaseDB();
+                    salesData = await supabaseDb.getSales();
+                    agencyData = await supabaseDb.getAgencies();
+                    productData = await supabaseDb.getProducts();
+                    
+                    // 代理店フィルターを設定
+                    populateAgencyFilter();
+                } else {
+                    // デモデータ
+                    generateDemoData();
+                }
+            } catch (error) {
+                console.error('データ読み込みエラー:', error);
+                generateDemoData();
+            }
+        }
+        
+        // デモデータ生成
+        function generateDemoData() {
+            const now = new Date();
+            salesData = [];
+            
+            // 過去90日分のデモデータを生成
+            for (let i = 0; i < 90; i++) {
+                const date = new Date(now);
+                date.setDate(date.getDate() - i);
+                
+                // 曜日による変動
+                const dayOfWeek = date.getDay();
+                const weekendMultiplier = (dayOfWeek === 0 || dayOfWeek === 6) ? 0.7 : 1.2;
+                
+                // 時間帯による変動
+                for (let hour = 9; hour < 18; hour++) {
+                    const hourMultiplier = hour >= 10 && hour <= 15 ? 1.5 : 0.8;
+                    
+                    if (Math.random() > 0.3) {
+                        salesData.push({
+                            id: `S${i}-${hour}`,
+                            sale_date: date.toISOString().split('T')[0],
+                            hour: hour,
+                            agency_id: `00${Math.floor(Math.random() * 4) + 1}`,
+                            product_id: `PRD00${Math.floor(Math.random() * 3) + 1}`,
+                            amount: Math.floor(Math.random() * 200000 * weekendMultiplier * hourMultiplier) + 50000,
+                            status: 'confirmed'
+                        });
+                    }
+                }
+            }
+            
+            agencyData = [
+                { id: '001', company_name: '株式会社ABC商事' },
+                { id: '002', company_name: 'XYZ営業株式会社' },
+                { id: '003', company_name: '田中商店' },
+                { id: '004', company_name: 'スズキ販売' }
+            ];
+            
+            productData = [
+                { id: 'PRD001', name: '商品A' },
+                { id: 'PRD002', name: '商品B' },
+                { id: 'PRD003', name: '商品C' }
+            ];
+            
+            populateAgencyFilter();
+        }
+        
+        // 代理店フィルター設定
+        function populateAgencyFilter() {
+            const select = document.getElementById('agencyFilter');
+            select.innerHTML = '<option value="all">全代理店</option>';
+            
+            agencyData.forEach(agency => {
+                const option = document.createElement('option');
+                option.value = agency.id;
+                option.textContent = agency.company_name || agency.name;
+                select.appendChild(option);
+            });
+        }
+        
+        // ヒートマップ初期化
+        function initHeatmaps() {
+            // 売上ヒートマップ
+            const ctx = document.getElementById('heatmapChart').getContext('2d');
+            heatmapChart = new Chart(ctx, {
+                type: 'matrix',
+                data: {
+                    datasets: [{
+                        label: '売上',
+                        data: [],
+                        backgroundColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex].v;
+                            const max = Math.max(...context.dataset.data.map(d => d.v));
+                            const intensity = value / max;
+                            
+                            if (intensity < 0.2) return '#f3f4f6';
+                            if (intensity < 0.4) return '#fef3c7';
+                            if (intensity < 0.6) return '#fbbf24';
+                            if (intensity < 0.8) return '#f59e0b';
+                            return '#dc2626';
+                        },
+                        borderWidth: 1,
+                        borderColor: '#ffffff',
+                        width: ({chart}) => (chart.chartArea || {}).width / 7 - 1,
+                        height: ({chart}) => (chart.chartArea || {}).height / 24 - 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const item = context[0].raw;
+                                    return `${item.day} ${item.hour}:00`;
+                                },
+                                label: function(context) {
+                                    return `売上: ¥${context.raw.v.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'category',
+                            labels: ['日', '月', '火', '水', '木', '金', '土'],
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            type: 'category',
+                            labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // ヒートマップ更新
+        function updateHeatmap() {
+            const period = parseInt(document.getElementById('periodFilter').value);
+            const viewType = document.getElementById('viewType').value;
+            const metricType = document.getElementById('metricType').value;
+            const agencyFilter = document.getElementById('agencyFilter').value;
+            
+            // フィルタリング
+            const now = new Date();
+            const startDate = new Date(now);
+            startDate.setDate(startDate.getDate() - period);
+            
+            let filteredData = salesData.filter(sale => {
+                const saleDate = new Date(sale.sale_date);
+                return saleDate >= startDate && saleDate <= now;
+            });
+            
+            if (agencyFilter !== 'all') {
+                filteredData = filteredData.filter(sale => sale.agency_id === agencyFilter);
+            }
+            
+            // ヒートマップデータ生成
+            const heatmapData = generateHeatmapData(filteredData, viewType, metricType);
+            
+            // チャート更新
+            if (heatmapChart) {
+                heatmapChart.data.datasets[0].data = heatmapData;
+                heatmapChart.update();
+            }
+            
+            // 統計更新
+            updateStatistics(filteredData);
+        }
+        
+        // ヒートマップデータ生成
+        function generateHeatmapData(data, viewType, metricType) {
+            const heatmapData = [];
+            
+            if (viewType === 'weekly') {
+                // 曜日×時間のヒートマップ
+                for (let day = 0; day < 7; day++) {
+                    for (let hour = 0; hour < 24; hour++) {
+                        const dayData = data.filter(sale => {
+                            const saleDate = new Date(sale.sale_date);
+                            return saleDate.getDay() === day && (sale.hour || 12) === hour;
+                        });
+                        
+                        let value = 0;
+                        if (metricType === 'sales') {
+                            value = dayData.reduce((sum, s) => sum + s.amount, 0);
+                        } else if (metricType === 'count') {
+                            value = dayData.length;
+                        } else if (metricType === 'average') {
+                            value = dayData.length > 0 ? 
+                                dayData.reduce((sum, s) => sum + s.amount, 0) / dayData.length : 0;
+                        }
+                        
+                        heatmapData.push({
+                            x: day,
+                            y: hour,
+                            v: value,
+                            day: ['日', '月', '火', '水', '木', '金', '土'][day],
+                            hour: hour
+                        });
+                    }
+                }
+            }
+            
+            return heatmapData;
+        }
+        
+        // 統計更新
+        function updateStatistics(data) {
+            // 最高売上日
+            const dailySales = {};
+            data.forEach(sale => {
+                const date = sale.sale_date;
+                if (!dailySales[date]) dailySales[date] = 0;
+                dailySales[date] += sale.amount;
+            });
+            
+            const peakDay = Object.entries(dailySales).sort((a, b) => b[1] - a[1])[0];
+            if (peakDay) {
+                document.getElementById('peakDay').textContent = peakDay[0];
+                document.getElementById('peakDayChange').textContent = `¥${peakDay[1].toLocaleString()}`;
+            }
+            
+            // 平均日次売上
+            const avgDaily = Object.values(dailySales).reduce((sum, v) => sum + v, 0) / Object.keys(dailySales).length;
+            document.getElementById('avgDaily').textContent = `¥${Math.floor(avgDaily).toLocaleString()}`;
+            
+            // 最も活発な曜日
+            const dayOfWeekSales = Array(7).fill(0);
+            data.forEach(sale => {
+                const day = new Date(sale.sale_date).getDay();
+                dayOfWeekSales[day] += sale.amount;
+            });
+            
+            const bestDayIndex = dayOfWeekSales.indexOf(Math.max(...dayOfWeekSales));
+            const dayNames = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+            document.getElementById('bestDay').textContent = dayNames[bestDayIndex];
+            document.getElementById('bestDayDetail').textContent = `平均 ¥${Math.floor(dayOfWeekSales[bestDayIndex] / 4).toLocaleString()}`;
+            
+            // 最も活発な時間帯
+            const hourlySales = Array(24).fill(0);
+            data.forEach(sale => {
+                const hour = sale.hour || 12;
+                hourlySales[hour] += sale.amount;
+            });
+            
+            const bestHour = hourlySales.indexOf(Math.max(...hourlySales));
+            document.getElementById('bestHour').textContent = `${bestHour}:00-${bestHour+1}:00`;
+            document.getElementById('bestHourDetail').textContent = `平均 ¥${Math.floor(hourlySales[bestHour] / 30).toLocaleString()}`;
+        }
+        
+        // タブ切り替え
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // タブのアクティブ状態を更新
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // コンテンツの表示/非表示
+            document.getElementById('salesHeatmap').style.display = tab === 'sales' ? 'block' : 'none';
+            document.getElementById('agencyHeatmap').style.display = tab === 'agencies' ? 'block' : 'none';
+            document.getElementById('productHeatmap').style.display = tab === 'products' ? 'block' : 'none';
+            document.getElementById('timeHeatmap').style.display = tab === 'time' ? 'block' : 'none';
+        }
+        
+        // エクスポート
+        function exportHeatmap() {
+            const canvas = document.getElementById('heatmapChart');
+            const url = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `heatmap_${new Date().toISOString().split('T')[0]}.png`;
+            link.href = url;
+            link.click();
+        }
+    </script>
+</body>
+</html>
