@@ -1,85 +1,92 @@
 // 設定管理用Supabaseデータベースクラス
 class SettingsSupabaseDB {
     constructor() {
-        // グローバルのSupabaseインスタンスを使用（遅延初期化）
-        if (window.initializeSupabaseDb) {
-            this.client = window.initializeSupabaseDb();
-        } else if (window.supabaseDb) {
-            this.client = window.supabaseDb;
-        } else {
-            // フォールバック：新規作成を試みる
-            this.client = initializeSupabase();
-        }
+        // Supabaseクライアントを初期化
+        const supabaseClient = initializeSupabase();
         
-        if (!this.client) {
+        if (!supabaseClient) {
             console.error('Supabaseクライアントの初期化に失敗しました');
             this.client = null;
+            return;
         }
+        
+        this.client = supabaseClient;
     }
-
-    // 設定取得
+    
+    // 特定カテゴリの設定を取得
     async getSettings(category) {
         if (!this.client) {
-            return { data: this.getDefaultSettings(category), error: null };
+            return { data: this.getDefaultSettings(category), error: 'Supabase not initialized' };
         }
         
         try {
-            const data = await this.client.request(`system_settings?category=eq.${category}`);
+            const { data, error } = await this.client
+                .from('system_settings')
+                .select('*')
+                .eq('category', category)
+                .single();
             
-            // データがない場合はデフォルト値を返す
-            if (!data || data.length === 0) {
+            if (error && error.code === 'PGRST116') {
+                // データがない場合はデフォルト値を返す
                 return { data: this.getDefaultSettings(category), error: null };
             }
             
-            return { data: data[0].settings, error: null };
+            if (error) throw error;
+            
+            return { data: data?.settings || this.getDefaultSettings(category), error: null };
         } catch (error) {
-            console.error('設定取得エラー:', error);
+            console.error(`${category}設定取得エラー:`, error);
             return { data: this.getDefaultSettings(category), error };
         }
     }
-
-    // 設定保存
+    
+    // 設定を保存
     async saveSettings(category, settings) {
         if (!this.client) {
-            console.warn('Supabaseクライアントが利用できません');
-            return { data: null, error: new Error('設定の保存にはSupabaseの設定が必要です') };
+            return { data: null, error: 'Supabase not initialized' };
         }
         
         try {
-            // 既存の設定を確認
-            const existingData = await this.client.request(`system_settings?category=eq.${category}`);
+            const { data: existingData, error: fetchError } = await this.client
+                .from('system_settings')
+                .select('*')
+                .eq('category', category)
+                .single();
             
             let result;
-            if (existingData && existingData.length > 0) {
+            if (existingData && !fetchError) {
                 // 更新
-                result = await this.client.request(`system_settings?id=eq.${existingData[0].id}`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({
-                        settings: settings,
-                        updated_at: new Date().toISOString()
-                    })
-                });
+                const { data, error } = await this.client
+                    .from('system_settings')
+                    .update({ settings, updated_at: new Date().toISOString() })
+                    .eq('id', existingData.id)
+                    .select();
+                result = { data, error };
             } else {
                 // 新規作成
-                result = await this.client.request('system_settings', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        category: category,
-                        settings: settings
-                    })
-                });
+                const { data, error } = await this.client
+                    .from('system_settings')
+                    .insert({ category, settings, created_at: new Date().toISOString() })
+                    .select();
+                result = { data, error };
             }
             
-            return { data: result, error: null };
+            if (result.error) throw result.error;
+            
+            // 履歴に保存
+            await this.saveSettingsHistory(category, settings);
+            
+            return result;
         } catch (error) {
-            console.error('設定保存エラー:', error);
+            console.error(`${category}設定保存エラー:`, error);
             return { data: null, error };
         }
     }
-
-    // すべての設定を取得
+    
+    // 全設定を取得
     async getAllSettings() {
         if (!this.client) {
+            // デモモード用のデフォルト設定を返す
             return { 
                 data: {
                     general: this.getDefaultSettings('general'),
@@ -94,7 +101,11 @@ class SettingsSupabaseDB {
         }
         
         try {
-            const data = await this.client.request('system_settings?select=*');
+            const { data, error } = await this.client
+                .from('system_settings')
+                .select('*');
+            
+            if (error) throw error;
             
             // カテゴリごとにまとめる
             const settings = {};
@@ -127,120 +138,159 @@ class SettingsSupabaseDB {
                 companyName: '株式会社サンプル',
                 adminEmail: 'admin@example.com',
                 timezone: 'Asia/Tokyo',
-                language: 'ja'
+                language: 'ja',
+                dateFormat: 'YYYY-MM-DD'
             },
             commission: {
-                tier1: { rate: 30, bonus: 10 },
-                tier2: { rate: 25, bonus: 8 },
-                tier3: { rate: 20, bonus: 6 },
-                tier4: { rate: 15, bonus: 4 },
-                autoApprove: false,
-                hierarchyBonus: true,
-                campaignBonus: false
+                tier1Rate: 30,
+                tier2Rate: 20,
+                tier3Rate: 15,
+                tier4Rate: 10,
+                bonusThreshold: 1000000,
+                bonusRate: 5,
+                calculateTiming: 'monthly',
+                paymentTiming: 'next_month_end'
             },
             notification: {
-                newAgency: true,
-                newSale: true,
-                payment: true,
-                monthlyReport: false,
-                method: 'email',
-                frequency: 'realtime'
+                emailEnabled: true,
+                smsEnabled: false,
+                newSaleNotification: true,
+                commissionNotification: true,
+                paymentNotification: true,
+                systemAlertNotification: true
             },
             security: {
-                minPasswordLength: 8,
-                requireUppercase: true,
-                requireNumbers: true,
-                requireSpecial: false,
+                sessionTimeout: 3600,
                 maxLoginAttempts: 5,
-                lockDuration: 30,
-                require2FA: false,
-                ipRestriction: false
+                passwordMinLength: 8,
+                requireSpecialChar: true,
+                requireNumber: true,
+                twoFactorEnabled: false
             },
             api: {
-                publicKey: 'pk_test_default123456789',
-                secretKey: 'sk_test_default123456789',
-                webhookUrl: 'https://api.example.com/webhook'
+                rateLimit: 100,
+                rateLimitWindow: 60,
+                apiKeyRequired: true,
+                allowedOrigins: ['*'],
+                debugMode: false
             },
             backup: {
-                autoBackup: true,
+                autoBackupEnabled: true,
+                backupInterval: 'daily',
+                backupTime: '03:00',
                 backupRetention: 30,
-                backupTime: '03:00'
+                backupLocation: 'cloud'
             }
         };
         
         return defaults[category] || {};
     }
-
+    
+    // 設定履歴を保存
+    async saveSettingsHistory(category, settings) {
+        if (!this.client) return;
+        
+        try {
+            await this.client
+                .from('settings_history')
+                .insert({
+                    category,
+                    settings,
+                    created_at: new Date().toISOString()
+                });
+        } catch (error) {
+            console.error('設定履歴保存エラー:', error);
+        }
+    }
+    
     // 設定履歴を取得
     async getSettingsHistory(category, limit = 10) {
         if (!this.client) {
-            return { data: [], error: null };
+            return { data: [], error: 'Supabase not initialized' };
         }
         
         try {
-            const data = await this.client.request(`settings_history?category=eq.${category}&order=created_at.desc&limit=${limit}`);
+            const { data, error } = await this.client
+                .from('settings_history')
+                .select('*')
+                .eq('category', category)
+                .order('created_at', { ascending: false })
+                .limit(limit);
             
+            if (error) throw error;
             return { data: data || [], error: null };
         } catch (error) {
             console.error('設定履歴取得エラー:', error);
             return { data: [], error };
         }
     }
-
-    // 設定をリセット
-    async resetSettings(category) {
-        const defaultSettings = this.getDefaultSettings(category);
-        return await this.saveSettings(category, defaultSettings);
-    }
-
-    // API使用状況を取得
-    async getApiUsageStats(days = 7) {
+    
+    // システム統計を取得
+    async getSystemStats() {
         if (!this.client) {
-            // デモデータ
-            return { 
-                data: [
-                    { date: '2024-03-15', requests: 1234, success_rate: 99.2, avg_response_time: 124 },
-                    { date: '2024-03-14', requests: 1189, success_rate: 99.5, avg_response_time: 118 },
-                    { date: '2024-03-13', requests: 1302, success_rate: 98.9, avg_response_time: 132 }
-                ],
-                error: null 
+            // デモデータを返す
+            return {
+                data: {
+                    totalAgencies: 4,
+                    activeAgencies: 3,
+                    totalSales: 150,
+                    totalRevenue: 15000000,
+                    totalCommissions: 3000000,
+                    averageCommissionRate: 20
+                },
+                error: null
             };
         }
         
+        // 実際のデータベースから統計を取得
+        // ここは簡略化のため、基本的な実装のみ
+        return this.getSystemStats();
+    }
+    
+    // API使用状況を取得
+    async getApiUsageLogs(startDate) {
+        if (!this.client) {
+            return { data: [], error: 'Supabase not initialized' };
+        }
+        
         try {
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - days);
+            const { data, error } = await this.client
+                .from('api_usage_logs')
+                .select('*')
+                .gte('date', startDate.toISOString())
+                .order('date', { ascending: false });
             
-            const data = await this.client.request(`api_usage_logs?date=gte.${startDate.toISOString()}&order=date.desc`);
-            
+            if (error) throw error;
             return { data: data || [], error: null };
         } catch (error) {
             console.error('API使用状況取得エラー:', error);
             return { data: [], error };
         }
     }
-
+    
     // バックアップ履歴を取得
     async getBackupHistory() {
         if (!this.client) {
-            // デモデータ
-            return {
-                data: [
-                    { id: 1, created_at: '2024-03-15T03:00:00Z', size: '125MB', status: 'completed' },
-                    { id: 2, created_at: '2024-03-14T03:00:00Z', size: '124MB', status: 'completed' },
-                    { id: 3, created_at: '2024-03-13T03:00:00Z', size: '123MB', status: 'completed' }
-                ],
-                error: null
-            };
+            return { data: [], error: 'Supabase not initialized' };
         }
         
         try {
-            const data = await this.client.request('backup_history?order=created_at.desc&limit=20');
+            const { data, error } = await this.client
+                .from('backup_history')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(20);
             
+            if (error) throw error;
             return { data: data || [], error: null };
         } catch (error) {
             console.error('バックアップ履歴取得エラー:', error);
             return { data: [], error };
         }
     }
+}
+
+// エクスポート（モジュールとして使用する場合）
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = SettingsSupabaseDB;
 }
