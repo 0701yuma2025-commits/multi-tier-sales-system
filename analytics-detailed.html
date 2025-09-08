@@ -896,7 +896,7 @@
             const maxValue = Math.max(...values);
             
             // 既存のチャートを破棄
-            if (window.heatmapChart) {
+            if (window.heatmapChart && typeof window.heatmapChart.destroy === 'function') {
                 window.heatmapChart.destroy();
             }
             
