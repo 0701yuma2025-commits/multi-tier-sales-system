@@ -362,32 +362,29 @@ class AgenciesSupabaseDB {
     // 代理店ステータス更新
     async updateAgencyStatus(id, status) {
         try {
+            // updateメソッドに.select()を追加して、更新後のデータを取得
             const { data: updateData, error: updateError } = await this.client
                 .from('agencies')
                 .update({ 
                     status: status,
                     updated_at: new Date().toISOString()
                 })
-                .eq('id', id);
+                .eq('id', id)
+                .select()
+                .single();
             
             if (updateError) {
                 console.error('ステータス更新エラー:', updateError);
                 throw updateError;
             }
             
-            // 更新後のデータを取得
-            const { data, error } = await this.client
-                .from('agencies')
-                .select()
-                .eq('id', id)
-                .single();
+            console.log('ステータス更新成功:', {
+                id: id,
+                newStatus: status,
+                updatedData: updateData
+            });
             
-            if (error) {
-                console.error('データ取得エラー:', error);
-                throw error;
-            }
-            
-            return Array.isArray(data) ? data[0] : data;
+            return updateData;
         } catch (error) {
             console.error('代理店ステータス更新エラー:', error);
             throw error;
