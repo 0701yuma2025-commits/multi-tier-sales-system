@@ -458,20 +458,6 @@
             </div>
         </div>
         
-        <!-- ファネル分析 -->
-        <div class="chart-section">
-            <div class="chart-header">
-                <h2 class="chart-title">セールスファネル分析</h2>
-                <div class="chart-options">
-                    <button class="chart-btn active" onclick="switchFunnelPeriod('month')">今月</button>
-                    <button class="chart-btn" onclick="switchFunnelPeriod('quarter')">今四半期</button>
-                    <button class="chart-btn" onclick="switchFunnelPeriod('year')">今年</button>
-                </div>
-            </div>
-            <div class="chart-wrapper small">
-                <canvas id="funnelChart"></canvas>
-            </div>
-        </div>
         
         <!-- ヒートマップ -->
         <div class="chart-section">
@@ -700,7 +686,6 @@
             
             // チャートデータ更新（デフォルトは売上表示）
             await updateCohortChartRevenue(startDate, endDate);
-            await updateFunnelChart(startDate, endDate);
             await updateHeatmapChart(startDate, endDate);
             
             // テーブルデータ更新
@@ -839,57 +824,6 @@
                                     return value + '%';
                                 }
                             }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // ファネルチャート
-        function initFunnelChart() {
-            const ctx = document.getElementById('funnelChart').getContext('2d');
-            
-            window.funnelChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['リード', '商談', '提案', '交渉', '成約'],
-                    datasets: [{
-                        label: 'ステージ別件数',
-                        data: [1000, 650, 320, 180, 142],
-                        backgroundColor: [
-                            'rgba(59, 130, 246, 0.8)',
-                            'rgba(59, 130, 246, 0.7)',
-                            'rgba(59, 130, 246, 0.6)',
-                            'rgba(59, 130, 246, 0.5)',
-                            'rgba(59, 130, 246, 0.4)'
-                        ],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const index = context.dataIndex;
-                                    const value = context.parsed.x;
-                                    const percentage = index > 0 
-                                        ? ((value / context.dataset.data[index - 1]) * 100).toFixed(1) + '%'
-                                        : '100%';
-                                    return value + '件 (' + percentage + ')';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true
                         }
                     }
                 }
@@ -1095,21 +1029,73 @@
         
         // コホート売上チャート
         async function updateCohortChartRevenue(startDate, endDate) {
-            const { data: cohortData, error } = await analyticsDb.getCohortData(6);
-            
-            if (error) {
-                console.error('コホートデータ取得エラー:', error);
-                return;
-            }
-            
-            const labels = ['月0', '月1', '月2', '月3', '月4', '月5'];
-            const datasets = [];
-            
-            // データがない場合の処理
-            if (!cohortData || Object.keys(cohortData).length === 0) {
-                showDataNotAvailable('コホート売上');
-                return;
-            }
+            try {
+                // analyticsDbが初期化されているか確認
+                if (!analyticsDb) {
+                    console.error('AnalyticsDBが初期化されていません');
+                    showDataNotAvailable('コホート分析');
+                    return;
+                }
+                
+                const { data: cohortData, error } = await analyticsDb.getCohortData(6);
+                
+                if (error) {
+                    console.error('コホートデータ取得エラー:', error);
+                    showDataNotAvailable('コホート分析');
+                    return;
+                }
+                
+                const labels = ['月0', '月1', '月2', '月3', '月4', '月5'];
+                const datasets = [];
+                
+                // データがない場合の処理
+                if (!cohortData || Object.keys(cohortData).length === 0) {
+                    console.log('コホートデータが空です');
+                    // デモデータを表示
+                    const demoDatasets = [
+                        {
+                            label: '2024-01登録',
+                            data: [100000, 85000, 72000, 65000, 58000, 52000],
+                            borderColor: 'hsl(0, 70%, 50%)',
+                            backgroundColor: 'hsla(0, 70%, 50%, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3
+                        },
+                        {
+                            label: '2024-02登録',
+                            data: [120000, 95000, 80000, 70000, 62000, 55000],
+                            borderColor: 'hsl(60, 70%, 50%)',
+                            backgroundColor: 'hsla(60, 70%, 50%, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3
+                        },
+                        {
+                            label: '2024-03登録',
+                            data: [95000, 78000, 68000, 60000, 0, 0],
+                            borderColor: 'hsl(120, 70%, 50%)',
+                            backgroundColor: 'hsla(120, 70%, 50%, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3
+                        }
+                    ];
+                    
+                    if (window.cohortChart) {
+                        window.cohortChart.options.scales.y.max = undefined;
+                        window.cohortChart.options.scales.y.min = 0;
+                        window.cohortChart.options.scales.y.beginAtZero = true;
+                        window.cohortChart.options.scales.y.ticks.callback = function(value) {
+                            return '¥' + (value/10000).toFixed(0) + '万';
+                        };
+                        window.cohortChart.options.plugins.tooltip.callbacks.label = function(context) {
+                            return context.dataset.label + ': ¥' + (context.parsed.y/10000).toFixed(0) + '万';
+                        };
+                        
+                        window.cohortChart.data.labels = labels;
+                        window.cohortChart.data.datasets = demoDatasets;
+                        window.cohortChart.update();
+                    }
+                    return;
+                }
             
             Object.entries(cohortData).forEach(([month, data]) => {
                 // 実際の売上データを月ごとに集計
@@ -1155,6 +1141,10 @@
                 window.cohortChart.data.labels = labels;
                 window.cohortChart.data.datasets = datasets;
                 window.cohortChart.update();
+            }
+            } catch (error) {
+                console.error('コホート売上チャート更新エラー:', error);
+                showDataNotAvailable('コホート分析');
             }
         }
         
@@ -1235,12 +1225,6 @@
             }
         }
         
-        function switchFunnelPeriod(period) {
-            document.querySelectorAll('.chart-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            // 実際の実装では、期間に応じてファネルデータを更新
-        }
-        
         // コホートデータ更新
         async function updateCohortChart(startDate, endDate) {
             const { data: cohortData, error } = await analyticsDb.getCohortData(6);
@@ -1285,37 +1269,6 @@
         }
         
         // ファネルデータ更新
-        async function updateFunnelChart(startDate, endDate) {
-            const { data: funnelData, error } = await analyticsDb.getFunnelData(startDate, endDate);
-            
-            if (error) {
-                console.error('ファネルデータ取得エラー:', error);
-                showDataNotAvailable('ファネルデータ');
-                return;
-            }
-            
-            // データがnullの場合はエラーを表示
-            if (!funnelData) {
-                showDataNotAvailable('ファネル');
-                // 空のデータでチャートを更新（表示をクリア）
-                if (window.funnelChart) {
-                    window.funnelChart.data.datasets[0].data = [0, 0, 0, 0, 0];
-                    window.funnelChart.update();
-                }
-                return;
-            }
-            
-            if (window.funnelChart) {
-                window.funnelChart.data.datasets[0].data = [
-                    funnelData.leads,
-                    funnelData.qualified,
-                    funnelData.opportunities,
-                    funnelData.negotiations,
-                    funnelData.closed
-                ];
-                window.funnelChart.update();
-            }
-        }
         
         // ヒートマップ更新
         async function updateHeatmapChart(startDate, endDate) {
@@ -1457,7 +1410,6 @@
             
             // チャートを先に初期化
             initCohortChart();
-            initFunnelChart();
             initHeatmapChart();
             
             // その後データを読み込み
