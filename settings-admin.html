@@ -1201,10 +1201,10 @@
         // セキュリティ設定の保存
         async function saveSecuritySettings() {
             const settings = {
-                minPasswordLength: parseInt(document.getElementById('minPasswordLength').value),
+                passwordMinLength: parseInt(document.getElementById('minPasswordLength').value),
                 requireUppercase: document.getElementById('requireUppercase').checked,
-                requireNumbers: document.getElementById('requireNumbers').checked,
-                requireSpecial: document.getElementById('requireSpecial').checked,
+                requireNumber: document.getElementById('requireNumbers').checked,
+                requireSpecialChar: document.getElementById('requireSpecial').checked,
                 maxLoginAttempts: parseInt(document.getElementById('maxLoginAttempts').value),
                 lockDuration: parseInt(document.getElementById('lockDuration').value),
                 require2FA: document.getElementById('require2FA').checked,
@@ -1431,10 +1431,10 @@
             
             // セキュリティ設定
             if (settings.security) {
-                document.getElementById('minPasswordLength').value = settings.security.minPasswordLength || 8;
+                document.getElementById('minPasswordLength').value = settings.security.passwordMinLength || 8;
                 document.getElementById('requireUppercase').checked = settings.security.requireUppercase !== false;
-                document.getElementById('requireNumbers').checked = settings.security.requireNumbers !== false;
-                document.getElementById('requireSpecial').checked = settings.security.requireSpecial || false;
+                document.getElementById('requireNumbers').checked = settings.security.requireNumber !== false;
+                document.getElementById('requireSpecial').checked = settings.security.requireSpecialChar || false;
                 document.getElementById('maxLoginAttempts').value = settings.security.maxLoginAttempts || 5;
                 document.getElementById('lockDuration').value = settings.security.lockDuration || 30;
                 document.getElementById('require2FA').checked = settings.security.require2FA || false;
