@@ -176,13 +176,17 @@ class SalesSupabaseDB {
             
             // 直接販売報酬
             const directRate = product.tier_rates?.[agency.tier_level] || product.base_rate || 10;
+            const saleDate = new Date(sale.sale_date);
+            const period = `${saleDate.getFullYear()}-${String(saleDate.getMonth() + 1).padStart(2, '0')}`;
+            
             const directCommission = {
                 sale_id: sale.id,
                 agency_id: agency.id,
                 amount: Math.floor(sale.amount * directRate / 100),
                 rate: directRate,
                 type: 'direct',
-                status: 'unpaid'
+                status: 'unpaid',
+                period: period  // period追加
             };
             commissions.push(directCommission);
             
@@ -207,7 +211,8 @@ class SalesSupabaseDB {
                     amount: Math.floor(sale.amount * bonusRate / 100),
                     rate: bonusRate,
                     type: `hierarchy_${level}`,
-                    status: 'unpaid'
+                    status: 'unpaid',
+                    period: period  // period追加
                 };
                 commissions.push(bonusCommission);
                 
