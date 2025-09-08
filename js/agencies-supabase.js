@@ -303,21 +303,21 @@ class AgenciesSupabaseDB {
         try {
             console.log('承認処理 - ID:', id);
             
-            // RLSを一時的に回避するため、複数の方法を試す
-            
-            // 方法1: シンプルなupdate（selectなし）
-            const { error: updateError } = await this.client
+            // 更新と同時にデータを取得するため.select()を追加
+            const { data: updateData, error: updateError } = await this.client
                 .from('agencies')
                 .update({ 
                     status: 'active',
                     updated_at: new Date().toISOString()
                 })
-                .eq('id', id);
+                .eq('id', id)
+                .select()
+                .single();
             
             if (updateError) {
                 console.error('更新エラー:', updateError);
                 
-                // 方法2: RLSエラーの場合は、RPCを使用
+                // RLSエラーの場合は、RPCを使用
                 if (updateError.code === '42501' || updateError.message.includes('row-level security')) {
                     console.log('RLSエラー検出、別の方法を試します');
                     
@@ -336,22 +336,14 @@ class AgenciesSupabaseDB {
                 throw updateError;
             }
             
-            console.log('更新成功、データ取得中...');
+            console.log('承認更新成功:', {
+                id: id,
+                newStatus: 'active',
+                updatedData: updateData
+            });
             
-            // 更新後のデータを取得
-            const { data, error } = await this.client
-                .from('agencies')
-                .select()
-                .eq('id', id)
-                .single();
-            
-            if (error) {
-                console.error('データ取得エラー:', error);
-                throw error;
-            }
-            
-            console.log('取得したデータ:', data);
-            return data;
+            // 更新に成功したら、更新されたデータを返す
+            return updateData;
             
         } catch (error) {
             console.error('代理店承認エラー:', error);
