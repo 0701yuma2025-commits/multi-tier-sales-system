@@ -11,6 +11,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
     <script src="js/supabase-client.js"></script>
     <script src="js/analytics-supabase.js"></script>
     <style>
@@ -473,9 +474,39 @@
         <div class="chart-section">
             <div class="chart-header">
                 <h2 class="chart-title">時間別売上ヒートマップ</h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="heatmapMetric" onchange="updateHeatmapChart()" style="padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;">
+                        <option value="sales">売上金額</option>
+                        <option value="count">取引件数</option>
+                        <option value="average">平均単価</option>
+                    </select>
+                    <button onclick="exportHeatmap()" style="padding: 6px 12px; background: #6b7280; color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer;">📥 エクスポート</button>
+                </div>
             </div>
             <div class="chart-wrapper">
                 <canvas id="heatmapChart"></canvas>
+            </div>
+            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 16px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280;">
+                    <div style="width: 20px; height: 10px; background: #f3f4f6; border-radius: 2px;"></div>
+                    <span>低</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280;">
+                    <div style="width: 20px; height: 10px; background: #fef3c7; border-radius: 2px;"></div>
+                    <span>中低</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280;">
+                    <div style="width: 20px; height: 10px; background: #fbbf24; border-radius: 2px;"></div>
+                    <span>中</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280;">
+                    <div style="width: 20px; height: 10px; background: #f59e0b; border-radius: 2px;"></div>
+                    <span>中高</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280;">
+                    <div style="width: 20px; height: 10px; background: #dc2626; border-radius: 2px;"></div>
+                    <span>高</span>
+                </div>
             </div>
         </div>
     </div>
@@ -866,39 +897,87 @@
         function initHeatmapChart() {
             const ctx = document.getElementById('heatmapChart').getContext('2d');
             
-            // ヒートマップ用のデータ生成
-            const hours = Array.from({length: 24}, (_, i) => i + '時');
+            // 現在の表示モードを取得
+            const viewMode = document.querySelector('.heatmap-view-select')?.value || 'sales';
+            const dataType = document.querySelector('.heatmap-data-select')?.value || 'revenue';
+            
+            // データの生成
+            const hours = Array.from({length: 24}, (_, i) => i);
             const days = ['月', '火', '水', '木', '金', '土', '日'];
             
-            const heatmapData = [];
-            days.forEach((day, dayIndex) => {
-                hours.forEach((hour, hourIndex) => {
-                    // 平日の営業時間は高い値、週末と夜間は低い値
-                    let value = Math.random() * 50;
-                    if (dayIndex < 5 && hourIndex >= 9 && hourIndex <= 18) {
-                        value += 50;
-                    }
-                    heatmapData.push({
-                        x: hourIndex,
-                        y: dayIndex,
-                        v: Math.round(value)
+            // マトリックスデータの生成
+            const generateHeatmapData = () => {
+                const data = [];
+                days.forEach((day, y) => {
+                    hours.forEach((hour, x) => {
+                        let value = Math.random() * 30;
+                        
+                        // ビジネスアワー（平日9-18時）は高い値
+                        if (y < 5 && x >= 9 && x <= 18) {
+                            value += 70;
+                        }
+                        // 週末は中程度
+                        else if (y >= 5 && x >= 10 && x <= 20) {
+                            value += 40;
+                        }
+                        // 深夜は低い値
+                        else if (x < 6 || x > 22) {
+                            value = Math.random() * 10;
+                        }
+                        
+                        data.push({
+                            x: x,
+                            y: y,
+                            v: Math.round(value)
+                        });
                     });
                 });
-            });
+                return data;
+            };
             
+            // カラースケールの生成
+            const getColorForValue = (value, min, max) => {
+                const normalized = (value - min) / (max - min);
+                
+                // カラーグラデーション（青→緑→黄→オレンジ→赤）
+                if (normalized < 0.2) {
+                    return `rgba(59, 130, 246, ${0.3 + normalized * 2})`;
+                } else if (normalized < 0.4) {
+                    return `rgba(34, 197, 94, ${0.5 + normalized})`;
+                } else if (normalized < 0.6) {
+                    return `rgba(250, 204, 21, ${0.6 + normalized})`;
+                } else if (normalized < 0.8) {
+                    return `rgba(251, 146, 60, ${0.7 + normalized})`;
+                } else {
+                    return `rgba(239, 68, 68, ${0.8 + normalized * 0.2})`;
+                }
+            };
+            
+            const heatmapData = generateHeatmapData();
+            const values = heatmapData.map(d => d.v);
+            const minValue = Math.min(...values);
+            const maxValue = Math.max(...values);
+            
+            // 既存のチャートを破棄
+            if (window.heatmapChart) {
+                window.heatmapChart.destroy();
+            }
+            
+            // 新しいチャートを作成
             window.heatmapChart = new Chart(ctx, {
-                type: 'scatter',
+                type: 'matrix',
                 data: {
                     datasets: [{
-                        label: '売上高',
+                        label: dataType === 'revenue' ? '売上高' : dataType === 'count' ? '取引件数' : 'コンバージョン率',
                         data: heatmapData,
-                        backgroundColor: function(context) {
-                            const value = context.raw.v;
-                            const alpha = value / 100;
-                            return `rgba(99, 102, 241, ${alpha})`;
+                        backgroundColor: (context) => {
+                            const value = context.dataset.data[context.dataIndex].v;
+                            return getColorForValue(value, minValue, maxValue);
                         },
-                        borderColor: 'transparent',
-                        pointRadius: 15
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1,
+                        width: ({chart}) => (chart.chartArea || {}).width / hours.length - 1,
+                        height: ({chart}) => (chart.chartArea || {}).height / days.length - 1
                     }]
                 },
                 options: {
@@ -910,41 +989,64 @@
                         },
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
-                                    const dayName = days[context.parsed.y];
-                                    const hourName = hours[context.parsed.x];
-                                    return `${dayName}曜日 ${hourName}: ¥${context.raw.v}万`;
+                                title: () => '',
+                                label: (context) => {
+                                    const value = context.raw.v;
+                                    const hour = context.raw.x;
+                                    const day = days[context.raw.y];
+                                    
+                                    if (dataType === 'revenue') {
+                                        return [`${day}曜日 ${hour}:00`, `売上: ¥${value.toLocaleString()}万`];
+                                    } else if (dataType === 'count') {
+                                        return [`${day}曜日 ${hour}:00`, `件数: ${value}件`];
+                                    } else {
+                                        return [`${day}曜日 ${hour}:00`, `CVR: ${value}%`];
+                                    }
                                 }
                             }
                         }
                     },
                     scales: {
                         x: {
-                            type: 'linear',
-                            position: 'bottom',
-                            min: -0.5,
-                            max: 23.5,
+                            type: 'category',
+                            labels: hours.map(h => h % 3 === 0 ? `${h}時` : ''),
                             ticks: {
-                                stepSize: 1,
-                                callback: function(value) {
-                                    return hours[value];
-                                }
+                                autoSkip: false,
+                                maxRotation: 0
+                            },
+                            grid: {
+                                display: false
                             }
                         },
                         y: {
-                            type: 'linear',
-                            min: -0.5,
-                            max: 6.5,
-                            ticks: {
-                                stepSize: 1,
-                                callback: function(value) {
-                                    return days[value];
-                                }
+                            type: 'category',
+                            labels: days,
+                            offset: true,
+                            grid: {
+                                display: false
                             }
                         }
                     }
                 }
             });
+            
+            // セレクトボックスのイベントリスナーを設定
+            const viewSelect = document.querySelector('.heatmap-view-select');
+            const dataSelect = document.querySelector('.heatmap-data-select');
+            
+            if (viewSelect && !viewSelect.hasAttribute('data-listener')) {
+                viewSelect.setAttribute('data-listener', 'true');
+                viewSelect.addEventListener('change', () => {
+                    initHeatmapChart();
+                });
+            }
+            
+            if (dataSelect && !dataSelect.hasAttribute('data-listener')) {
+                dataSelect.setAttribute('data-listener', 'true');
+                dataSelect.addEventListener('change', () => {
+                    initHeatmapChart();
+                });
+            }
         }
         
         // フィルター適用
