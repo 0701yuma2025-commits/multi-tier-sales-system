@@ -563,9 +563,26 @@
                 if (!email.includes('@') || !email.includes('.')) {
                     throw new ApiError('VALIDATION_002');
                 }
+                // パスワード検証
                 const minLength = window.passwordMinLength || 8;
+                const requireUppercase = window.passwordRequireUppercase || false;
+                const requireNumber = window.passwordRequireNumber || false;
+                const requireSpecialChar = window.passwordRequireSpecialChar || false;
+                
                 if (password.length < minLength) {
                     throw new ApiError('VALIDATION_001', { field: 'パスワード', requirement: `${minLength}文字以上` });
+                }
+                
+                if (requireUppercase && !/[A-Z]/.test(password)) {
+                    throw new ApiError('VALIDATION_001', { field: 'パスワード', requirement: '大文字を含む' });
+                }
+                
+                if (requireNumber && !/[0-9]/.test(password)) {
+                    throw new ApiError('VALIDATION_001', { field: 'パスワード', requirement: '数字を含む' });
+                }
+                
+                if (requireSpecialChar && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+                    throw new ApiError('VALIDATION_001', { field: 'パスワード', requirement: '特殊文字を含む' });
                 }
                 
                 // Supabase設定がない場合はエラー
@@ -739,6 +756,9 @@
                 if (!error && securitySettings) {
                     const minLength = securitySettings.passwordMinLength || 8;
                     window.passwordMinLength = minLength;
+                    window.passwordRequireUppercase = securitySettings.requireUppercase || false;
+                    window.passwordRequireNumber = securitySettings.requireNumber || false;
+                    window.passwordRequireSpecialChar = securitySettings.requireSpecialChar || false;
                     
                     // フォームの属性を更新
                     const passwordInput = document.getElementById('signupPassword');
@@ -750,20 +770,27 @@
                     // ヘルプテキストを更新
                     const helpText = document.getElementById('passwordRequirement');
                     if (helpText) {
-                        let requirementText = `半角${minLength}文字以上`;
+                        let requirements = [];
+                        requirements.push(`${minLength}文字以上`);
+                        if (securitySettings.requireUppercase) {
+                            requirements.push('大文字を含む');
+                        }
                         if (securitySettings.requireNumber) {
-                            requirementText = '数字を含む' + requirementText;
+                            requirements.push('数字を含む');
                         }
                         if (securitySettings.requireSpecialChar) {
-                            requirementText = '特殊文字を含む' + requirementText;
+                            requirements.push('特殊文字を含む');
                         }
-                        helpText.textContent = requirementText + 'で入力してください';
+                        helpText.textContent = requirements.join('、') + 'で入力してください';
                     }
                 }
             } catch (error) {
                 console.log('パスワード設定の読み込みエラー:', error);
                 // エラー時はデフォルト値を使用
                 window.passwordMinLength = 8;
+                window.passwordRequireUppercase = false;
+                window.passwordRequireNumber = false;
+                window.passwordRequireSpecialChar = false;
             }
         }
         
