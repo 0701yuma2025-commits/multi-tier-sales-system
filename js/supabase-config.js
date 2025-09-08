@@ -62,6 +62,11 @@ const SUPABASE_CONFIG = {
 
 // Supabaseクライアントの初期化関数
 function initializeSupabase() {
+    // 既存のクライアントがある場合は再利用
+    if (window.supabaseClient) {
+        return window.supabaseClient;
+    }
+    
     if (typeof window.supabase === 'undefined') {
         console.error('Supabase JavaScript client library not loaded');
         return null;
@@ -75,6 +80,9 @@ function initializeSupabase() {
                 auth: SUPABASE_CONFIG.auth
             }
         );
+        
+        // グローバルに保存
+        window.supabaseClient = supabaseClient;
         
         if (SUPABASE_CONFIG.debug) {
             console.log('Supabase client initialized');

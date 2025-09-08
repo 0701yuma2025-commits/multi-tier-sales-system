@@ -11,9 +11,14 @@ class DashboardRealtime {
     }
     
     initialize() {
-        // Supabaseクライアントを初期化
-        this.supabaseClient = initializeSupabase();
-        if (!this.supabaseClient) {
+        // 既存のSupabaseクライアントを再利用
+        if (window.supabaseClient) {
+            this.supabaseClient = window.supabaseClient;
+        } else if (typeof initializeSupabase === 'function') {
+            this.supabaseClient = initializeSupabase();
+            // グローバルに保存して再利用可能にする
+            window.supabaseClient = this.supabaseClient;
+        } else {
             console.error('Supabaseクライアントの初期化に失敗しました');
             return;
         }
