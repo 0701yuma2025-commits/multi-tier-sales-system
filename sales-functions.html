@@ -862,11 +862,6 @@
         async function saveSales(event) {
             event.preventDefault();
             
-            if (!supabaseDb) {
-                ErrorHandler.handle(new ApiError('DATABASE_001'));
-                return;
-            }
-            
             const formData = new FormData(event.target);
             const salesData = {
                 date: formData.get('saleDate'),
@@ -886,13 +881,23 @@
             today.setHours(23, 59, 59, 999);
             
             if (saleDate > today) {
-                ErrorHandler.handle(new ApiError('SALES_004'));
+                showError('売上日は未来の日付にできません');
                 return;
             }
             
+            // 入力値の検証
+            if (!salesData.agencyId || !salesData.product || !salesData.customerName) {
+                showError('必須項目を入力してください');
+                return;
+            }
+            
+            if (salesData.amount <= 0) {
+                showError('金額は0より大きい値を入力してください');
+                return;
+            }
             
             try {
-                if (supabaseDb) {
+                if (currentMode === 'supabase' && supabaseDb) {
                     // Supabaseに保存（階層ボーナスも自動計算される）
                     const savedSale = await supabaseDb.createSale(salesData);
                     showSuccess('売上を登録し、階層ボーナスを計算しました');
@@ -904,17 +909,49 @@
                     // デモモード：階層ボーナスを手動計算
                     await calculateHierarchyBonuses(salesData);
                     showSuccess('売上を登録しました（デモモード）');
+                    
+                    // デモモードでもテーブルを更新
+                    const newSale = {
+                        id: 'S' + Date.now().toString().slice(-8),
+                        sale_date: salesData.date,
+                        agency_id: salesData.agencyId,
+                        product_id: salesData.product,
+                        customer_name: salesData.customerName,
+                        amount: salesData.amount,
+                        status: salesData.status,
+                        commissions: [{amount: Math.floor(salesData.amount * 0.2)}]
+                    };
+                    currentSalesData.unshift(newSale);
+                    displaySalesTable(currentSalesData);
+                    
+                    // 統計を更新
+                    const total = currentSalesData.reduce((sum, s) => sum + s.amount, 0);
+                    displayStats({
+                        total: total,
+                        count: currentSalesData.length,
+                        average: Math.round(total / currentSalesData.length),
+                        growth: 15
+                    });
+                    
                     closeModal();
                 }
             } catch (error) {
                 console.error('保存エラーの詳細:', error);
                 console.error('エラーメッセージ:', error.message);
-                if (error.message && error.message.includes('duplicate')) {
-                    ErrorHandler.handle(new ApiError('SALES_002'));
-                } else if (error.message && error.message.includes('invalid')) {
-                    ErrorHandler.handle(new ApiError('SALES_003'));
+                
+                // エラーメッセージの改善
+                if (error.message) {
+                    if (error.message.includes('duplicate')) {
+                        showError('この売上は既に登録されています');
+                    } else if (error.message.includes('invalid')) {
+                        showError('入力データが不正です。確認してください');
+                    } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                        showError('ネットワークエラーが発生しました。接続を確認してください');
+                    } else {
+                        showError('売上の登録に失敗しました: ' + error.message);
+                    }
                 } else {
-                    ErrorHandler.handle(new ApiError('SYSTEM_001'));
+                    showError('売上の登録に失敗しました');
                 }
             }
         }
