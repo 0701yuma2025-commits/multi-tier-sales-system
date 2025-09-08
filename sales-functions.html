@@ -946,6 +946,8 @@
                                  '（RLSポリシーの設定が必要です）');
                     } else if (error.message.includes('401')) {
                         showError('認証エラーです。ログインし直してください');
+                    } else if (error.message.includes('null value in column')) {
+                        showError('必須項目が不足しています。データベース構造を確認してください');
                     } else if (error.message.includes('duplicate')) {
                         showError('この売上は既に登録されています');
                     } else if (error.message.includes('invalid')) {
@@ -954,6 +956,13 @@
                         showError('ネットワークエラーが発生しました。接続を確認してください');
                     } else {
                         showError('売上の登録に失敗しました: ' + error.message);
+                    }
+                } else if (error.code) {
+                    // PostgreSQLエラーコードの処理
+                    if (error.code === '23502') {
+                        showError('必須項目が不足しています（' + (error.message || '') + '）');
+                    } else {
+                        showError('データベースエラー: ' + error.code);
                     }
                 } else {
                     showError('売上の登録に失敗しました');
