@@ -941,7 +941,12 @@
                 
                 // エラーメッセージの改善
                 if (error.message) {
-                    if (error.message.includes('duplicate')) {
+                    if (error.message.includes('row-level security policy')) {
+                        showError('データベースの権限エラーです。管理者に連絡してください。\n' + 
+                                 '（RLSポリシーの設定が必要です）');
+                    } else if (error.message.includes('401')) {
+                        showError('認証エラーです。ログインし直してください');
+                    } else if (error.message.includes('duplicate')) {
                         showError('この売上は既に登録されています');
                     } else if (error.message.includes('invalid')) {
                         showError('入力データが不正です。確認してください');
