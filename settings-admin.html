@@ -1464,7 +1464,9 @@
         
         // API使用状況テーブル更新
         async function updateApiUsageTable() {
-            const { data: usage, error } = await settingsDb.getApiUsageStats(3);
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 3);
+            const { data: usage, error } = await settingsDb.getApiUsageLogs(startDate);
             
             if (error || !usage || usage.length === 0) {
                 return;
