@@ -17,6 +17,7 @@
     <script src="js/sales-supabase.js"></script>
     <script src="js/api-error-codes.js"></script>
     <script src="js/common-functions.js"></script>
+    <script src="js/dashboard-realtime.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
     <link rel="stylesheet" href="css/responsive-complete.css">
     <script src="js/mobile-menu.js"></script>
@@ -76,6 +77,56 @@
         
         .logout-btn:hover {
             background-color: #dc2626;
+        }
+        
+        /* 更新アニメーション */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+            50% {
+                transform: scale(1.02);
+                box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+        }
+        
+        /* リアルタイム更新インジケーター */
+        .realtime-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #6b7280;
+            z-index: 1000;
+        }
+        
+        .realtime-indicator.active {
+            color: #10b981;
+        }
+        
+        .realtime-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
         
         /* KPIカード */
@@ -1083,6 +1134,9 @@
         }
         
         // 初期化
+        // リアルタイム更新マネージャー
+        let realtimeManager = null;
+        
         document.addEventListener('DOMContentLoaded', async function() {
             // ユーザー情報表示
             displayUserInfo('userDisplay');
@@ -1094,7 +1148,68 @@
             
             // ダッシュボードデータを読み込み
             await loadDashboardData();
+            
+            // リアルタイム更新を開始
+            startRealtimeUpdates();
+        });
+        
+        // リアルタイム更新を開始
+        function startRealtimeUpdates() {
+            const hasValidConfig = SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_PROJECT_URL' && 
+                                 SUPABASE_CONFIG.anonKey !== 'YOUR_SUPABASE_ANON_KEY';
+            
+            if (hasValidConfig) {
+                realtimeManager = new DashboardRealtime();
+                
+                // リアルタイム更新のコールバック
+                realtimeManager.startRealtimeUpdates(async (table, payload) => {
+                    console.log(`テーブル ${table} が更新されました`);
+                    
+                    // データを再読み込み
+                    await loadDashboardData();
+                    
+                    // 更新アニメーションを追加
+                    animateUpdate(table);
+                });
+                
+                // フォールバックとして30秒ごとにポーリング
+                realtimeManager.startPolling(30000);
+            }
+        }
+        
+        // 更新アニメーション
+        function animateUpdate(table) {
+            let targetElement = null;
+            
+            if (table === 'sales') {
+                targetElement = document.querySelector('.kpi-card:nth-child(1)');
+            } else if (table === 'agencies') {
+                targetElement = document.querySelector('.kpi-card:nth-child(2)');
+            } else if (table === 'commissions') {
+                targetElement = document.querySelector('.kpi-card:nth-child(3)');
+            }
+            
+            if (targetElement) {
+                targetElement.style.animation = 'pulse 0.5s ease-in-out';
+                setTimeout(() => {
+                    targetElement.style.animation = '';
+                }, 500);
+            }
+        }
+        
+        // ページ離脱時にリアルタイム更新を停止
+        window.addEventListener('beforeunload', () => {
+            if (realtimeManager) {
+                realtimeManager.stopRealtimeUpdates();
+                realtimeManager.stopPolling();
+            }
         });
     </script>
+    
+    <!-- リアルタイム更新インジケーター -->
+    <div class="realtime-indicator active">
+        <div class="realtime-dot"></div>
+        <span>リアルタイム更新中</span>
+    </div>
 </body>
 </html>
