@@ -700,23 +700,23 @@
             window.commissionChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: generateMonthLabels(6),
+                    labels: [],
                     datasets: [
                         {
                             label: '直接報酬',
-                            data: [450000, 520000, 480000, 590000, 620000, 680000],
+                            data: [],
                             backgroundColor: '#3b82f6',
                             stack: 'Stack 0'
                         },
                         {
                             label: '階層ボーナス',
-                            data: [120000, 150000, 135000, 175000, 185000, 210000],
+                            data: [],
                             backgroundColor: '#10b981',
                             stack: 'Stack 0'
                         },
                         {
                             label: '特別インセンティブ',
-                            data: [50000, 60000, 55000, 70000, 80000, 95000],
+                            data: [],
                             backgroundColor: '#f59e0b',
                             stack: 'Stack 0'
                         }
@@ -834,12 +834,8 @@
                 days = 365;
             }
             
-            // グラフを再描画
-            if (supabaseDb) {
-                await updateCommissionChartWithRealData(days);
-            } else {
-                updateCommissionChartWithDemoData();
-            }
+            // 実データのみを表示
+            await updateCommissionChartWithRealData(days);
         }
         
         async function updateCommissionChartWithRealData(days = 30) {
@@ -885,7 +881,14 @@
                 
             } catch (error) {
                 console.error('報酬データ読み込みエラー:', error);
-                updateCommissionChartWithDemoData();
+                // デモデータは表示しない - 空のデータを表示
+                if (window.commissionChart) {
+                    window.commissionChart.data.labels = generateDateLabels(days);
+                    window.commissionChart.data.datasets[0].data = new Array(days).fill(0);
+                    window.commissionChart.data.datasets[1].data = new Array(days).fill(0);
+                    window.commissionChart.data.datasets[2].data = new Array(days).fill(0);
+                    window.commissionChart.update();
+                }
             }
         }
         
@@ -1020,17 +1023,6 @@
             window.tierChart.update();
         }
         
-        
-        function updateCommissionChartWithDemoData() {
-            // デモデータの場合は既存の処理を維持
-            const days = 30;
-            const labels = generateDateLabels(days);
-            
-            if (window.commissionChart) {
-                window.commissionChart.data.labels = labels;
-                window.commissionChart.update();
-            }
-        }
         
         // データリストを更新
         function updateDataLists() {
