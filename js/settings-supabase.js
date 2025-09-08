@@ -163,6 +163,7 @@ class SettingsSupabaseDB {
                 sessionTimeout: 3600,
                 maxLoginAttempts: 5,
                 passwordMinLength: 8,
+                requireUppercase: true,
                 requireSpecialChar: true,
                 requireNumber: true,
                 twoFactorEnabled: false
