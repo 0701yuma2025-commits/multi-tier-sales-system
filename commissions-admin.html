@@ -595,9 +595,9 @@
                 <div class="stat-subtext" id="totalAmountSubtext">データ読み込み中...</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">支払い承認待ち</div>
+                <div class="stat-label">支払待ち</div>
                 <div class="stat-value" id="pendingAmount">¥0</div>
-                <div class="stat-subtext" id="pendingSubtext">0件の承認待ち</div>
+                <div class="stat-subtext" id="pendingSubtext">0件の支払待ち</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">処理済み</div>
@@ -1921,8 +1921,8 @@
                         document.getElementById('totalAmount').textContent = `¥${stats.totalAmount.toLocaleString()}`;
                         document.getElementById('totalAmountSubtext').textContent = '今月の報酬総額';
                         
-                        document.getElementById('pendingAmount').textContent = `¥${stats.pendingAmount.toLocaleString()}`;
-                        document.getElementById('pendingSubtext').textContent = `${stats.pendingCount}件の承認待ち`;
+                        document.getElementById('pendingAmount').textContent = `¥${(stats.completedAmount || 0).toLocaleString()}`;
+                        document.getElementById('pendingSubtext').textContent = `${stats.completedCount || 0}件の支払待ち`;
                         
                         document.getElementById('completedAmount').textContent = `¥${stats.completedAmount.toLocaleString()}`;
                         document.getElementById('completedSubtext').textContent = `${stats.completedCount}件処理済み`;
