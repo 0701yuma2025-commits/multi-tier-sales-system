@@ -594,27 +594,46 @@
         async function saveCampaign(event) {
             event.preventDefault();
             
+            console.log('保存処理開始');
+            
             const bonusType = document.querySelector('input[name="bonusType"]:checked').value;
+            console.log('ボーナスタイプ:', bonusType);
+            
+            // 日付からステータスを判定
+            const today = new Date().toISOString().split('T')[0];
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            let status = 'scheduled';
+            if (startDate <= today && endDate >= today) {
+                status = 'active';
+            } else if (endDate < today) {
+                status = 'ended';
+            }
+            
             const campaignData = {
                 name: document.getElementById('campaignName').value,
                 type: '期間限定',
-                start_date: document.getElementById('startDate').value,
-                end_date: document.getElementById('endDate').value,
-                status: 'scheduled',
+                start_date: startDate,
+                end_date: endDate,
+                status: status,
                 bonus_type: bonusType === 'percent' ? 'percentage' : 'fixed',
                 bonus_rate: bonusType === 'percent' 
-                    ? parseFloat(document.getElementById('bonusPercentValue').value)
-                    : parseFloat(document.getElementById('bonusAmountValue').value),
+                    ? parseFloat(document.getElementById('bonusPercentValue').value || 0)
+                    : parseFloat(document.getElementById('bonusAmountValue').value || 0),
                 min_bonus: null,
                 max_bonus: document.getElementById('maxBonus').value ? parseInt(document.getElementById('maxBonus').value) : null,
                 target_products: Array.from(document.getElementById('targetProducts').selectedOptions).map(opt => opt.value),
                 target_type: document.querySelector('input[name="targetType"]:checked').value,
                 target_agencies: getSelectedTargets(),
-                notes: document.getElementById('campaignNotes').value
+                notes: document.getElementById('campaignNotes').value,
+                created_at: new Date().toISOString()
             };
+            
+            console.log('キャンペーンデータ:', campaignData);
             
             try {
                 if (campaignsDb) {
+                    console.log('Supabaseモードで保存');
                     // Supabaseに保存
                     const { data, error } = currentCampaignId
                         ? await campaignsDb.updateCampaign(currentCampaignId, campaignData)
@@ -641,7 +660,8 @@
                     loadCampaigns();
                 }
             } catch (error) {
-                console.error('保存エラー:', error);
+                console.error('保存エラー詳細:', error);
+                console.error('エラースタック:', error.stack);
                 alert('保存に失敗しました: ' + error.message);
             }
         }
