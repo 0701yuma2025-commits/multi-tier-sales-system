@@ -130,29 +130,6 @@ class CommissionsSupabaseDB {
         }
     }
 
-    // 一括承認
-    async approveAllPending(period) {
-        try {
-            const { data: userData } = await this.client.auth.getUser();
-            
-            const { data, error } = await this.client
-                .from('commissions')
-                .update({
-                    status: 'completed',
-                    approved_at: new Date().toISOString(),
-                    approved_by: userData?.user?.id
-                })
-                .eq('period', period)
-                .eq('status', 'pending')
-                .select();
-            
-            if (error) throw error;
-            return { data, error: null };
-        } catch (error) {
-            console.error('一括承認エラー:', error);
-            return { data: null, error };
-        }
-    }
 
     // 階層ボーナス一覧取得
     async getHierarchyBonuses(period) {
@@ -323,22 +300,22 @@ class CommissionsSupabaseDB {
             
             const stats = {
                 totalAmount: 0,
-                pendingAmount: 0,
                 completedAmount: 0,
-                pendingCount: 0,
+                paidAmount: 0,
                 completedCount: 0,
+                paidCount: 0,
                 hierarchyBonusTotal: 0
             };
             
             if (totalData) {
                 totalData.forEach(comm => {
                     stats.totalAmount += comm.total_commission || 0;
-                    if (comm.status === 'pending') {
-                        stats.pendingAmount += comm.total_commission || 0;
-                        stats.pendingCount++;
-                    } else if (comm.status === 'completed') {
+                    if (comm.status === 'completed') {
                         stats.completedAmount += comm.total_commission || 0;
                         stats.completedCount++;
+                    } else if (comm.status === 'paid') {
+                        stats.paidAmount += comm.total_commission || 0;
+                        stats.paidCount++;
                     }
                 });
             }
@@ -480,7 +457,7 @@ class CommissionsSupabaseDB {
             invoice_deduction: taxCalc.invoiceDeduction,
             withholding_tax: taxCalc.withholdingTax,
             net_payment: taxCalc.netPayment,
-            status: 'pending'
+            status: 'completed'
         };
     }
 
@@ -562,7 +539,7 @@ class CommissionsSupabaseDB {
                         relation: `${level}階層上`,
                         bonus_rate: bonusRates[level],
                         bonus_amount: bonusAmount,
-                        status: 'pending'
+                        status: 'completed'
                     });
                     
                     currentAgency = parentAgency;

@@ -256,7 +256,7 @@ class ApiError extends Error {
 const ErrorHandler = {
     // エラーを処理してユーザーに表示
     handle: function(error) {
-        console.error('API Error:', error);
+        // console.error('API Error:', error);
         
         if (error instanceof ApiError) {
             // APIエラーの場合

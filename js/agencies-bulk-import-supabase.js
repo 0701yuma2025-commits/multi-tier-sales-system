@@ -108,7 +108,7 @@ async function processBulkImportSupabase() {
                 await agenciesDb.createAgency(agencyData);
                 successCount++;
             } catch (error) {
-                console.error(`登録エラー (${data.email}):`, error);
+                // console.error(`登録エラー (${data.email}):`, error);
                 errors.push(`${data.companyName} (${data.email}): ${error.message}`);
             }
             
