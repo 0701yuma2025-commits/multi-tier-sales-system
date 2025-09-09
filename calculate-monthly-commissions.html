@@ -201,7 +201,7 @@
                     `;
                     
                     // 報酬を計算
-                    const commission = commissionsDb.calculateAgencyCommission(
+                    const commission = await commissionsDb.calculateAgencyCommission(
                         agency,
                         data.totalAmount,
                         period
