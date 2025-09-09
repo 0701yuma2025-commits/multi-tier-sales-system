@@ -867,8 +867,9 @@
                     
                     if (diffDays >= 0 && diffDays < days) {
                         const index = days - 1 - diffDays;
-                        baseCommissions[index] += commission.base_amount || 0;
-                        tierBonuses[index] += commission.tier_bonus || 0;
+                        // フィールド名を修正: direct_commission, hierarchy_bonus を使用
+                        baseCommissions[index] += commission.direct_commission || commission.base_amount || 0;
+                        tierBonuses[index] += commission.hierarchy_bonus || commission.tier_bonus || 0;
                         campaignBonuses[index] += commission.campaign_bonus || 0;
                     }
                 });
