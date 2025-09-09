@@ -600,9 +600,9 @@
                 <div class="stat-subtext" id="pendingSubtext">0件の支払待ち</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">処理済み</div>
-                <div class="stat-value" id="completedAmount">¥0</div>
-                <div class="stat-subtext" id="completedSubtext">0件処理済み</div>
+                <div class="stat-label">支払済み</div>
+                <div class="stat-value" id="paidAmount">¥0</div>
+                <div class="stat-subtext" id="paidSubtext">0件支払済み</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">階層ボーナス</div>
@@ -1924,8 +1924,8 @@
                         document.getElementById('pendingAmount').textContent = `¥${(stats.completedAmount || 0).toLocaleString()}`;
                         document.getElementById('pendingSubtext').textContent = `${stats.completedCount || 0}件の支払待ち`;
                         
-                        document.getElementById('completedAmount').textContent = `¥${stats.completedAmount.toLocaleString()}`;
-                        document.getElementById('completedSubtext').textContent = `${stats.completedCount}件処理済み`;
+                        document.getElementById('paidAmount').textContent = `¥${(stats.paidAmount || 0).toLocaleString()}`;
+                        document.getElementById('paidSubtext').textContent = `${stats.paidCount || 0}件支払済み`;
                         
                         document.getElementById('hierarchyAmount').textContent = `¥${stats.hierarchyBonusTotal.toLocaleString()}`;
                         const hierarchyPercent = stats.totalAmount > 0 ? Math.round(stats.hierarchyBonusTotal / stats.totalAmount * 100) : 0;
