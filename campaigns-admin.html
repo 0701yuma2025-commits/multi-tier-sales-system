@@ -338,9 +338,9 @@
                 </div>
                 
                 <div class="campaign-actions">
-                    <button class="btn btn-sm btn-secondary" onclick="viewCampaignDetails(1)">詳細</button>
-                    <button class="btn btn-sm btn-secondary" onclick="editCampaign(1)">編集</button>
-                    <button class="btn btn-sm btn-secondary" onclick="endCampaign(1)">終了</button>
+                    <button class="btn btn-sm btn-primary" onclick="editCampaign(1)">編集</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCampaign(1)">削除</button>
+                    <button class="btn btn-sm btn-warning" onclick="endCampaign(1)">終了</button>
                 </div>
             </div>
             
@@ -377,9 +377,8 @@
                 </div>
                 
                 <div class="campaign-actions">
-                    <button class="btn btn-sm btn-secondary" onclick="viewCampaignDetails(2)">詳細</button>
-                    <button class="btn btn-sm btn-secondary" onclick="editCampaign(2)">編集</button>
-                    <button class="btn btn-sm btn-secondary" onclick="deleteCampaign(2)">削除</button>
+                    <button class="btn btn-sm btn-primary" onclick="editCampaign(2)">編集</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCampaign(2)">削除</button>
                 </div>
             </div>
             
@@ -416,8 +415,8 @@
                 </div>
                 
                 <div class="campaign-actions">
-                    <button class="btn btn-sm btn-secondary" onclick="viewCampaignDetails(3)">詳細</button>
-                    <button class="btn btn-sm btn-secondary" onclick="duplicateCampaign(3)">複製</button>
+                    <button class="btn btn-sm btn-primary" onclick="editCampaign(3)">編集</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCampaign(3)">削除</button>
                 </div>
             </div>
         </div>
@@ -1054,13 +1053,22 @@
                                 <span class="detail-label">上限額</span>
                                 <span class="detail-value">${campaign.max_bonus ? `¥${campaign.max_bonus.toLocaleString()}` : '上限なし'}</span>
                             </div>
+                            <div class="detail-item">
+                                <span class="detail-label">作成日</span>
+                                <span class="detail-value">${campaign.created_at ? new Date(campaign.created_at).toLocaleDateString('ja-JP') : '-'}</span>
+                            </div>
+                            ${campaign.notes ? `
+                            <div class="detail-item" style="grid-column: 1 / -1;">
+                                <span class="detail-label">備考</span>
+                                <span class="detail-value" style="white-space: pre-wrap;">${campaign.notes}</span>
+                            </div>
+                            ` : ''}
                         </div>
                         
                         <div class="campaign-actions">
-                            <button class="btn btn-sm btn-secondary" onclick="viewCampaignDetails('${campaign.id}')">詳細</button>
-                            <button class="btn btn-sm btn-secondary" onclick="editCampaign('${campaign.id}')">編集</button>
-                            ${status !== '終了' ? `<button class="btn btn-sm btn-secondary" onclick="endCampaign('${campaign.id}')">終了</button>` : ''}
-                            <button class="btn btn-sm btn-secondary" onclick="deleteCampaign('${campaign.id}')">削除</button>
+                            <button class="btn btn-sm btn-primary" onclick="editCampaign('${campaign.id}')">編集</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCampaign('${campaign.id}')">削除</button>
+                            ${status === '実施中' ? `<button class="btn btn-sm btn-warning" onclick="endCampaign('${campaign.id}')">終了</button>` : ''}
                         </div>
                     </div>
                 `;
