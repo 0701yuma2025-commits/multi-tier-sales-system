@@ -786,27 +786,17 @@
             }
             
             try {
-                // 売上データを取得
-                const salesResult = await supabaseDb.getSales();
-                const statsResult = await supabaseDb.getSalesStats();
+                // 売上データを取得（直接配列とオブジェクトが返される）
+                const sales = await supabaseDb.getSales();
+                const stats = await supabaseDb.getSalesStats();
                 
-                console.log('Sales data result:', salesResult);
-                console.log('Stats result:', statsResult);
-                
-                // salesResultが配列の場合は直接使用、オブジェクトの場合はdataプロパティを使用
-                const sales = Array.isArray(salesResult) ? salesResult : (salesResult?.data || []);
-                const stats = typeof statsResult === 'object' && !Array.isArray(statsResult) ? 
-                    (statsResult.data || statsResult) : {};
-                
-                console.log('About to display sales data:', sales);
-                console.log('Sales array length:', sales.length);
+                console.log('Sales data:', sales);
+                console.log('Stats:', stats);
                 
                 // データを表示
-                currentSalesData = sales;
-                displaySalesTable(sales);
-                displayStats(stats);
-                
-                console.log('Display functions called');
+                currentSalesData = sales || [];
+                displaySalesTable(sales || []);
+                displayStats(stats || {});
             } catch (error) {
                 console.error('売上データ読み込みエラー:', error);
                 // エラー時はデモデータを表示
