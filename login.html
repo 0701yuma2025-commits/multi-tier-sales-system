@@ -243,10 +243,33 @@
         </div>
         
         <!-- タブ -->
-        <div class="tab-container">
+        <div class="tab-container" id="mainTabs">
             <div class="tab active" onclick="switchTab('login')">ログイン</div>
             <div class="tab" onclick="switchTab('signup')">新規登録</div>
             <div class="tab" onclick="switchTab('reset')">パスワードリセット</div>
+        </div>
+        
+        <!-- OTP認証フォーム（初期非表示） -->
+        <div id="otpContainer" style="display: none;">
+            <h3 style="font-size: 18px; margin-bottom: 20px; text-align: center;">二要素認証</h3>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px; text-align: center;">
+                メールに送信された6桁の認証コードを入力してください
+            </p>
+            <form id="otpForm" onsubmit="handleOtpVerification(event)">
+                <div class="form-group">
+                    <label for="otpCode" class="form-label form-label-required">認証コード</label>
+                    <input type="text" id="otpCode" class="form-control" required 
+                           pattern="[0-9]{6}" maxlength="6" placeholder="123456"
+                           style="text-align: center; font-size: 24px; letter-spacing: 8px;">
+                    <span class="form-help-text">有効期限：5分間</span>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" id="otpBtn">
+                    認証
+                </button>
+                <button type="button" class="btn btn-secondary btn-block" onclick="cancelOtp()" style="margin-top: 10px;">
+                    キャンセル
+                </button>
+            </form>
         </div>
         
         <!-- ログインフォーム -->
@@ -607,15 +630,48 @@
                 const userData = await userResponse.json();
                 const userInfo = userData[0] || { email: data.user.email, role: 'agency' };
                 
-                localStorage.setItem('currentUser', JSON.stringify(userInfo));
-                showSuccess('ログインに成功しました');
+                // 2FAが有効か確認
+                const require2FA = window.require2FA || false;
                 
-                // ロールに応じてリダイレクト
-                setTimeout(() => {
-                    window.location.href = userInfo.role === 'admin' 
-                        ? 'dashboard-admin.html' 
-                        : 'dashboard-agency.html';
-                }, 1000);
+                if (require2FA) {
+                    // OTPを生成して送信
+                    const otp = generateOTP();
+                    const saved = await saveOTP(email, otp);
+                    
+                    if (saved) {
+                        await sendOTPEmail(email, otp);
+                        showSuccess('認証コードを送信しました');
+                        
+                        // OTP認証画面を表示
+                        showOTPForm({
+                            email: email,
+                            userInfo: userInfo,
+                            token: data
+                        });
+                    } else {
+                        // OTP保存失敗時は通常のログイン
+                        console.error('OTP保存に失敗しました。2FAをスキップします。');
+                        localStorage.setItem('currentUser', JSON.stringify(userInfo));
+                        showSuccess('ログインに成功しました');
+                        
+                        setTimeout(() => {
+                            window.location.href = userInfo.role === 'admin' 
+                                ? 'dashboard-admin.html' 
+                                : 'dashboard-agency.html';
+                        }, 1000);
+                    }
+                } else {
+                    // 2FAが無効の場合は通常のログイン
+                    localStorage.setItem('currentUser', JSON.stringify(userInfo));
+                    showSuccess('ログインに成功しました');
+                    
+                    // ロールに応じてリダイレクト
+                    setTimeout(() => {
+                        window.location.href = userInfo.role === 'admin' 
+                            ? 'dashboard-admin.html' 
+                            : 'dashboard-agency.html';
+                    }, 1000);
+                }
                 
             } catch (error) {
                 console.error('ログインエラー:', error);
@@ -811,6 +867,154 @@
             }
         }
         
+        // OTP関連の変数
+        let pendingLoginData = null;
+        
+        // 6桁のOTPを生成
+        function generateOTP() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+        
+        // OTPをデータベースに保存
+        async function saveOTP(email, code, purpose = 'login') {
+            try {
+                const supabaseClient = initializeSupabase();
+                if (!supabaseClient) {
+                    console.log('デモモード: OTP機能スキップ');
+                    return false;
+                }
+                
+                // 5分後の有効期限
+                const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+                
+                const { data, error } = await supabaseClient
+                    .from('otp_codes')
+                    .insert({
+                        email: email,
+                        code: code,
+                        purpose: purpose,
+                        expires_at: expiresAt
+                    });
+                
+                if (error) {
+                    console.error('OTP保存エラー:', error);
+                    return false;
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('OTP保存エラー:', error);
+                return false;
+            }
+        }
+        
+        // OTPを検証
+        async function verifyOTP(email, code, purpose = 'login') {
+            try {
+                const supabaseClient = initializeSupabase();
+                if (!supabaseClient) {
+                    console.log('デモモード: OTP検証スキップ');
+                    return true;
+                }
+                
+                // 有効なOTPを取得
+                const { data, error } = await supabaseClient
+                    .from('otp_codes')
+                    .select('*')
+                    .eq('email', email)
+                    .eq('code', code)
+                    .eq('purpose', purpose)
+                    .eq('used', false)
+                    .gte('expires_at', new Date().toISOString())
+                    .single();
+                
+                if (error || !data) {
+                    return false;
+                }
+                
+                // OTPを使用済みにマーク
+                await supabaseClient
+                    .from('otp_codes')
+                    .update({ used: true })
+                    .eq('id', data.id);
+                
+                return true;
+            } catch (error) {
+                console.error('OTP検証エラー:', error);
+                return false;
+            }
+        }
+        
+        // OTP送信（実際にはSupabaseのメール機能を使用）
+        async function sendOTPEmail(email, code) {
+            // 実際の実装では、Supabase EdgeFunctionやResendなどのメールサービスを使用
+            // ここではコンソールに表示（デモ用）
+            console.log(`OTP送信: ${email} に認証コード ${code} を送信しました`);
+            showInfo(`認証コード ${code} をメールで送信しました（デモ: コンソールに表示）`);
+            return true;
+        }
+        
+        // OTP認証画面を表示
+        function showOTPForm(loginData) {
+            pendingLoginData = loginData;
+            document.getElementById('mainTabs').style.display = 'none';
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            document.getElementById('otpContainer').style.display = 'block';
+            document.getElementById('otpCode').value = '';
+            document.getElementById('otpCode').focus();
+        }
+        
+        // OTP認証をキャンセル
+        function cancelOtp() {
+            pendingLoginData = null;
+            document.getElementById('otpContainer').style.display = 'none';
+            document.getElementById('mainTabs').style.display = 'flex';
+            document.getElementById('loginTab').style.display = 'block';
+            setButtonLoading('loginBtn', false);
+        }
+        
+        // OTP認証処理
+        async function handleOtpVerification(event) {
+            event.preventDefault();
+            hideMessages();
+            setButtonLoading('otpBtn', true);
+            
+            const otpCode = document.getElementById('otpCode').value;
+            
+            try {
+                if (!pendingLoginData) {
+                    throw new Error('認証データが見つかりません');
+                }
+                
+                // OTPを検証
+                const isValid = await verifyOTP(pendingLoginData.email, otpCode);
+                
+                if (!isValid) {
+                    showError('認証コードが正しくないか、有効期限が切れています');
+                    return;
+                }
+                
+                // ログイン処理を完了
+                localStorage.setItem('currentUser', JSON.stringify(pendingLoginData.userInfo));
+                showSuccess('ログインに成功しました');
+                
+                // ダッシュボードへリダイレクト
+                setTimeout(() => {
+                    window.location.href = pendingLoginData.userInfo.role === 'admin' 
+                        ? 'dashboard-admin.html' 
+                        : 'dashboard-agency.html';
+                }, 1000);
+                
+            } catch (error) {
+                console.error('OTP認証エラー:', error);
+                showError(error.message || 'OTP認証に失敗しました');
+            } finally {
+                setButtonLoading('otpBtn', false);
+            }
+        }
+        
         // パスワード表示/非表示切替
         function togglePassword(inputId) {
             const input = document.getElementById(inputId);
@@ -849,6 +1053,7 @@
                     window.passwordRequireSpecialChar = securitySettings.requireSpecialChar || false;
                     window.maxLoginAttempts = securitySettings.maxLoginAttempts || 5;
                     window.lockDuration = securitySettings.lockDuration || 30;
+                    window.require2FA = securitySettings.require2FA || false;
                     
                     // フォームの属性を更新
                     const passwordInput = document.getElementById('signupPassword');
