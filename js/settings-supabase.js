@@ -162,6 +162,7 @@ class SettingsSupabaseDB {
             security: {
                 sessionTimeout: 3600,
                 maxLoginAttempts: 5,
+                lockDuration: 30,
                 passwordMinLength: 8,
                 requireUppercase: true,
                 requireSpecialChar: true,
