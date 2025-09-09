@@ -811,7 +811,7 @@
         function displaySalesTable(sales) {
             const tbody = document.getElementById('salesTableBody');
             
-            if (sales.length === 0) {
+            if (!sales || sales.length === 0) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="9" style="text-align: center; padding: 40px;">
@@ -823,32 +823,41 @@
                 return;
             }
             
-            tbody.innerHTML = sales.map(sale => {
-                const agency = agencies.find(a => a.id === sale.agency_id);
-                const product = products.find(p => p.id === sale.product_id);
-                const totalCommissions = sale.commissions ? 
-                    sale.commissions.reduce((sum, c) => sum + c.amount, 0) : 0;
-                
-                return `
-                    <tr>
-                        <td>${sale.sale_date}</td>
-                        <td>#${sale.id}</td>
-                        <td>${agency ? agency.company_name : '不明'}</td>
-                        <td>${product ? product.name : '不明'}</td>
-                        <td>${sale.customer_name}</td>
-                        <td>¥${sale.amount.toLocaleString()}</td>
-                        <td><span class="status-badge status-${sale.status}">${getStatusLabel(sale.status)}</span></td>
-                        <td>¥${totalCommissions.toLocaleString()}</td>
-                        <td>
-                            <div class="action-links">
-                                <a href="#" onclick="viewSalesDetail('${sale.id}'); return false;">詳細</a>
-                                <a href="#" onclick="editSales('${sale.id}'); return false;">編集</a>
-                                <a href="#" onclick="deleteSales('${sale.id}'); return false;" style="color: #ef4444;">削除</a>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            console.log('Displaying sales:', sales);
+            console.log('Available agencies:', agencies);
+            console.log('Available products:', products);
+            
+            try {
+                tbody.innerHTML = sales.map(sale => {
+                    const agency = agencies.find(a => a.id === sale.agency_id);
+                    const product = products.find(p => p.id === sale.product_id);
+                    const totalCommissions = sale.commissions ? 
+                        sale.commissions.reduce((sum, c) => sum + c.amount, 0) : 0;
+                    
+                    return `
+                        <tr>
+                            <td>${sale.sale_date || sale.date || ''}</td>
+                            <td>#${sale.id}</td>
+                            <td>${agency ? agency.company_name : '不明'}</td>
+                            <td>${product ? product.name : '不明'}</td>
+                            <td>${sale.customer_name || ''}</td>
+                            <td>¥${(sale.amount || 0).toLocaleString()}</td>
+                            <td><span class="status-badge status-${sale.status || 'pending'}">${getStatusLabel(sale.status)}</span></td>
+                            <td>¥${totalCommissions.toLocaleString()}</td>
+                            <td>
+                                <div class="action-links">
+                                    <a href="#" onclick="viewSalesDetail('${sale.id}'); return false;">詳細</a>
+                                    <a href="#" onclick="editSales('${sale.id}'); return false;">編集</a>
+                                    <a href="#" onclick="deleteSales('${sale.id}'); return false;" style="color: #ef4444;">削除</a>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('売上テーブル表示エラー:', error);
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: red;">データ表示中にエラーが発生しました</td></tr>';
+            }
         }
         
         // 統計情報表示
