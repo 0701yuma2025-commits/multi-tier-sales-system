@@ -198,6 +198,57 @@
             border-radius: 6px;
         }
         
+        /* ボタンスタイル */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        
+        .btn-warning {
+            background-color: #f59e0b;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #d97706;
+        }
+        
         .checkbox-option {
             display: flex;
             align-items: center;
@@ -340,7 +391,6 @@
                 <div class="campaign-actions">
                     <button class="btn btn-sm btn-primary" onclick="editCampaign(1)">編集</button>
                     <button class="btn btn-sm btn-danger" onclick="deleteCampaign(1)">削除</button>
-                    <button class="btn btn-sm btn-warning" onclick="endCampaign(1)">終了</button>
                 </div>
             </div>
             
@@ -1068,7 +1118,6 @@
                         <div class="campaign-actions">
                             <button class="btn btn-sm btn-primary" onclick="editCampaign('${campaign.id}')">編集</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteCampaign('${campaign.id}')">削除</button>
-                            ${status === '実施中' ? `<button class="btn btn-sm btn-warning" onclick="endCampaign('${campaign.id}')">終了</button>` : ''}
                         </div>
                     </div>
                 `;
