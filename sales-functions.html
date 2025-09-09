@@ -824,10 +824,41 @@
             console.log('Available agencies:', agencies);
             console.log('Available products:', products);
             
+            // 最初の売上データの構造を確認
+            if (sales.length > 0) {
+                console.log('First sale structure:', sales[0]);
+                console.log('Has agencies relation:', !!sales[0].agencies);
+                console.log('Has products relation:', !!sales[0].products);
+            }
+            
             try {
                 tbody.innerHTML = sales.map(sale => {
-                    const agency = agencies.find(a => a.id === sale.agency_id);
-                    const product = products.find(p => p.id === sale.product_id);
+                    // Supabaseのリレーションデータを優先的に使用
+                    let agencyName = '不明';
+                    let productName = '不明';
+                    
+                    // agenciesリレーションがある場合
+                    if (sale.agencies) {
+                        agencyName = sale.agencies.company_name || sale.agencies.name || '不明';
+                    } else {
+                        // リレーションがない場合は手動で検索
+                        const agency = agencies.find(a => a.id === sale.agency_id);
+                        if (agency) {
+                            agencyName = agency.company_name || agency.name || '不明';
+                        }
+                    }
+                    
+                    // productsリレーションがある場合
+                    if (sale.products) {
+                        productName = sale.products.name || '不明';
+                    } else {
+                        // リレーションがない場合は手動で検索
+                        const product = products.find(p => p.id === sale.product_id);
+                        if (product) {
+                            productName = product.name || '不明';
+                        }
+                    }
+                    
                     const totalCommissions = sale.commissions ? 
                         sale.commissions.reduce((sum, c) => sum + c.amount, 0) : 0;
                     
@@ -835,8 +866,8 @@
                         <tr>
                             <td>${sale.sale_date || sale.date || ''}</td>
                             <td>#${sale.id}</td>
-                            <td>${agency ? agency.company_name : '不明'}</td>
-                            <td>${product ? product.name : '不明'}</td>
+                            <td>${agencyName}</td>
+                            <td>${productName}</td>
                             <td>${sale.customer_name || ''}</td>
                             <td>¥${(sale.amount || 0).toLocaleString()}</td>
                             <td><span class="status-badge status-${sale.status || 'pending'}">${getStatusLabel(sale.status)}</span></td>
