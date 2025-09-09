@@ -363,6 +363,69 @@
     
     <!-- 認証スクリプト -->
     <script>
+        // ログイン試行管理
+        const loginAttempts = {};
+        
+        // ログイン試行を記録
+        function recordLoginAttempt(email, success = false) {
+            if (!loginAttempts[email]) {
+                loginAttempts[email] = {
+                    count: 0,
+                    lockedUntil: null,
+                    lastAttempt: Date.now()
+                };
+            }
+            
+            const attempt = loginAttempts[email];
+            
+            if (success) {
+                // 成功時はリセット
+                attempt.count = 0;
+                attempt.lockedUntil = null;
+            } else {
+                // 失敗時
+                attempt.count++;
+                attempt.lastAttempt = Date.now();
+                
+                // 設定から最大試行回数とロック時間を取得
+                const maxAttempts = window.maxLoginAttempts || 5;
+                const lockMinutes = window.lockDuration || 30;
+                const lockDuration = lockMinutes * 60 * 1000;
+                
+                if (attempt.count >= maxAttempts) {
+                    attempt.lockedUntil = Date.now() + lockDuration;
+                }
+            }
+        }
+        
+        // アカウントがロックされているか確認
+        function isAccountLocked(email) {
+            const attempt = loginAttempts[email];
+            if (!attempt || !attempt.lockedUntil) {
+                return false;
+            }
+            
+            if (Date.now() > attempt.lockedUntil) {
+                // ロック期間が終了
+                attempt.count = 0;
+                attempt.lockedUntil = null;
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // 残りロック時間を取得
+        function getRemainingLockTime(email) {
+            const attempt = loginAttempts[email];
+            if (!attempt || !attempt.lockedUntil) {
+                return 0;
+            }
+            
+            const remaining = attempt.lockedUntil - Date.now();
+            return Math.max(0, Math.ceil(remaining / 1000 / 60)); // 分単位
+        }
+        
         // タブ切り替え
         function switchTab(tabName) {
             // タブの表示切り替え
@@ -452,6 +515,13 @@
             const password = document.getElementById('loginPassword').value;
             
             try {
+                // アカウントロック確認
+                if (isAccountLocked(email)) {
+                    const remainingTime = getRemainingLockTime(email);
+                    showError(`ログイン試行回数が上限に達しました。${remainingTime}分後に再試行してください。`);
+                    return;
+                }
+                
                 // デモアカウントかどうかを先にチェック
                 const isDemoAccount = (email === 'admin@example.com' && password === 'admin123') ||
                                     (email === 'agency@example.com' && password === 'agency123');
@@ -496,8 +566,21 @@
                 
                 if (!response.ok) {
                     const errorData = await response.json();
+                    // ログイン失敗を記録
+                    recordLoginAttempt(email, false);
+                    
+                    const attempt = loginAttempts[email];
+                    const maxAttempts = window.maxLoginAttempts || 5;
+                    const remainingAttempts = maxAttempts - attempt.count;
+                    
                     if (errorData.msg && errorData.msg.includes('Invalid login credentials')) {
-                        throw new ApiError('AUTH_003');
+                        if (remainingAttempts > 0) {
+                            showError(`メールアドレスまたはパスワードが間違っています。残り${remainingAttempts}回試行できます。`);
+                        } else {
+                            const remainingTime = getRemainingLockTime(email);
+                            showError(`ログイン試行回数が上限に達しました。${remainingTime}分後に再試行してください。`);
+                        }
+                        throw new Error('Login failed');
                     } else if (response.status === 403) {
                         throw new ApiError('AUTH_004');
                     } else {
@@ -506,6 +589,9 @@
                 }
                 
                 const data = await response.json();
+                
+                // ログイン成功を記録
+                recordLoginAttempt(email, true);
                 
                 // トークンを保存
                 localStorage.setItem('supabase.auth.token', JSON.stringify(data));
@@ -533,7 +619,9 @@
                 
             } catch (error) {
                 console.error('ログインエラー:', error);
-                if (error instanceof ApiError) {
+                if (error.message === 'Login failed') {
+                    // エラーメッセージはすでに表示済み
+                } else if (error instanceof ApiError) {
                     ErrorHandler.handle(error);
                 } else if (error.name === 'NetworkError' || error.name === 'TypeError') {
                     ErrorHandler.handle(new ApiError('NETWORK_001'));
@@ -759,6 +847,8 @@
                     window.passwordRequireUppercase = securitySettings.requireUppercase || false;
                     window.passwordRequireNumber = securitySettings.requireNumber || false;
                     window.passwordRequireSpecialChar = securitySettings.requireSpecialChar || false;
+                    window.maxLoginAttempts = securitySettings.maxLoginAttempts || 5;
+                    window.lockDuration = securitySettings.lockDuration || 30;
                     
                     // フォームの属性を更新
                     const passwordInput = document.getElementById('signupPassword');
@@ -791,6 +881,8 @@
                 window.passwordRequireUppercase = false;
                 window.passwordRequireNumber = false;
                 window.passwordRequireSpecialChar = false;
+                window.maxLoginAttempts = 5;
+                window.lockDuration = 30;
             }
         }
         
