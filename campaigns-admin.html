@@ -559,6 +559,43 @@
             currentCampaignId = null;
         }
         
+        // 詳細モーダルを表示
+        function showDetailModal(content) {
+            // 既存のモーダルがあれば削除
+            const existingModal = document.getElementById('detailModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // 新しいモーダルを作成
+            const modal = document.createElement('div');
+            modal.id = 'detailModal';
+            modal.className = 'modal';
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 600px;">
+                    ${content}
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 背景クリックで閉じる
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeDetailModal();
+                }
+            });
+        }
+        
+        // 詳細モーダルを閉じる
+        function closeDetailModal() {
+            const modal = document.getElementById('detailModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
         // ボーナスタイプ切り替え
         function toggleBonusInput() {
             const bonusType = document.querySelector('input[name="bonusType"]:checked').value;
@@ -698,8 +735,106 @@
         }
         
         // キャンペーン詳細表示
-        function viewCampaignDetails(id) {
-            alert(`キャンペーンID: ${id} の詳細画面（実装予定）`);
+        async function viewCampaignDetails(id) {
+            try {
+                let campaign = null;
+                
+                if (campaignsDb) {
+                    // Supabaseから取得
+                    const { data: campaigns } = await campaignsDb.getCampaigns();
+                    campaign = campaigns?.find(c => c.id === id);
+                } else {
+                    // デモモード
+                    const campaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+                    campaign = campaigns.find(c => c.id === id);
+                }
+                
+                if (!campaign) {
+                    alert('キャンペーンが見つかりません');
+                    return;
+                }
+                
+                // JSON文字列をパース
+                if (typeof campaign.target_products === 'string') {
+                    try {
+                        campaign.target_products = JSON.parse(campaign.target_products);
+                    } catch (e) {
+                        campaign.target_products = [];
+                    }
+                }
+                if (typeof campaign.target_agencies === 'string') {
+                    try {
+                        campaign.target_agencies = JSON.parse(campaign.target_agencies);
+                    } catch (e) {
+                        campaign.target_agencies = [];
+                    }
+                }
+                
+                // 詳細モーダルの内容を生成
+                const modalContent = `
+                    <div style="padding: 20px;">
+                        <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">${campaign.name}</h2>
+                        
+                        <div style="display: grid; gap: 16px;">
+                            <div style="display: grid; grid-template-columns: 120px 1fr; gap: 8px;">
+                                <span style="color: #6b7280; font-weight: 500;">期間:</span>
+                                <span>${campaign.start_date} 〜 ${campaign.end_date}</span>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 120px 1fr; gap: 8px;">
+                                <span style="color: #6b7280; font-weight: 500;">ステータス:</span>
+                                <span>${getStatus(campaign)}</span>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 120px 1fr; gap: 8px;">
+                                <span style="color: #6b7280; font-weight: 500;">ボーナス:</span>
+                                <span>${campaign.bonus_type === 'percentage' ? `売上の${campaign.bonus_rate}%` : `固定額 ¥${campaign.bonus_rate?.toLocaleString()}`}</span>
+                            </div>
+                            
+                            ${campaign.max_bonus ? `
+                            <div style="display: grid; grid-template-columns: 120px 1fr; gap: 8px;">
+                                <span style="color: #6b7280; font-weight: 500;">上限額:</span>
+                                <span>¥${campaign.max_bonus.toLocaleString()}</span>
+                            </div>
+                            ` : ''}
+                            
+                            <div style="display: grid; grid-template-columns: 120px 1fr; gap: 8px;">
+                                <span style="color: #6b7280; font-weight: 500;">対象商品:</span>
+                                <span>${Array.isArray(campaign.target_products) && campaign.target_products.length > 0 ? campaign.target_products.join(', ') : '全商品'}</span>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 120px 1fr; gap: 8px;">
+                                <span style="color: #6b7280; font-weight: 500;">対象代理店:</span>
+                                <span>${getTargetDisplay(campaign)}</span>
+                            </div>
+                            
+                            ${campaign.notes ? `
+                            <div style="display: grid; grid-template-columns: 120px 1fr; gap: 8px;">
+                                <span style="color: #6b7280; font-weight: 500;">備考:</span>
+                                <span>${campaign.notes}</span>
+                            </div>
+                            ` : ''}
+                            
+                            <div style="display: grid; grid-template-columns: 120px 1fr; gap: 8px;">
+                                <span style="color: #6b7280; font-weight: 500;">作成日:</span>
+                                <span>${campaign.created_at ? new Date(campaign.created_at).toLocaleDateString('ja-JP') : '-'}</span>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                            <button onclick="editCampaign('${campaign.id}')" style="padding: 8px 16px; background-color: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">編集</button>
+                            <button onclick="closeDetailModal()" style="padding: 8px 16px; background-color: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer;">閉じる</button>
+                        </div>
+                    </div>
+                `;
+                
+                // モーダルを表示
+                showDetailModal(modalContent);
+                
+            } catch (error) {
+                console.error('詳細表示エラー:', error);
+                alert('詳細の表示に失敗しました');
+            }
         }
         
         // キャンペーン編集
