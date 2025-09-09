@@ -887,7 +887,7 @@
             }
         ];
         
-        // 報酬率設定
+        // 報酬率設定（デフォルト値）
         let commissionRates = {
             tier1: 30,
             tier2: 25,
@@ -898,6 +898,28 @@
             bonus3: 6,
             bonus4: 4
         };
+        
+        // 設定から報酬率を読み込む
+        async function loadCommissionRates() {
+            try {
+                const settingsDb = new SettingsSupabaseDB();
+                const { data: commissionSettings } = await settingsDb.getSettings('commission');
+                
+                if (commissionSettings) {
+                    commissionRates.tier1 = commissionSettings.tier1?.rate || 30;
+                    commissionRates.tier2 = commissionSettings.tier2?.rate || 25;
+                    commissionRates.tier3 = commissionSettings.tier3?.rate || 20;
+                    commissionRates.tier4 = commissionSettings.tier4?.rate || 15;
+                    commissionRates.bonus1 = commissionSettings.tier1?.bonus || 10;
+                    commissionRates.bonus2 = commissionSettings.tier2?.bonus || 8;
+                    commissionRates.bonus3 = commissionSettings.tier3?.bonus || 6;
+                    commissionRates.bonus4 = commissionSettings.tier4?.bonus || 4;
+                    console.log('報酬率設定を読み込みました:', commissionRates);
+                }
+            } catch (error) {
+                console.log('報酬率設定の読み込みに失敗しました。デフォルト値を使用します。');
+            }
+        }
         
         
         // タブ切り替え
@@ -1655,7 +1677,7 @@
                     // 3. 各代理店の報酬を計算
                     let successCount = 0;
                     for (const [agencyId, data] of Object.entries(agencySalesMap)) {
-                        const commissionRate = getCommissionRateByTier(data.agency.tier_level);
+                        const commissionRate = await getCommissionRateByTier(data.agency.tier_level);
                         const baseAmount = Math.floor(data.totalSales * commissionRate / 100);
                         
                         // 税金計算
@@ -1708,13 +1730,14 @@
             }
         }
         
-        // ティアに基づく報酬率を取得
-        function getCommissionRateByTier(tier) {
+        // ティアに基づく報酬率を取得（設定から）
+        async function getCommissionRateByTier(tier) {
+            // commissionRatesから取得（初期化時に設定から読み込み済み）
             const rates = {
-                1: 30,
-                2: 25,
-                3: 20,
-                4: 15
+                1: commissionRates.tier1,
+                2: commissionRates.tier2,
+                3: commissionRates.tier3,
+                4: commissionRates.tier4
             };
             return rates[tier] || 15;
         }
@@ -1903,6 +1926,8 @@
                 
                 if (hasValidConfig) {
                     commissionsDb = new CommissionsSupabaseDB();
+                    // 報酬率設定を読み込む
+                    await loadCommissionRates();
                     console.log('Supabaseモードで初期化完了');
                     console.log('commissionsDb:', commissionsDb);
                 }
