@@ -677,7 +677,6 @@
                     await loadInitialData();
                 } catch (error) {
                     console.error('Supabase接続エラー:', error);
-                    ErrorHandler.handle(new ApiError('DATABASE_001'));
                     // エラー時はデモモードにフォールバック
                     populateAgencySelect();
                     populateProductSelect();
@@ -780,24 +779,31 @@
         
         // 売上データ読み込み
         async function loadSalesData() {
-            if (!supabaseDb) return;
+            if (!supabaseDb) {
+                console.log('Supabase DB not initialized, using demo data');
+                displayDemoSalesData();
+                return;
+            }
             
             try {
                 // 売上データを取得
-                const { data: sales } = await supabaseDb.getSales();
-                const { data: stats } = await supabaseDb.getSalesStats();
+                const salesResult = await supabaseDb.getSales();
+                const statsResult = await supabaseDb.getSalesStats();
+                
+                console.log('Sales data result:', salesResult);
+                console.log('Stats result:', statsResult);
+                
+                const sales = salesResult?.data || [];
+                const stats = statsResult?.data || {};
                 
                 // データを表示
-                currentSalesData = sales || [];
-                displaySalesTable(sales || []);
-                displayStats(stats || {});
+                currentSalesData = sales;
+                displaySalesTable(sales);
+                displayStats(stats);
             } catch (error) {
                 console.error('売上データ読み込みエラー:', error);
-                if (error.name === 'NetworkError' || error.name === 'TypeError') {
-                    ErrorHandler.handle(new ApiError('NETWORK_001'));
-                } else {
-                    ErrorHandler.handle(new ApiError('SALES_001'));
-                }
+                // エラー時はデモデータを表示
+                displayDemoSalesData();
             }
         }
         
@@ -806,7 +812,14 @@
             const tbody = document.getElementById('salesTableBody');
             
             if (sales.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">売上データがありません</td></tr>';
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px;">
+                            <p style="color: #6b7280; margin-bottom: 16px;">売上データがありません</p>
+                            <button onclick="showAddSalesModal()" class="btn btn-primary">新規売上を登録</button>
+                        </td>
+                    </tr>
+                `;
                 return;
             }
             
