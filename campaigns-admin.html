@@ -594,10 +594,7 @@
         async function saveCampaign(event) {
             event.preventDefault();
             
-            console.log('保存処理開始');
-            
             const bonusType = document.querySelector('input[name="bonusType"]:checked').value;
-            console.log('ボーナスタイプ:', bonusType);
             
             // 日付からステータスを判定
             const today = new Date().toISOString().split('T')[0];
@@ -628,8 +625,6 @@
                 notes: document.getElementById('campaignNotes').value || ''
             };
             
-            console.log('キャンペーンデータ:', campaignData);
-            
             // データ検証
             if (!campaignData.name) {
                 alert('キャンペーン名を入力してください');
@@ -646,20 +641,14 @@
             
             try {
                 if (campaignsDb) {
-                    console.log('Supabaseモードで保存');
-                    console.log('currentCampaignId:', currentCampaignId);
-                    
                     // Supabaseに保存
                     const result = currentCampaignId
                         ? await campaignsDb.updateCampaign(currentCampaignId, campaignData)
                         : await campaignsDb.createCampaign(campaignData);
                     
-                    console.log('保存結果:', result);
-                    
                     const { data, error } = result;
                     
                     if (error) {
-                        console.error('Supabaseエラー:', error);
                         throw error;
                     }
                     
@@ -684,7 +673,13 @@
             } catch (error) {
                 console.error('保存エラー詳細:', error);
                 console.error('エラースタック:', error.stack);
-                alert('保存に失敗しました: ' + error.message);
+                
+                // エラーメッセージを詳しく表示
+                if (error.code === '42501') {
+                    alert('データベースの権限エラーが発生しました。\n\nSupabaseのダッシュボードで以下を確認してください：\n1. campaignsテーブルが存在すること\n2. RLS（Row Level Security）が適切に設定されていること\n\n詳細は setup-campaigns-rls.sql ファイルを参照してください。');
+                } else {
+                    alert('保存に失敗しました: ' + (error.message || 'Unknown error'));
+                }
             }
         }
         
@@ -875,6 +870,21 @@
             }
             
             campaignList.innerHTML = campaigns.map(campaign => {
+                // JSON文字列をパース
+                if (typeof campaign.target_products === 'string') {
+                    try {
+                        campaign.target_products = JSON.parse(campaign.target_products);
+                    } catch (e) {
+                        campaign.target_products = [];
+                    }
+                }
+                if (typeof campaign.target_agencies === 'string') {
+                    try {
+                        campaign.target_agencies = JSON.parse(campaign.target_agencies);
+                    } catch (e) {
+                        campaign.target_agencies = [];
+                    }
+                }
                 const status = getStatus(campaign);
                 const statusClass = status === '実施中' ? 'active' : status === '開始予定' ? 'scheduled' : 'ended';
                 const statusColor = status === '実施中' ? '#10b981' : status === '開始予定' ? '#3b82f6' : '#9ca3af';
@@ -899,7 +909,7 @@
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">対象商品</span>
-                                <span class="detail-value">${campaign.target_products?.length > 0 ? campaign.target_products.join(', ') : '全商品'}</span>
+                                <span class="detail-value">${Array.isArray(campaign.target_products) && campaign.target_products.length > 0 ? campaign.target_products.join(', ') : '全商品'}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">対象代理店</span>
