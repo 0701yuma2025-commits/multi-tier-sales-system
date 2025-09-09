@@ -545,7 +545,7 @@
 <body>
     <!-- ヘッダー -->
     <header class="header">
-        <h1>報酬管理</h1>
+        <h1 id="systemTitle">多段階営業代理店管理システム【管理者】</h1>
         <div class="user-info">
             <span class="user-name" id="userDisplay">読み込み中...</span>
             <button class="logout-btn" onclick="handleLogout()">ログアウト</button>
@@ -594,25 +594,23 @@
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-label">総報酬額</div>
-                <div class="stat-value">¥1,755,000</div>
-                <div class="stat-change positive">
-                    <span>↑</span> +18.2% 前月比
-                </div>
+                <div class="stat-value" id="totalAmount">¥0</div>
+                <div class="stat-subtext" id="totalAmountSubtext">データ読み込み中...</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">支払い承認待ち</div>
-                <div class="stat-value">¥580,500</div>
-                <div class="stat-subtext">15件の承認待ち</div>
+                <div class="stat-value" id="pendingAmount">¥0</div>
+                <div class="stat-subtext" id="pendingSubtext">0件の承認待ち</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">処理済み</div>
-                <div class="stat-value">¥1,174,500</div>
-                <div class="stat-subtext">28件処理済み</div>
+                <div class="stat-value" id="completedAmount">¥0</div>
+                <div class="stat-subtext" id="completedSubtext">0件処理済み</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">階層ボーナス</div>
-                <div class="stat-value">¥320,000</div>
-                <div class="stat-subtext">総報酬の18.2%</div>
+                <div class="stat-value" id="hierarchyAmount">¥0</div>
+                <div class="stat-subtext" id="hierarchySubtext">上位代理店への配分</div>
             </div>
         </div>
         
@@ -1851,34 +1849,22 @@
                     const { data: stats } = await commissionsDb.getStatistics(currentPeriod);
                     if (stats) {
                         // 統計情報を更新
-                        document.querySelector('.stats-grid').innerHTML = `
-                            <div class="stat-card">
-                                <div class="stat-label">総報酬額</div>
-                                <div class="stat-value">¥${stats.totalAmount.toLocaleString()}</div>
-                                <div class="stat-change positive">
-                                    <span>↑</span> +18.2% 前月比
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-label">支払い承認待ち</div>
-                                <div class="stat-value">¥${stats.pendingAmount.toLocaleString()}</div>
-                                <div class="stat-subtext">${stats.pendingCount}件の承認待ち</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-label">処理済み</div>
-                                <div class="stat-value">¥${stats.completedAmount.toLocaleString()}</div>
-                                <div class="stat-subtext">${stats.completedCount}件処理済み</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-label">階層ボーナス</div>
-                                <div class="stat-value">¥${stats.hierarchyBonusTotal.toLocaleString()}</div>
-                                <div class="stat-subtext">総報酬の${stats.totalAmount > 0 ? Math.round(stats.hierarchyBonusTotal / stats.totalAmount * 100) : 0}%</div>
-                            </div>
-                        `;
+                        document.getElementById('totalAmount').textContent = `¥${stats.totalAmount.toLocaleString()}`;
+                        document.getElementById('totalAmountSubtext').textContent = '今月の報酬総額';
+                        
+                        document.getElementById('pendingAmount').textContent = `¥${stats.pendingAmount.toLocaleString()}`;
+                        document.getElementById('pendingSubtext').textContent = `${stats.pendingCount}件の承認待ち`;
+                        
+                        document.getElementById('completedAmount').textContent = `¥${stats.completedAmount.toLocaleString()}`;
+                        document.getElementById('completedSubtext').textContent = `${stats.completedCount}件処理済み`;
+                        
+                        document.getElementById('hierarchyAmount').textContent = `¥${stats.hierarchyBonusTotal.toLocaleString()}`;
+                        const hierarchyPercent = stats.totalAmount > 0 ? Math.round(stats.hierarchyBonusTotal / stats.totalAmount * 100) : 0;
+                        document.getElementById('hierarchySubtext').textContent = `総報酬の${hierarchyPercent}%`;
                     }
                 }
             } catch (error) {
-                console.error('統計情報読み込みエラー:', error);
+                console.error('統計情報の読み込みエラー:', error);
             }
         }
         
@@ -1912,9 +1898,35 @@
             }
         }
         
+        // 一般設定を読み込んで表示を更新
+        async function loadGeneralSettings() {
+            try {
+                const supabaseClient = initializeSupabase();
+                if (!supabaseClient) {
+                    console.log('デモモード: デフォルトの設定を使用');
+                    return;
+                }
+                
+                const settingsDb = new SettingsSupabaseDB();
+                const { data: generalSettings, error } = await settingsDb.getSettings('general');
+                
+                if (!error && generalSettings) {
+                    // システム名を更新
+                    if (generalSettings.systemName) {
+                        document.getElementById('systemTitle').textContent = generalSettings.systemName + '【管理者】';
+                    }
+                }
+            } catch (error) {
+                console.log('一般設定の読み込みエラー:', error);
+            }
+        }
+        
         // ユーザー情報表示
         document.addEventListener('DOMContentLoaded', async function() {
             displayUserInfo('userDisplay');
+            
+            // 一般設定を読み込み
+            await loadGeneralSettings();
             
             // 期間選択を生成
             generatePeriodOptions();
