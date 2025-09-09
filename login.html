@@ -255,12 +255,6 @@
             <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px; text-align: center;">
                 メールに送信された6桁の認証コードを入力してください
             </p>
-            <!-- デモ用：認証コード表示エリア -->
-            <div id="demoOtpDisplay" style="background: #f0f9ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 16px; margin-bottom: 20px; text-align: center; display: none;">
-                <p style="color: #1e40af; font-weight: bold; margin-bottom: 8px;">デモモード：認証コード</p>
-                <p style="font-size: 32px; letter-spacing: 8px; font-weight: bold; color: #1e40af;" id="demoOtpCode"></p>
-                <p style="color: #64748b; font-size: 12px; margin-top: 8px;">実際の環境ではメールで送信されます</p>
-            </div>
             <form id="otpForm" onsubmit="handleOtpVerification(event)">
                 <div class="form-group">
                     <label for="otpCode" class="form-label form-label-required">認証コード</label>
@@ -962,8 +956,8 @@
                 if (!functionUrl) {
                     // Supabaseが設定されていない場合はデモモード
                     console.log(`OTP送信: ${email} に認証コード ${code} を送信しました`);
-                    showSuccess(`認証コード: ${code}`);
-                    showInfo('デモモード: Supabaseが設定されていないため画面に表示しています');
+                    showSuccess('認証コードをメールで送信しました');
+                    showInfo('デモモード: コンソールログをご確認ください');
                     return true;
                 }
                 
@@ -1002,9 +996,7 @@
                     // メール送信失敗時はフォールバック
                     console.error('メール送信エラー:', result.error);
                     showError('メール送信に失敗しました');
-                    
-                    // フォールバック：画面に表示
-                    showInfo(`認証コード: ${code} (メール送信失敗のため画面に表示)`);
+                    console.log(`フォールバック認証コード: ${code}`);
                     return true;
                 }
                 
@@ -1012,7 +1004,7 @@
                 console.error('OTP送信エラー:', error);
                 // エラー時はフォールバック
                 showError('メール送信でエラーが発生しました');
-                showInfo(`認証コード: ${code} (エラーのため画面に表示)`);
+                console.log(`エラー時の認証コード: ${code}`);
                 return true;
             }
         }
@@ -1027,11 +1019,8 @@
             document.getElementById('otpContainer').style.display = 'block';
             document.getElementById('otpCode').value = '';
             
-            // デモモードでOTPを表示
-            if (loginData.otp) {
-                document.getElementById('demoOtpDisplay').style.display = 'block';
-                document.getElementById('demoOtpCode').textContent = loginData.otp;
-            }
+            // デモモードでOTPを表示（削除）
+            // OTPはコンソールログにのみ出力
             
             document.getElementById('otpCode').focus();
         }
