@@ -786,13 +786,13 @@
             
             try {
                 // 売上データを取得
-                const sales = await supabaseDb.getSales();
-                const stats = await supabaseDb.getSalesStats();
+                const { data: sales } = await supabaseDb.getSales();
+                const { data: stats } = await supabaseDb.getSalesStats();
                 
                 // データを表示
-                currentSalesData = sales;
-                displaySalesTable(sales);
-                displayStats(stats);
+                currentSalesData = sales || [];
+                displaySalesTable(sales || []);
+                displayStats(stats || {});
             } catch (error) {
                 console.error('売上データ読み込みエラー:', error);
                 if (error.name === 'NetworkError' || error.name === 'TypeError') {
