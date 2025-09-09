@@ -793,13 +793,20 @@
                 console.log('Sales data result:', salesResult);
                 console.log('Stats result:', statsResult);
                 
-                const sales = salesResult?.data || [];
-                const stats = statsResult?.data || {};
+                // salesResultが配列の場合は直接使用、オブジェクトの場合はdataプロパティを使用
+                const sales = Array.isArray(salesResult) ? salesResult : (salesResult?.data || []);
+                const stats = typeof statsResult === 'object' && !Array.isArray(statsResult) ? 
+                    (statsResult.data || statsResult) : {};
+                
+                console.log('About to display sales data:', sales);
+                console.log('Sales array length:', sales.length);
                 
                 // データを表示
                 currentSalesData = sales;
                 displaySalesTable(sales);
                 displayStats(stats);
+                
+                console.log('Display functions called');
             } catch (error) {
                 console.error('売上データ読み込みエラー:', error);
                 // エラー時はデモデータを表示
