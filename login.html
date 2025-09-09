@@ -966,6 +966,32 @@
                 console.log('Sending OTP to:', email);
                 console.log('OTP code:', code);
                 
+                // 設定情報を取得
+                let systemName = '多段階営業代理店管理システム';
+                let companyName = '株式会社サンプル';
+                
+                try {
+                    const supabaseClient = initializeSupabase();
+                    console.log('Supabase Client initialized:', !!supabaseClient);
+                    
+                    if (supabaseClient) {
+                        const settingsDb = new SettingsSupabaseDB();
+                        const { data: generalSettings, error } = await settingsDb.getSettings('general');
+                        console.log('Settings fetched:', generalSettings);
+                        console.log('Settings error:', error);
+                        
+                        if (generalSettings) {
+                            systemName = generalSettings.systemName || systemName;
+                            companyName = generalSettings.companyName || companyName;
+                            console.log('Using settings - System:', systemName, 'Company:', companyName);
+                        }
+                    }
+                } catch (err) {
+                    console.log('設定取得エラー:', err);
+                }
+                
+                console.log('Final values - System:', systemName, 'Company:', companyName);
+                
                 const response = await fetch(functionUrl, {
                     method: 'POST',
                     headers: {
@@ -975,7 +1001,9 @@
                     body: JSON.stringify({
                         email: email,
                         code: code,
-                        purpose: 'login'
+                        purpose: 'login',
+                        systemName: systemName,
+                        companyName: companyName
                     })
                 });
                 
