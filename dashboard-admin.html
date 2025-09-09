@@ -14,6 +14,7 @@
     <!-- 共通スクリプト -->
     <script src="js/supabase-config.js"></script>
     <script src="js/sales-supabase.js"></script>
+    <script src="js/settings-supabase.js"></script>
     <script src="js/api-error-codes.js"></script>
     <script src="js/common-functions.js"></script>
     <script src="js/dashboard-realtime.js"></script>
@@ -400,7 +401,7 @@
 <body>
     <!-- ヘッダー -->
     <header class="header">
-        <h1>📊 ダッシュボード（グラフ拡張版）</h1>
+        <h1 id="systemTitle">📊 ダッシュボード（グラフ拡張版）</h1>
         <div class="user-info">
             <span class="user-name" id="userDisplay">読み込み中...</span>
             <button class="logout-btn" onclick="handleLogout()">ログアウト</button>
@@ -1124,6 +1125,33 @@
             document.getElementById('recentActivities').innerHTML = demoActivities;
         }
         
+        // 一般設定を読み込んで表示を更新
+        async function loadGeneralSettings() {
+            try {
+                const supabaseClient = initializeSupabase();
+                if (!supabaseClient) {
+                    console.log('デモモード: デフォルトの設定を使用');
+                    return;
+                }
+                
+                const settingsDb = new SettingsSupabaseDB();
+                const { data: generalSettings, error } = await settingsDb.getSettings('general');
+                
+                if (!error && generalSettings) {
+                    // システム名を更新
+                    if (generalSettings.systemName) {
+                        document.getElementById('systemTitle').textContent = generalSettings.systemName;
+                    }
+                    // 会社名を更新
+                    if (generalSettings.companyName) {
+                        document.getElementById('companyName').textContent = generalSettings.companyName;
+                    }
+                }
+            } catch (error) {
+                console.log('一般設定の読み込みエラー:', error);
+            }
+        }
+        
         // 初期化
         // リアルタイム更新マネージャー
         let realtimeManager = null;
@@ -1131,6 +1159,9 @@
         document.addEventListener('DOMContentLoaded', async function() {
             // ユーザー情報表示
             displayUserInfo('userDisplay');
+            
+            // 一般設定を読み込み
+            await loadGeneralSettings();
             
             // グラフを初期化
             initSalesChart();
@@ -1202,5 +1233,10 @@
         <div class="realtime-dot"></div>
         <span>リアルタイム更新中</span>
     </div>
+    
+    <!-- フッター -->
+    <footer style="background-color: white; border-top: 1px solid #e5e7eb; padding: 16px 24px; text-align: center; color: #6b7280; font-size: 14px; margin-top: 40px;">
+        <span id="companyName">株式会社サンプル</span> - 多段階営業代理店管理システム
+    </footer>
 </body>
 </html>

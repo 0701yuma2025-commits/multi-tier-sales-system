@@ -221,8 +221,8 @@
 <body>
     <div class="login-container">
         <div class="logo">
-            <h1>🏢 営業代理店管理</h1>
-            <p>Multi-Tier Sales Agency System</p>
+            <h1 id="systemTitle">🏢 営業代理店管理</h1>
+            <p id="companyName">Multi-Tier Sales Agency System</p>
         </div>
         
         <div id="errorMessage" class="alert alert-error error-message">
@@ -1150,10 +1150,38 @@
             }
         }
         
+        // 一般設定を読み込んで表示を更新
+        async function loadGeneralSettings() {
+            try {
+                const supabaseClient = initializeSupabase();
+                if (!supabaseClient) {
+                    console.log('デモモード: デフォルトの設定を使用');
+                    return;
+                }
+                
+                const settingsDb = new SettingsSupabaseDB();
+                const { data: generalSettings, error } = await settingsDb.getSettings('general');
+                
+                if (!error && generalSettings) {
+                    // システム名を更新
+                    if (generalSettings.systemName) {
+                        document.getElementById('systemTitle').textContent = generalSettings.systemName;
+                    }
+                    // 会社名を更新
+                    if (generalSettings.companyName) {
+                        document.getElementById('companyName').textContent = generalSettings.companyName;
+                    }
+                }
+            } catch (error) {
+                console.log('一般設定の読み込みエラー:', error);
+            }
+        }
+        
         // ページロード時の処理
         document.addEventListener('DOMContentLoaded', async function() {
-            // パスワード設定を読み込み
+            // 設定を読み込み
             await loadPasswordSettings();
+            await loadGeneralSettings();
             // ログアウトパラメータがある場合はリダイレクトしない
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('logout') === 'true') {
