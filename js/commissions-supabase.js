@@ -399,7 +399,7 @@ class CommissionsSupabaseDB {
             // 報酬計算
             const commissions = [];
             for (const [agencyId, data] of Object.entries(agencyTotals)) {
-                const commission = this.calculateAgencyCommission(
+                const commission = await this.calculateAgencyCommission(
                     data.agency,
                     data.totalSales,
                     period
@@ -420,14 +420,31 @@ class CommissionsSupabaseDB {
     }
 
     // 代理店の報酬計算
-    calculateAgencyCommission(agency, salesAmount, period) {
-        // 報酬率（ティアに基づく）
-        const commissionRates = {
+    async calculateAgencyCommission(agency, salesAmount, period) {
+        // 設定から報酬率を取得（取得できない場合はデフォルト値を使用）
+        let commissionRates = {
             1: 30,
             2: 25,
             3: 20,
             4: 15
         };
+        
+        try {
+            // 設定から報酬率を取得
+            const settingsDb = new SettingsSupabaseDB();
+            const { data: commissionSettings } = await settingsDb.getSettings('commission');
+            
+            if (commissionSettings) {
+                commissionRates = {
+                    1: commissionSettings.tier1?.rate || 30,
+                    2: commissionSettings.tier2?.rate || 25,
+                    3: commissionSettings.tier3?.rate || 20,
+                    4: commissionSettings.tier4?.rate || 15
+                };
+            }
+        } catch (error) {
+            console.log('報酬設定の取得に失敗しました。デフォルト値を使用します。');
+        }
         
         const tier = agency.tier || agency.tier_level || 1;
         const rate = commissionRates[tier] || 15;
