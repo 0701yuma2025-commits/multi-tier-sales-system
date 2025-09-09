@@ -698,8 +698,8 @@
                 document.getElementById('loadingMessage').style.display = 'block';
                 
                 // Supabaseから代理店と商品データを取得
-                const supabaseAgencies = await supabaseDb.getAgencies();
-                const supabaseProducts = await supabaseDb.getProducts();
+                const { data: supabaseAgencies } = await supabaseDb.getAgencies();
+                const { data: supabaseProducts } = await supabaseDb.getProducts();
                 
                 // データがある場合は上書き
                 if (supabaseAgencies && supabaseAgencies.length > 0) {
