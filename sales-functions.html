@@ -842,14 +842,19 @@
         
         // 統計情報表示
         function displayStats(stats) {
-            document.getElementById('statTotal').textContent = `¥${stats.total.toLocaleString()}`;
-            document.getElementById('statCount').textContent = `${stats.count}件`;
-            document.getElementById('statAverage').textContent = `¥${stats.average.toLocaleString()}`;
-            document.getElementById('statGrowth').textContent = `${stats.growth > 0 ? '+' : ''}${stats.growth}%`;
+            const total = stats?.total || 0;
+            const count = stats?.count || 0;
+            const average = stats?.average || 0;
+            const growth = stats?.growth || 0;
+            
+            document.getElementById('statTotal').textContent = `¥${total.toLocaleString()}`;
+            document.getElementById('statCount').textContent = `${count}件`;
+            document.getElementById('statAverage').textContent = `¥${average.toLocaleString()}`;
+            document.getElementById('statGrowth').textContent = `${growth > 0 ? '+' : ''}${growth}%`;
             
             // 成長率に応じて色を変更
             const growthElement = document.getElementById('statGrowth');
-            growthElement.style.color = stats.growth >= 0 ? '#10b981' : '#ef4444';
+            growthElement.style.color = growth >= 0 ? '#10b981' : '#ef4444';
         }
         
         // ステータスラベル取得
