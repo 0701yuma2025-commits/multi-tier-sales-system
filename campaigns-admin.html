@@ -452,12 +452,12 @@
                     <label>ボーナスタイプ</label>
                     <div class="bonus-type-selector">
                         <div class="radio-option">
-                            <input type="radio" id="bonusPercent" name="bonusType" value="percent" checked onchange="toggleBonusInput()">
-                            <label for="bonusPercent">売上の割合</label>
+                            <input type="radio" id="bonusTypePercent" name="bonusType" value="percent" checked onchange="toggleBonusInput()">
+                            <label for="bonusTypePercent">売上の割合</label>
                         </div>
                         <div class="radio-option">
-                            <input type="radio" id="bonusFixed" name="bonusType" value="fixed" onchange="toggleBonusInput()">
-                            <label for="bonusFixed">固定額</label>
+                            <input type="radio" id="bonusTypeFixed" name="bonusType" value="fixed" onchange="toggleBonusInput()">
+                            <label for="bonusTypeFixed">固定額</label>
                         </div>
                     </div>
                 </div>
@@ -465,11 +465,11 @@
                 <div class="form-row">
                     <div class="form-group" id="percentGroup">
                         <label>ボーナス率（%） <span style="color: #ef4444;">*</span></label>
-                        <input type="number" id="bonusPercent" min="0" max="100" step="0.1" placeholder="例: 15">
+                        <input type="number" id="bonusPercentValue" min="0" max="100" step="0.1" placeholder="例: 15">
                     </div>
                     <div class="form-group" id="fixedGroup" style="display: none;">
                         <label>ボーナス額（円） <span style="color: #ef4444;">*</span></label>
-                        <input type="number" id="bonusAmount" min="0" placeholder="例: 10000">
+                        <input type="number" id="bonusAmountValue" min="0" placeholder="例: 10000">
                     </div>
                     <div class="form-group">
                         <label>上限額（円）</label>
@@ -603,8 +603,8 @@
                 status: 'scheduled',
                 bonus_type: bonusType === 'percent' ? 'percentage' : 'fixed',
                 bonus_rate: bonusType === 'percent' 
-                    ? parseFloat(document.getElementById('bonusPercent').value)
-                    : parseFloat(document.getElementById('bonusAmount').value),
+                    ? parseFloat(document.getElementById('bonusPercentValue').value)
+                    : parseFloat(document.getElementById('bonusAmountValue').value),
                 min_bonus: null,
                 max_bonus: document.getElementById('maxBonus').value ? parseInt(document.getElementById('maxBonus').value) : null,
                 target_products: Array.from(document.getElementById('targetProducts').selectedOptions).map(opt => opt.value),
@@ -692,11 +692,11 @@
                     
                     // ボーナスタイプ
                     if (campaign.bonus_type === 'percentage') {
-                        document.getElementById('bonusPercent').checked = true;
-                        document.getElementById('bonusPercent').value = campaign.bonus_rate;
+                        document.getElementById('bonusTypePercent').checked = true;
+                        document.getElementById('bonusPercentValue').value = campaign.bonus_rate;
                     } else {
-                        document.getElementById('bonusFixed').checked = true;
-                        document.getElementById('bonusAmount').value = campaign.bonus_rate;
+                        document.getElementById('bonusTypeFixed').checked = true;
+                        document.getElementById('bonusAmountValue').value = campaign.bonus_rate;
                     }
                     toggleBonusInput();
                     
