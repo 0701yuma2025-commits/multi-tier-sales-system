@@ -700,10 +700,16 @@
                 
                 // データがある場合は上書き
                 if (supabaseAgencies && supabaseAgencies.length > 0) {
+                    console.log('Supabaseから取得した代理店データ:', supabaseAgencies);
                     agencies = supabaseAgencies;
+                } else {
+                    console.log('Supabaseから代理店データが取得できませんでした。デモデータを使用します。');
                 }
                 if (supabaseProducts && supabaseProducts.length > 0) {
+                    console.log('Supabaseから取得した商品データ:', supabaseProducts);
                     products = supabaseProducts;
+                } else {
+                    console.log('Supabaseから商品データが取得できませんでした。デモデータを使用します。');
                 }
                 
                 // セレクトボックスに設定
@@ -1312,11 +1318,16 @@
                                 <label>代理店</label>
                                 <select name="agency_id" required class="form-control">
                                     <option value="">選択してください</option>
-                                    ${agencies.map(agency => `
-                                        <option value="${agency.id}" ${agency.id === sale.agency_id ? 'selected' : ''}>
-                                            ${agency.company_name} (Tier ${agency.tier_level || agency.tier})
-                                        </option>
-                                    `).join('')}
+                                    ${agencies.map(agency => {
+                                        // 現在の売上の代理店IDと比較
+                                        const isSelected = agency.id === sale.agency_id;
+                                        console.log('Agency:', agency.company_name, 'ID:', agency.id, 'Selected:', isSelected);
+                                        return `
+                                            <option value="${agency.id}" ${isSelected ? 'selected' : ''}>
+                                                ${agency.company_name} (Tier ${agency.tier_level || agency.tier})
+                                            </option>
+                                        `;
+                                    }).join('')}
                                 </select>
                             </div>
                             <div class="form-group">
