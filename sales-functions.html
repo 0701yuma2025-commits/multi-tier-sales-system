@@ -1377,15 +1377,19 @@
                         customer_name: formData.get('customer_name'),
                         amount: parseInt(formData.get('amount')),
                         status: formData.get('status'),
-                        notes: formData.get('notes')
+                        notes: formData.get('notes') || null
                     };
                     
-                    const { error } = await supabaseDb.client
-                        .from('sales')
-                        .update(updateData)
-                        .eq('id', id);
+                    console.log('更新データ:', updateData);
+                    console.log('更新対象ID:', id);
                     
-                    if (error) throw error;
+                    // supabaseDbのupdateSaleメソッドを使用
+                    const { data, error } = await supabaseDb.updateSale(id, updateData);
+                    
+                    if (error) {
+                        console.error('Supabase更新エラー:', error);
+                        throw error;
+                    }
                     
                     showSuccess('売上を更新しました');
                     await loadSalesData();
