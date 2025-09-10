@@ -236,6 +236,25 @@ class SalesSupabaseDB {
         }
     }
     
+    // 売上更新
+    async updateSale(saleId, updateData) {
+        try {
+            const { data, error } = await this.client
+                .from('sales')
+                .update(updateData)
+                .eq('id', saleId)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            
+            return { data, error: null };
+        } catch (error) {
+            console.error('売上更新エラー:', error);
+            return { data: null, error };
+        }
+    }
+    
     // 売上削除
     async deleteSale(saleId) {
         try {
