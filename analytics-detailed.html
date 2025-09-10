@@ -834,6 +834,8 @@
         function initHeatmapChart(initialData = null) {
             const ctx = document.getElementById('heatmapChart').getContext('2d');
             
+            console.log('initHeatmapChart called with data:', initialData ? `${initialData.length}件` : 'null');
+            
             // 現在の表示モードを取得
             const viewMode = document.querySelector('.heatmap-view-select')?.value || 'sales';
             const dataType = document.getElementById('heatmapMetric')?.value || 'revenue';
@@ -887,9 +889,13 @@
             };
             
             const heatmapData = generateHeatmapData();
+            console.log('Generated heatmap data:', heatmapData.filter(d => d.v > 0).length, '個の有効データポイント');
+            
             const values = heatmapData.map(d => d.v).filter(v => v > 0);  // 0より大きい値のみ
             const minValue = values.length > 0 ? Math.min(...values) : 0;
             const maxValue = values.length > 0 ? Math.max(...values) : 100;
+            
+            console.log('Value range:', minValue, '-', maxValue);
             
             // 既存のチャートを破棄
             if (window.heatmapChart && typeof window.heatmapChart.destroy === 'function') {
@@ -1290,6 +1296,7 @@
             
             // 売上データを集計
             if (salesData && salesData.length > 0) {
+                console.log('売上データ件数:', salesData.length);
                 salesData.forEach(sale => {
                     const saleDate = new Date(sale.sale_date);
                     const dayOfWeek = saleDate.getDay();
@@ -1301,6 +1308,17 @@
                         dataMatrix[key].count += 1;
                     }
                 });
+                
+                // デバッグ: 集計結果を確認
+                let totalRevenue = 0;
+                let totalCount = 0;
+                Object.values(dataMatrix).forEach(data => {
+                    totalRevenue += data.revenue;
+                    totalCount += data.count;
+                });
+                console.log('集計結果 - 総売上:', totalRevenue, '総件数:', totalCount);
+            } else {
+                console.log('売上データがありません');
             }
             
             // Chart.jsのmatrix形式にデータを変換
@@ -1327,6 +1345,9 @@
                     });
                 });
             });
+            
+            // デバッグ: ヒートマップデータの確認
+            console.log('ヒートマップデータ生成完了:', heatmapData.filter(d => d.v > 0).length, '個の有効データ');
             
             // チャートを更新または初期化
             if (window.heatmapChart) {
@@ -1463,11 +1484,11 @@
             document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
             document.getElementById('endDate').value = today.toISOString().split('T')[0];
             
-            // チャートを先に初期化
+            // チャートを先に初期化（コホートチャートのみ）
             initCohortChart();
-            initHeatmapChart();
+            // ヒートマップは空で初期化しない（データ読み込み後に初期化）
             
-            // その後データを読み込み
+            // データを読み込み（ヒートマップも含めて更新される）
             await initializeAnalytics();
             
             // 日付変更時の処理
