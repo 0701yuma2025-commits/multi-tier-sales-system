@@ -288,10 +288,10 @@ class SalesSupabaseDB {
                 .order('company_name', { ascending: true });
             
             if (error) throw error;
-            return data;
+            return { data, error: null };
         } catch (error) {
             console.error('代理店取得エラー:', error);
-            throw error;
+            return { data: null, error };
         }
     }
     
@@ -304,10 +304,10 @@ class SalesSupabaseDB {
                 .order('id', { ascending: true });
             
             if (error) throw error;
-            return data;
+            return { data, error: null };
         } catch (error) {
             console.error('商品取得エラー:', error);
-            throw error;
+            return { data: null, error };
         }
     }
 }
