@@ -951,7 +951,6 @@
         async function loadAgenciesData() {
             try {
                 const data = await agenciesDb.getAgencies();
-                console.log('Supabaseから取得したデータ:', data);
                 agencies = data.map(agency => ({
                     id: agency.id,
                     name: agency.company_name,
@@ -1426,7 +1425,6 @@
                         updates.representative.corporate_number = corporateNumber.value;
                     }
                     
-                    console.log('送信する更新データ:', updates);
                     
                     await agenciesDb.updateAgency(id, updates);
                     await loadAgenciesData();
@@ -2063,9 +2061,7 @@
             if (agenciesDb) {
                 // Supabaseモード
                 try {
-                    console.log('承認処理開始:', { agencyId, comment, agency });
                     const result = await agenciesDb.approveAgency(agencyId, comment);
-                    console.log('承認結果:', result);
                     
                     await loadAgenciesData();
                     

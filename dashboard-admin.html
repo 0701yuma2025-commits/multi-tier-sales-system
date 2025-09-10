@@ -876,7 +876,6 @@
                                 };
                             }
                         } catch (e) {
-                            console.log('デフォルト報酬率を使用');
                         }
                         
                         // 売上日ごとに報酬を計算
@@ -1171,7 +1170,6 @@
             try {
                 const supabaseClient = initializeSupabase();
                 if (!supabaseClient) {
-                    console.log('デモモード: デフォルトの設定を使用');
                     return;
                 }
                 
@@ -1189,7 +1187,6 @@
                     }
                 }
             } catch (error) {
-                console.log('一般設定の読み込みエラー:', error);
             }
         }
         
@@ -1226,7 +1223,6 @@
                 
                 // リアルタイム更新のコールバック
                 realtimeManager.startRealtimeUpdates(async (table, payload) => {
-                    console.log(`テーブル ${table} が更新されました`);
                     
                     // データを再読み込み
                     await loadDashboardData();

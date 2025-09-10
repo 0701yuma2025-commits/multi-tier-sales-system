@@ -750,7 +750,6 @@
         
         // データ不足警告表示
         function showDataNotAvailable(dataType) {
-            console.warn(`${dataType}の実データが利用できません`);
             
             // 既存のエラー表示があれば削除
             const existingError = document.getElementById('dataNotAvailableError');
@@ -1047,7 +1046,6 @@
                 
                 // データがない場合の処理
                 if (!cohortData || Object.keys(cohortData).length === 0) {
-                    console.log('コホートデータが空です');
                     // デモデータを表示
                     const demoDatasets = [
                         {

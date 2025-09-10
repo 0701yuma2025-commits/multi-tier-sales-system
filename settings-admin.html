@@ -1379,7 +1379,6 @@
             try {
                 const supabaseClient = initializeSupabase();
                 if (!supabaseClient) {
-                    console.log('デモモード: デフォルトの設定を使用');
                     return;
                 }
                 
@@ -1393,7 +1392,6 @@
                     }
                 }
             } catch (error) {
-                console.log('一般設定の読み込みエラー:', error);
             }
         }
         

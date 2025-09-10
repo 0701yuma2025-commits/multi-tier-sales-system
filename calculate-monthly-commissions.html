@@ -139,7 +139,6 @@
                 const endDate = new Date(parseInt(period.split('-')[0]), parseInt(period.split('-')[1]), 0)
                     .toISOString().split('T')[0];
                 
-                console.log(`期間: ${startDate} ~ ${endDate}`);
                 
                 const { data: sales, error: salesError } = await client
                     .from('sales')
@@ -159,7 +158,6 @@
                 
                 if (salesError) throw salesError;
                 
-                console.log('売上データ:', sales);
                 
                 if (!sales || sales.length === 0) {
                     resultDiv.innerHTML = `<p class="error">${period}の確定売上データがありません。</p>`;
@@ -208,7 +206,6 @@
                         period
                     );
                     
-                    console.log('計算された報酬:', commission);
                     
                     // 報酬データを作成/更新
                     const { data: savedCommission, error } = await commissionsDb.upsertCommission(commission);
@@ -217,7 +214,6 @@
                         console.error('報酬作成エラー:', error);
                         resultDiv.innerHTML += `<p class="error">${agency.company_name}: エラー - ${error.message}</p>`;
                     } else {
-                        console.log('報酬作成成功:', savedCommission);
                         createdCount++;
                         totalCommissions += commission.total_commission;
                         resultDiv.innerHTML += `<p class="success">→ 報酬: ¥${commission.total_commission.toLocaleString()} (税引後: ¥${commission.net_payment.toLocaleString()})</p>`;

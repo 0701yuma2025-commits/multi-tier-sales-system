@@ -637,7 +637,6 @@
             try {
                 const supabaseClient = initializeSupabase();
                 if (!supabaseClient) {
-                    console.log('デモモード: デフォルトの設定を使用');
                     return;
                 }
                 
@@ -651,7 +650,6 @@
                     }
                 }
             } catch (error) {
-                console.log('一般設定の読み込みエラー:', error);
             }
         }
         
@@ -780,7 +778,6 @@
         // 売上データ読み込み
         async function loadSalesData() {
             if (!supabaseDb) {
-                console.log('Supabase DB not initialized, using demo data');
                 displayDemoSalesData();
                 return;
             }
@@ -790,8 +787,6 @@
                 const sales = await supabaseDb.getSales();
                 const stats = await supabaseDb.getSalesStats();
                 
-                console.log('Sales data:', sales);
-                console.log('Stats:', stats);
                 
                 // データを表示
                 currentSalesData = sales || [];
@@ -820,15 +815,9 @@
                 return;
             }
             
-            console.log('Displaying sales:', sales);
-            console.log('Available agencies:', agencies);
-            console.log('Available products:', products);
             
             // 最初の売上データの構造を確認
             if (sales.length > 0) {
-                console.log('First sale structure:', sales[0]);
-                console.log('Has agencies relation:', !!sales[0].agencies);
-                console.log('Has products relation:', !!sales[0].products);
             }
             
             try {
@@ -1252,6 +1241,7 @@
         
         // 売上編集
         function editSales(id) {
+            
             const sale = currentMode === 'supabase' ? 
                 currentSalesData.find(s => s.id === id) :
                 [
@@ -1297,15 +1287,37 @@
                         <form onsubmit="handleSaleUpdate(event, '${sale.id}'); return false;">
                             <div class="form-group">
                                 <label>売上日</label>
-                                <input type="date" name="sale_date" value="${sale.sale_date}" required class="form-control">
+                                <input type="date" name="sale_date" value="${sale.sale_date || sale.date || ''}" required class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>代理店</label>
+                                <select name="agency_id" required class="form-control">
+                                    <option value="">選択してください</option>
+                                    ${agencies.map(agency => `
+                                        <option value="${agency.id}" ${agency.id === sale.agency_id ? 'selected' : ''}>
+                                            ${agency.company_name} (Tier ${agency.tier_level || agency.tier})
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>商品</label>
+                                <select name="product_id" required class="form-control">
+                                    <option value="">選択してください</option>
+                                    ${products.map(product => `
+                                        <option value="${product.id}" ${product.id === sale.product_id ? 'selected' : ''}>
+                                            ${product.name} - ¥${product.price.toLocaleString()}
+                                        </option>
+                                    `).join('')}
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>顧客名</label>
-                                <input type="text" name="customer_name" value="${sale.customer_name}" required class="form-control">
+                                <input type="text" name="customer_name" value="${sale.customer_name || ''}" required class="form-control">
                             </div>
                             <div class="form-group">
                                 <label>金額</label>
-                                <input type="number" name="amount" value="${sale.amount}" required class="form-control">
+                                <input type="number" name="amount" value="${sale.amount || 0}" required class="form-control">
                             </div>
                             <div class="form-group">
                                 <label>ステータス</label>
@@ -1341,6 +1353,8 @@
                     // Supabaseでの更新処理
                     const updateData = {
                         sale_date: formData.get('sale_date'),
+                        agency_id: formData.get('agency_id'),
+                        product_id: formData.get('product_id'),
                         customer_name: formData.get('customer_name'),
                         amount: parseInt(formData.get('amount')),
                         status: formData.get('status'),

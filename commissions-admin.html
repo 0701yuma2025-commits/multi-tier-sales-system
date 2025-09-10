@@ -908,10 +908,8 @@
                     commissionRates.bonus2 = commissionSettings.tier2?.bonus || 8;
                     commissionRates.bonus3 = commissionSettings.tier3?.bonus || 6;
                     commissionRates.bonus4 = commissionSettings.tier4?.bonus || 4;
-                    console.log('報酬率設定を読み込みました:', commissionRates);
                 }
             } catch (error) {
-                console.log('報酬率設定の読み込みに失敗しました。デフォルト値を使用します。');
             }
         }
         
@@ -964,7 +962,6 @@
                     const { data, error } = await commissionsDb.getCommissions(currentPeriod);
                     if (error) throw error;
                     
-                    console.log('Supabaseから取得した報酬データ:', data);
                     
                     commissionsData = data?.map(comm => ({
                         agencyId: comm.agency_id,
@@ -986,7 +983,6 @@
                         id: comm.id
                     })) || [];
                     
-                    console.log('マッピング後の報酬データ:', commissionsData);
                     
                     // データが空の場合のメッセージ表示
                     if (commissionsData.length === 0 && !error) {
@@ -1094,72 +1090,12 @@
             }
         }
         
-        // 承認待ちテーブル描画
+        // 承認待ちテーブル描画（使用されていないが互換性のため残す）
         async function renderPendingTable() {
+            // 承認フローは削除されたため、何も表示しない
             const tbody = document.getElementById('pendingTableBody');
-            tbody.innerHTML = '';
-            
-            try {
-                let pendingData = [];
-                
-                if (commissionsDb) {
-                    // Supabaseから承認待ちデータを取得
-                    const { data, error } = await commissionsDb.getCommissions(currentPeriod, { status: 'pending' });
-                    if (error) throw error;
-                    
-                    pendingData = data?.map(comm => ({
-                        id: comm.id,
-                        date: new Date(comm.created_at).toLocaleDateString('ja-JP'),
-                        agencyName: comm.agencies?.company_name || '',
-                        targetSales: comm.sales_amount,
-                        amount: comm.total_commission,
-                        type: '直接報酬',
-                        details: `${comm.period}度売上分`
-                    })) || [];
-                } else {
-                    // デモモード
-                    pendingData = pendingApprovals;
-                }
-                
-                pendingData.forEach(pending => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${pending.date}</td>
-                        <td>${pending.agencyName}</td>
-                        <td>¥${pending.targetSales.toLocaleString()}</td>
-                        <td style="font-weight: bold;">¥${pending.amount.toLocaleString()}</td>
-                        <td>${pending.type}</td>
-                        <td>${pending.details}</td>
-                        <td>
-                            <div class="action-btns">
-                                <button class="action-btn approve" onclick="approvePending('${pending.id}')">承認</button>
-                                <button class="action-btn reject" onclick="rejectPending('${pending.id}')">却下</button>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } catch (error) {
-                console.error('承認待ちデータ読み込みエラー:', error);
-                // エラー時はデモデータを表示
-                pendingApprovals.forEach(pending => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${pending.date}</td>
-                        <td>${pending.agencyName}</td>
-                        <td>¥${pending.targetSales.toLocaleString()}</td>
-                        <td style="font-weight: bold;">¥${pending.amount.toLocaleString()}</td>
-                        <td>${pending.type}</td>
-                        <td>${pending.details}</td>
-                        <td>
-                            <div class="action-btns">
-                                <button class="action-btn approve" onclick="approvePending('${pending.id}')">承認</button>
-                                <button class="action-btn reject" onclick="rejectPending('${pending.id}')">却下</button>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">承認フローは削除されました</td></tr>';
             }
         }
         
@@ -1655,7 +1591,6 @@
         
         // 支払い完了処理
         async function markAsPaid(commissionId) {
-            console.log('支払い完了処理開始:', { commissionId });
             
             if (!confirm('この報酬を支払い済みにしますか？')) {
                 return;
@@ -1690,7 +1625,6 @@
         
         // 売上データから報酬を計算
         async function calculateFromSalesData() {
-            console.log('売上データから報酬計算を開始');
             
             if (!confirm(`${currentPeriod}の売上データから報酬を計算しますか？\n\n既存の報酬データは上書きされます。`)) {
                 return;
@@ -1836,12 +1770,10 @@
         
         // 個別承認
         async function approveCommission(commissionId) {
-            console.log('承認処理開始:', { commissionId });
             
             try {
                 if (commissionsDb) {
                     // Supabaseで承認
-                    console.log('Supabaseで承認を実行:', { commissionId });
                     const { data, error } = await commissionsDb.approveCommission(commissionId);
                     
                     if (error) {
@@ -1849,12 +1781,10 @@
                         throw error;
                     }
                     
-                    console.log('承認結果:', data);
                     alert('報酬を承認しました');
                     await renderSummaryTable();
                 } else {
                     // デモモード
-                    console.log('デモモードで承認を実行');
                     const commission = commissions.find(c => c.id === commissionId || c.agencyId === commissionId);
                     if (commission) {
                         commission.status = 'completed';
@@ -1896,7 +1826,6 @@
         async function changePeriod() {
             const period = document.getElementById('periodSelect').value;
             currentPeriod = period;
-            console.log('期間変更:', currentPeriod);
             
             await loadStatistics();
             await renderSummaryTable();
@@ -1972,7 +1901,6 @@
             try {
                 const supabaseClient = initializeSupabase();
                 if (!supabaseClient) {
-                    console.log('デモモード: デフォルトの設定を使用');
                     return;
                 }
                 
@@ -1986,7 +1914,6 @@
                     }
                 }
             } catch (error) {
-                console.log('一般設定の読み込みエラー:', error);
             }
         }
         
@@ -2009,8 +1936,6 @@
                     commissionsDb = new CommissionsSupabaseDB();
                     // 報酬率設定を読み込む
                     await loadCommissionRates();
-                    console.log('Supabaseモードで初期化完了');
-                    console.log('commissionsDb:', commissionsDb);
                 }
             } catch (error) {
                 console.error('Supabase初期化エラー:', error);
