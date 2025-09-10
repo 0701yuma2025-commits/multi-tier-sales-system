@@ -678,18 +678,22 @@
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
             
+            // Date型に変換
+            const startDateObj = new Date(startDate);
+            const endDateObj = new Date(endDate);
+            
             // メトリクス更新
-            await updateMetrics(startDate, endDate);
+            await updateMetrics(startDateObj, endDateObj);
             
             // チャートデータ更新（デフォルトは売上表示）
-            await updateCohortChartRevenue(startDate, endDate);
-            await updateHeatmapChart(startDate, endDate);
+            await updateCohortChartRevenue(startDateObj, endDateObj);
+            await updateHeatmapChart(startDateObj, endDateObj);
             
             // テーブルデータ更新
-            await updatePerformanceTables(startDate, endDate);
+            await updatePerformanceTables(startDateObj, endDateObj);
             
             // AIインサイト更新
-            await updateAIInsights(startDate, endDate);
+            await updateAIInsights(startDateObj, endDateObj);
         }
         
         // メトリクス更新
@@ -836,32 +840,17 @@
             
             // データの生成
             const hours = Array.from({length: 24}, (_, i) => i);
-            const days = ['月', '火', '水', '木', '金', '土', '日'];
+            const days = ['日', '月', '火', '水', '木', '金', '土'];  // 日曜日から始まる（JavaScriptのgetDay()に合わせる）
             
-            // マトリックスデータの生成
+            // マトリックスデータの生成（初期は空データ）
             const generateHeatmapData = () => {
                 const data = [];
                 days.forEach((day, y) => {
                     hours.forEach((hour, x) => {
-                        let value = Math.random() * 30;
-                        
-                        // ビジネスアワー（平日9-18時）は高い値
-                        if (y < 5 && x >= 9 && x <= 18) {
-                            value += 70;
-                        }
-                        // 週末は中程度
-                        else if (y >= 5 && x >= 10 && x <= 20) {
-                            value += 40;
-                        }
-                        // 深夜は低い値
-                        else if (x < 6 || x > 22) {
-                            value = Math.random() * 10;
-                        }
-                        
                         data.push({
                             x: x,
                             y: y,
-                            v: Math.round(value)
+                            v: 0  // 初期値は0
                         });
                     });
                 });
@@ -1267,16 +1256,78 @@
         
         // ヒートマップ更新
         async function updateHeatmapChart(startDate, endDate) {
-            // 実際の時間別売上データを取得（簡易版）
-            const { data: salesStats, error } = await analyticsDb.getSalesStatistics(startDate, endDate);
+            // 実際の売上データを取得
+            const { data: salesData, error } = await analyticsDb.client
+                .from('sales')
+                .select('*')
+                .gte('sale_date', startDate.toISOString())
+                .lte('sale_date', endDate.toISOString())
+                .eq('status', 'confirmed');
             
             if (error) {
-                console.error('売上統計取得エラー:', error);
+                console.error('売上データ取得エラー:', error);
                 return;
             }
             
-            // ヒートマップデータを更新（デモデータ使用）
-            // 実際の実装では時間別売上データを集計して使用
+            // 曜日と時間別にデータを集計
+            const heatmapData = [];
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            const hours = Array.from({length: 24}, (_, i) => i);
+            
+            // 初期化：全ての曜日×時間のデータを0で初期化
+            const dataMatrix = {};
+            days.forEach((_, dayIndex) => {
+                hours.forEach(hour => {
+                    const key = `${dayIndex}_${hour}`;
+                    dataMatrix[key] = { revenue: 0, count: 0 };
+                });
+            });
+            
+            // 売上データを集計
+            if (salesData && salesData.length > 0) {
+                salesData.forEach(sale => {
+                    const saleDate = new Date(sale.sale_date);
+                    const dayOfWeek = saleDate.getDay();
+                    const hour = saleDate.getHours();
+                    const key = `${dayOfWeek}_${hour}`;
+                    
+                    if (dataMatrix[key]) {
+                        dataMatrix[key].revenue += sale.amount || 0;
+                        dataMatrix[key].count += 1;
+                    }
+                });
+            }
+            
+            // Chart.jsのmatrix形式にデータを変換
+            const metricType = document.getElementById('heatmapMetric')?.value || 'revenue';
+            days.forEach((day, dayIndex) => {
+                hours.forEach(hour => {
+                    const key = `${dayIndex}_${hour}`;
+                    const data = dataMatrix[key];
+                    
+                    let value = 0;
+                    if (metricType === 'revenue') {
+                        value = Math.round(data.revenue / 10000); // 万円単位
+                    } else if (metricType === 'count') {
+                        value = data.count;
+                    } else if (metricType === 'conversion') {
+                        // コンバージョン率の計算（仮）
+                        value = data.count > 0 ? Math.round((data.count / (data.count + Math.random() * 10)) * 100) : 0;
+                    }
+                    
+                    heatmapData.push({
+                        x: hour,
+                        y: dayIndex,
+                        v: value
+                    });
+                });
+            });
+            
+            // チャートを更新
+            if (window.heatmapChart) {
+                window.heatmapChart.data.datasets[0].data = heatmapData;
+                window.heatmapChart.update();
+            }
         }
         
         // パフォーマンステーブル更新
