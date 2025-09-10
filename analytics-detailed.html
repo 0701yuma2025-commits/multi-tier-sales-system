@@ -831,19 +831,25 @@
         }
         
         // ヒートマップチャート
-        function initHeatmapChart() {
+        function initHeatmapChart(initialData = null) {
             const ctx = document.getElementById('heatmapChart').getContext('2d');
             
             // 現在の表示モードを取得
             const viewMode = document.querySelector('.heatmap-view-select')?.value || 'sales';
-            const dataType = document.querySelector('.heatmap-data-select')?.value || 'revenue';
+            const dataType = document.getElementById('heatmapMetric')?.value || 'revenue';
             
             // データの生成
             const hours = Array.from({length: 24}, (_, i) => i);
             const days = ['日', '月', '火', '水', '木', '金', '土'];  // 日曜日から始まる（JavaScriptのgetDay()に合わせる）
             
-            // マトリックスデータの生成（初期は空データ）
+            // マトリックスデータの生成
             const generateHeatmapData = () => {
+                // initialDataが渡されていればそれを使用
+                if (initialData && initialData.length > 0) {
+                    return initialData;
+                }
+                
+                // そうでなければ空データ
                 const data = [];
                 days.forEach((day, y) => {
                     hours.forEach((hour, x) => {
@@ -859,7 +865,12 @@
             
             // カラースケールの生成
             const getColorForValue = (value, min, max) => {
-                const normalized = (value - min) / (max - min);
+                if (value === 0) {
+                    return 'rgba(200, 200, 200, 0.1)';  // データなしはグレー
+                }
+                
+                const range = max - min;
+                const normalized = range > 0 ? (value - min) / range : 0;
                 
                 // カラーグラデーション（青→緑→黄→オレンジ→赤）
                 if (normalized < 0.2) {
@@ -876,9 +887,9 @@
             };
             
             const heatmapData = generateHeatmapData();
-            const values = heatmapData.map(d => d.v);
-            const minValue = Math.min(...values);
-            const maxValue = Math.max(...values);
+            const values = heatmapData.map(d => d.v).filter(v => v > 0);  // 0より大きい値のみ
+            const minValue = values.length > 0 ? Math.min(...values) : 0;
+            const maxValue = values.length > 0 ? Math.max(...values) : 100;
             
             // 既存のチャートを破棄
             if (window.heatmapChart && typeof window.heatmapChart.destroy === 'function') {
@@ -893,7 +904,7 @@
                         label: dataType === 'revenue' ? '売上高' : dataType === 'count' ? '取引件数' : 'コンバージョン率',
                         data: heatmapData,
                         backgroundColor: (context) => {
-                            const value = context.dataset.data[context.dataIndex].v;
+                            const value = context.dataset.data[context.dataIndex]?.v || 0;
                             return getColorForValue(value, minValue, maxValue);
                         },
                         borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -953,20 +964,14 @@
             });
             
             // セレクトボックスのイベントリスナーを設定
-            const viewSelect = document.querySelector('.heatmap-view-select');
-            const dataSelect = document.querySelector('.heatmap-data-select');
+            const metricSelect = document.getElementById('heatmapMetric');
             
-            if (viewSelect && !viewSelect.hasAttribute('data-listener')) {
-                viewSelect.setAttribute('data-listener', 'true');
-                viewSelect.addEventListener('change', () => {
-                    initHeatmapChart();
-                });
-            }
-            
-            if (dataSelect && !dataSelect.hasAttribute('data-listener')) {
-                dataSelect.setAttribute('data-listener', 'true');
-                dataSelect.addEventListener('change', () => {
-                    initHeatmapChart();
+            if (metricSelect && !metricSelect.hasAttribute('data-listener')) {
+                metricSelect.setAttribute('data-listener', 'true');
+                metricSelect.addEventListener('change', async () => {
+                    const startDate = document.getElementById('startDate').value;
+                    const endDate = document.getElementById('endDate').value;
+                    await updateHeatmapChart(new Date(startDate), new Date(endDate));
                 });
             }
         }
@@ -1323,10 +1328,14 @@
                 });
             });
             
-            // チャートを更新
+            // チャートを更新または初期化
             if (window.heatmapChart) {
-                window.heatmapChart.data.datasets[0].data = heatmapData;
-                window.heatmapChart.update();
+                // 既存のチャートを破棄して新しく作成
+                window.heatmapChart.destroy();
+                initHeatmapChart(heatmapData);
+            } else {
+                // 初期化
+                initHeatmapChart(heatmapData);
             }
         }
         
