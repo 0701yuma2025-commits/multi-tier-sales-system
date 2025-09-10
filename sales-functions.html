@@ -821,7 +821,13 @@
             }
             
             try {
-                tbody.innerHTML = sales.map(sale => {
+                tbody.innerHTML = sales.map((sale, index) => {
+                    if (index === 0) {
+                        console.log('最初の売上データ詳細:', sale);
+                        console.log('agency_id:', sale.agency_id);
+                        console.log('agencies関連:', sale.agencies);
+                    }
+                    
                     // Supabaseのリレーションデータを優先的に使用
                     let agencyName = '不明';
                     let productName = '不明';
@@ -834,6 +840,8 @@
                         const agency = agencies.find(a => a.id === sale.agency_id);
                         if (agency) {
                             agencyName = agency.company_name || agency.name || '不明';
+                        } else {
+                            console.log('代理店が見つかりません。agency_id:', sale.agency_id);
                         }
                     }
                     
@@ -1241,6 +1249,11 @@
         
         // 売上編集
         function editSales(id) {
+            console.log('=== 編集開始 ===');
+            console.log('編集対象ID:', id);
+            console.log('現在のモード:', currentMode);
+            console.log('売上データ件数:', currentSalesData ? currentSalesData.length : 0);
+            console.log('売上データ:', currentSalesData);
             
             const sale = currentMode === 'supabase' ? 
                 currentSalesData.find(s => s.id === id) :
@@ -1267,9 +1280,15 @@
                 ].find(s => s.id === id);
             
             if (!sale) {
+                console.error('売上データが見つかりません。ID:', id);
+                alert('売上情報が見つかりません。\nID: ' + id + '\n現在のデータ数: ' + (currentSalesData ? currentSalesData.length : 0));
                 showError('売上情報が見つかりません');
                 return;
             }
+            
+            console.log('編集対象の売上データ:', sale);
+            console.log('代理店データ:', agencies);
+            console.log('商品データ:', products);
             
             // モーダル作成
             const existingModal = document.getElementById('editSaleModal');
