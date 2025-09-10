@@ -26,14 +26,22 @@ class AnalyticsSupabaseDB {
         
         try {
             // 代理店データを取得
-            const agencies = await this.client.getAgencies();
+            const { data: agencies, error: agenciesError } = await this.client
+                .from('agencies')
+                .select('*')
+                .eq('status', 'active');
+            
+            if (agenciesError) throw agenciesError;
             
             // 売上データを取得
-            const sales = await this.client.getSales({
-                dateFrom: startDate,
-                dateTo: endDate,
-                status: 'confirmed'
-            });
+            const { data: sales, error: salesError } = await this.client
+                .from('sales')
+                .select('*')
+                .gte('sale_date', startDate)
+                .lte('sale_date', endDate)
+                .eq('status', 'confirmed');
+            
+            if (salesError) throw salesError;
             
             // データを結合
             const performanceData = agencies.map(agency => {
@@ -70,14 +78,21 @@ class AnalyticsSupabaseDB {
         
         try {
             // 売上データを取得
-            const sales = await this.client.getSales({
-                dateFrom: startDate,
-                dateTo: endDate,
-                status: 'confirmed'
-            });
+            const { data: sales, error: salesError } = await this.client
+                .from('sales')
+                .select('*')
+                .gte('sale_date', startDate)
+                .lte('sale_date', endDate)
+                .eq('status', 'confirmed');
+            
+            if (salesError) throw salesError;
             
             // 代理店データを取得
-            const agencies = await this.client.getAgencies();
+            const { data: agencies, error: agenciesError } = await this.client
+                .from('agencies')
+                .select('*');
+            
+            if (agenciesError) throw agenciesError;
             
             // データを結合
             const salesWithAgency = sales.map(sale => {
@@ -184,7 +199,12 @@ class AnalyticsSupabaseDB {
             startDate.setMonth(startDate.getMonth() - months);
 
             // 代理店データを取得
-            const agencies = await this.client.getAgencies();
+            const { data: agencies, error: agenciesError } = await this.client
+                .from('agencies')
+                .select('*')
+                .eq('status', 'active');
+            
+            if (agenciesError) throw agenciesError;
             
             // 指定期間内に作成された代理店をフィルタ
             const filteredAgencies = agencies.filter(agency => 
@@ -192,7 +212,12 @@ class AnalyticsSupabaseDB {
             );
             
             // 売上データを取得
-            const sales = await this.client.getSales();
+            const { data: sales, error: salesError } = await this.client
+                .from('sales')
+                .select('*')
+                .order('sale_date', { ascending: false });
+            
+            if (salesError) throw salesError;
             
             // データを結合
             const agenciesWithSales = filteredAgencies.map(agency => {
@@ -266,11 +291,14 @@ class AnalyticsSupabaseDB {
             // 現在のテーブル構造では、leadsやopportunitiesテーブルが存在しないため
             // 売上データから推定するか、デモデータを使用
             
-            const sales = await this.client.getSales({
-                dateFrom: startDate,
-                dateTo: endDate,
-                status: 'confirmed'
-            });
+            const { data: sales, error: salesError } = await this.client
+                .from('sales')
+                .select('*')
+                .gte('sale_date', startDate.toISOString())
+                .lte('sale_date', endDate.toISOString())
+                .eq('status', 'confirmed');
+            
+            if (salesError) throw salesError;
             
             // 売上データを基にファネルを推定（仮の計算）
             const closedCount = sales.length;
@@ -356,11 +384,14 @@ class AnalyticsSupabaseDB {
         
         try {
             // 売上データ取得
-            const salesData = await this.client.getSales({
-                dateFrom: startDate,
-                dateTo: endDate,
-                status: 'confirmed'
-            });
+            const { data: salesData, error: salesError } = await this.client
+                .from('sales')
+                .select('*')
+                .gte('sale_date', startDate.toISOString())
+                .lte('sale_date', endDate.toISOString())
+                .eq('status', 'confirmed');
+            
+            if (salesError) throw salesError;
 
             // customersテーブルが存在しない場合のダミーデータ
             const customerData = [];
@@ -421,7 +452,11 @@ class AnalyticsSupabaseDB {
     async calculateRetentionRate(startDate, endDate) {
         // 継続率計算（簡易版）
         try {
-            const agencies = await this.client.getAgencies();
+            const { data: agencies, error } = await this.client
+                .from('agencies')
+                .select('*');
+            
+            if (error) throw error;
             if (!agencies || agencies.length === 0) {
                 return 0; // データがない場合は0
             }
@@ -439,11 +474,13 @@ class AnalyticsSupabaseDB {
     async calculateConversionRate(startDate, endDate) {
         // コンバージョン率計算（簡易版）
         try {
-            const sales = await this.client.getSales({
-                dateFrom: startDate,
-                dateTo: endDate
-            });
+            const { data: sales, error } = await this.client
+                .from('sales')
+                .select('*')
+                .gte('sale_date', startDate.toISOString())
+                .lte('sale_date', endDate.toISOString());
             
+            if (error) throw error;
             if (!sales || sales.length === 0) {
                 return 0; // データがない場合は0
             }
