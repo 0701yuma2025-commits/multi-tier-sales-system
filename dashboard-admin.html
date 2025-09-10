@@ -947,7 +947,8 @@
                     
                     // データを取得
                     salesData = await supabaseDb.getSales();
-                    agencyData = await supabaseDb.getAgencies();
+                    const agencyResult = await supabaseDb.getAgencies();
+                    agencyData = agencyResult.data || [];
                     
                     // KPIを更新
                     updateKPIs();
